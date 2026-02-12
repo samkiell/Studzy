@@ -13,7 +13,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@supabase/supabase-js": "^2.47.0",
-    "@supabase/ssr": "^0.5.2"
+    "@supabase/ssr": "^0.5.2",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
