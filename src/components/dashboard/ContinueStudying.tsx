@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Video, Music, FileText, ChevronRight } from "lucide-react";
 
 interface RecentResource {
   id: string;
@@ -90,22 +91,9 @@ export function ContinueStudying() {
   }
 
   const typeIcons = {
-    video: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    audio: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-      </svg>
-    ),
-    pdf: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-    ),
+    video: <Video className="h-5 w-5" />,
+    audio: <Music className="h-5 w-5" />,
+    pdf: <FileText className="h-5 w-5" />,
   };
 
   const typeColors = {
@@ -142,14 +130,7 @@ export function ContinueStudying() {
                 {formatTimeAgo(resource.last_accessed)}
               </p>
             </div>
-            <svg
-              className="h-5 w-5 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="h-5 w-5 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300" />
           </Link>
         ))}
       </div>
