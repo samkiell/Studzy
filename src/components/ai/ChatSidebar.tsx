@@ -106,6 +106,7 @@ export function ChatSidebar({
           <button
             onClick={onToggle}
             className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 lg:hidden"
+            title="Close sidebar"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>

@@ -208,6 +208,7 @@ export function ChatPanel({
         <button
           onClick={onToggleSidebar}
           className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 lg:hidden"
+          title="Toggle sidebar"
         >
           <Menu className="h-5 w-5" />
         </button>
