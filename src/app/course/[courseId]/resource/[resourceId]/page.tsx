@@ -25,6 +25,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     .select("*, courses(*)")
     .eq("id", resourceId)
     .eq("course_id", courseId)
+    .eq("status", "published")
     .single();
 
   if (resourceError || !resource) {

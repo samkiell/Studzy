@@ -13,11 +13,12 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  // Fetch resource details with course info
+  // Fetch resource details with course info (only published)
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
     .select("*")
     .eq("id", id)
+    .eq("status", "published")
     .single();
 
   if (resourceError || !resource) {

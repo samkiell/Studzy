@@ -13,10 +13,11 @@ export default async function DashboardPage() {
     .select("*")
     .order("code", { ascending: true });
 
-  // Fetch total resources count
+  // Fetch total resources count (only published)
   const { count: totalResources } = await supabase
     .from("resources")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("status", "published");
 
   if (error) {
     console.error("Error fetching courses:", error);
