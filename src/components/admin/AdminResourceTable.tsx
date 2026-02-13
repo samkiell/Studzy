@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { ResourceStatus } from "@/types/database";
-import { Star } from "lucide-react";
+import { Star, Search, Filter, Trash2, Edit3, Loader2, ChevronRight, Hash } from "lucide-react";
+import { EditResourceModal } from "./EditResourceModal";
 
 interface AdminResource {
   id: string;
@@ -13,6 +14,7 @@ interface AdminResource {
   view_count: number;
   course_code: string;
   created_at: string;
+  description?: string;
 }
 
 interface AdminResourceTableProps {
@@ -24,6 +26,20 @@ export function AdminResourceTable({
 }: AdminResourceTableProps) {
   const [resources, setResources] = useState(initialResources);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [editingResource, setEditingResource] = useState<AdminResource | null>(null);
+
+  const filteredResources = useMemo(() => {
+    return resources.filter((r) => {
+      const matchesSearch = r.title.toLowerCase().includes(search.toLowerCase()) || 
+                             r.course_code.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = filterStatus === "all" || r.status === filterStatus;
+      const matchesType = filterType === "all" || r.type === filterType;
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [resources, search, filterStatus, filterType]);
 
   const handleToggle = async (
     resourceId: string,
@@ -54,9 +70,7 @@ export function AdminResourceTable({
       });
 
       const result = await response.json();
-
       if (!result.success) {
-        // Revert on failure
         setResources((prev) =>
           prev.map((r) =>
             r.id === resourceId ? { ...r, [field]: currentValue } : r
@@ -64,7 +78,6 @@ export function AdminResourceTable({
         );
       }
     } catch {
-      // Revert on error
       setResources((prev) =>
         prev.map((r) =>
           r.id === resourceId ? { ...r, [field]: currentValue } : r
@@ -76,187 +89,185 @@ export function AdminResourceTable({
   };
 
   const typeColors: Record<string, string> = {
-    video:
-      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    audio:
-      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    pdf: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    video: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+    audio: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
+    pdf: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
-              <th className="px-4 py-3 font-semibold text-neutral-700 dark:text-neutral-300">
-                Resource
-              </th>
-              <th className="px-4 py-3 font-semibold text-neutral-700 dark:text-neutral-300">
-                Course
-              </th>
-              <th className="px-4 py-3 font-semibold text-neutral-700 dark:text-neutral-300">
-                Type
-              </th>
-              <th className="px-4 py-3 text-right font-semibold text-neutral-700 dark:text-neutral-300">
-                Views
-              </th>
-              <th className="px-4 py-3 text-center font-semibold text-neutral-700 dark:text-neutral-300">
-                Status
-              </th>
-              <th className="px-4 py-3 text-center font-semibold text-neutral-700 dark:text-neutral-300">
-                Featured
-              </th>
-              <th className="px-4 py-3 text-center font-semibold text-neutral-700 dark:text-neutral-300">
-                Delete
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-            {resources.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-12 text-center text-neutral-500 dark:text-neutral-400"
-                >
-                  No resources found
-                </td>
-              </tr>
-            ) : (
-              resources.map((resource) => {
-                const isLoading = loadingId === resource.id;
-
-                return (
-                  <tr
-                    key={resource.id}
-                    className={`transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${isLoading ? "opacity-70" : ""}`}
-                  >
-                    <td className="max-w-[200px] truncate px-4 py-3 font-medium text-neutral-900 dark:text-white">
-                      {resource.title}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-md bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-                        {resource.course_code}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${typeColors[resource.type] || ""}`}
-                      >
-                        {resource.type.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-900 dark:text-white">
-                      {resource.view_count.toLocaleString()}
-                    </td>
-
-                    {/* Status Toggle */}
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() =>
-                          handleToggle(
-                            resource.id,
-                            "status",
-                            resource.status
-                          )
-                        }
-                        disabled={isLoading}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-900 disabled:cursor-not-allowed ${
-                          resource.status === "published"
-                            ? "bg-green-500"
-                            : "bg-neutral-300 dark:bg-neutral-600"
-                        }`}
-                        role="switch"
-                        aria-checked={resource.status === "published"}
-                        aria-label={`Toggle status for ${resource.title}`}
-                        title={
-                          resource.status === "published"
-                            ? "Published — click to set as Draft"
-                            : "Draft — click to Publish"
-                        }
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                            resource.status === "published"
-                              ? "translate-x-5"
-                              : "translate-x-0"
-                          }`}
-                        />
-                      </button>
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        {resource.status === "published"
-                          ? "Published"
-                          : "Draft"}
-                      </p>
-                    </td>
-
-                    {/* Featured Toggle */}
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() =>
-                          handleToggle(
-                            resource.id,
-                            "featured",
-                            resource.featured
-                          )
-                        }
-                        disabled={isLoading}
-                        className={`group inline-flex items-center justify-center rounded-lg p-2 transition-all disabled:cursor-not-allowed ${
-                          resource.featured
-                            ? "bg-amber-100 text-amber-500 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50"
-                            : "bg-neutral-100 text-neutral-300 hover:bg-neutral-200 hover:text-amber-400 dark:bg-neutral-800 dark:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-amber-400"
-                        }`}
-                        aria-label={`${resource.featured ? "Remove from" : "Mark as"} featured for ${resource.title}`}
-                        title={
-                          resource.featured
-                            ? "Featured — click to remove"
-                            : "Not featured — click to feature"
-                        }
-                      >
-                        <Star
-                          className={`h-5 w-5 transition-transform group-hover:scale-110 ${
-                            resource.featured ? "fill-current text-amber-500" : "text-neutral-300 dark:text-neutral-600"
-                          }`}
-                        />
-                      </button>
-                    </td>
-
-                    {/* Delete Button */}
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={async () => {
-                          if (!window.confirm(`Delete resource "${resource.title}"? This cannot be undone.`)) return;
-                          setLoadingId(resource.id);
-                          try {
-                            const response = await fetch("/api/admin/delete-resource", {
-                              method: "DELETE",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ resourceId: resource.id }),
-                            });
-                            const result = await response.json();
-                            if (result.success) {
-                              setResources((prev) => prev.filter((r) => r.id !== resource.id));
-                            }
-                          } finally {
-                            setLoadingId(null);
-                          }
-                        }}
-                        disabled={isLoading}
-                        className="group inline-flex items-center justify-center rounded-lg p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:cursor-not-allowed"
-                        aria-label={`Delete ${resource.title}`}
-                        title="Delete resource"
-                      >
-                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                          <path d="M6 8a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1zm3 0a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1zm3 0a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1z"/><path fillRule="evenodd" d="M4 6a2 2 0 012-2h8a2 2 0 012 2v1H4V6zm2-3a4 4 0 00-4 4v1a1 1 0 001 1h14a1 1 0 001-1V7a4 4 0 00-4-4H6z" clipRule="evenodd"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+    <div className="space-y-6">
+      {/* Filters & Search */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Search resources or courses..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-800 dark:bg-neutral-950"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-neutral-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-800 dark:bg-neutral-950"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-800 dark:bg-neutral-950"
+          >
+            <option value="all">All Types</option>
+            <option value="video">Video</option>
+            <option value="audio">Audio</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
       </div>
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Resource</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Course</th>
+                <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Stats</th>
+                <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
+                <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Featured</th>
+                <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {filteredResources.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">
+                    No resources match your filters
+                  </td>
+                </tr>
+              ) : (
+                filteredResources.map((resource) => {
+                  const isLoading = loadingId === resource.id;
+
+                  return (
+                    <tr
+                      key={resource.id}
+                      className={`group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors ${isLoading ? "opacity-50" : ""}`}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${typeColors[resource.type]}`}>
+                            <Hash className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[200px]">{resource.title}</p>
+                            <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider font-mono">{resource.type}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                          {resource.course_code}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="font-mono font-bold text-neutral-900 dark:text-white">{resource.view_count.toLocaleString()}</span>
+                          <span className="text-[10px] text-neutral-500 uppercase">Views</span>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => handleToggle(resource.id, "status", resource.status)}
+                          disabled={isLoading}
+                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${
+                            resource.status === "published" ? "bg-green-500" : "bg-neutral-300 dark:bg-neutral-700"
+                          }`}
+                        >
+                          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                            resource.status === "published" ? "translate-x-5.5" : "translate-x-1"
+                          }`} />
+                        </button>
+                        <p className="mt-1 text-[10px] font-bold uppercase text-neutral-500">{resource.status}</p>
+                      </td>
+
+                      {/* Featured */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => handleToggle(resource.id, "featured", resource.featured)}
+                          disabled={isLoading}
+                          className={`p-2 rounded-lg transition-colors ${
+                            resource.featured 
+                              ? "text-amber-500 bg-amber-50 dark:bg-amber-900/20" 
+                              : "text-neutral-300 hover:text-amber-400"
+                          }`}
+                        >
+                          <Star className={`h-5 w-5 ${resource.featured ? "fill-current" : ""}`} />
+                        </button>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => setEditingResource(resource)}
+                            className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`Delete "${resource.title}"?`)) return;
+                              setLoadingId(resource.id);
+                              try {
+                                const response = await fetch("/api/admin/delete-resource", {
+                                  method: "DELETE",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ resourceId: resource.id }),
+                                });
+                                if (response.ok) setResources(prev => prev.filter(r => r.id !== resource.id));
+                              } finally {
+                                setLoadingId(null);
+                              }
+                            }}
+                            className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {editingResource && (
+        <EditResourceModal
+          resource={editingResource as any}
+          onClose={() => setEditingResource(null)}
+          onSave={(updated) => {
+            setResources(prev => prev.map(r => r.id === updated.id ? { ...r, ...updated } as AdminResource : r));
+          }}
+        />
+      )}
     </div>
   );
 }

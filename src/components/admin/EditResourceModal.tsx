@@ -10,7 +10,7 @@ interface Resource {
   slug: string;
   description: string;
   type: string;
-  status: string;
+  status: ResourceStatus;
 }
 
 interface EditResourceModalProps {

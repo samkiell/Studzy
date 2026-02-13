@@ -47,7 +47,6 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
   const [input, setInput] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [enableSearch, setEnableSearch] = useState(false);
   const [openingWorkspace, setOpeningWorkspace] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +143,6 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             image: m.image,
           })),
           mode,
-          enable_search: enableSearch || mode === "search",
           enable_code: mode === "code",
           image: image || undefined,
         }),
