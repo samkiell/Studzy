@@ -81,6 +81,11 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
 
   return (
     <div className="group relative overflow-hidden rounded-xl bg-black">
+      {/* Studzy Watermark */}
+      <div className="pointer-events-none absolute bottom-16 left-4 z-10 select-none">
+        <span className="text-lg font-bold text-white/40 drop-shadow-lg">Studzy</span>
+      </div>
+
       <video
         ref={videoRef}
         src={src}
@@ -159,6 +164,18 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
               className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-white/30 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
             />
           </div>
+
+          {/* Download */}
+          <a
+            href={src}
+            download
+            className="text-white transition-colors hover:text-white/80"
+            title="Download video"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </a>
 
           {/* Fullscreen */}
           <button

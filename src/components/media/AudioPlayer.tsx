@@ -91,7 +91,12 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-6 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30">
+    <div className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-6 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30">
+      {/* Studzy Watermark */}
+      <div className="pointer-events-none absolute bottom-3 left-4 select-none">
+        <span className="text-sm font-bold text-purple-300/60 dark:text-purple-700/60">Studzy</span>
+      </div>
+
       <audio ref={audioRef} src={src} preload="metadata" />
 
       {/* Title */}
@@ -184,32 +189,46 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
         </button>
       </div>
 
-      {/* Volume Control */}
-      <div className="mt-6 flex items-center justify-center gap-3">
-        <button
-          onClick={toggleMute}
-          className="text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+      {/* Volume Control & Download */}
+      <div className="mt-6 flex items-center justify-center gap-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleMute}
+            className="text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+          >
+            {isMuted || volume === 0 ? (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            )}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.1}
+            value={isMuted ? 0 : volume}
+            onChange={handleVolumeChange}
+            className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-neutral-300 dark:bg-neutral-600 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500"
+          />
+        </div>
+
+        {/* Download Button */}
+        <a
+          href={src}
+          download
+          className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700"
         >
-          {isMuted || volume === 0 ? (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-            </svg>
-          ) : (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-            </svg>
-          )}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.1}
-          value={isMuted ? 0 : volume}
-          onChange={handleVolumeChange}
-          className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-neutral-300 dark:bg-neutral-600 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500"
-        />
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Download
+        </a>
       </div>
     </div>
   );

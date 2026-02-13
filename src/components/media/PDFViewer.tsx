@@ -139,6 +139,11 @@ export function PDFViewer({ src, title }: PDFViewerProps) {
             setError(true);
           }}
         />
+
+        {/* Studzy Watermark */}
+        <div className="pointer-events-none absolute bottom-4 left-4 select-none">
+          <span className="text-lg font-bold text-blue-400/50 drop-shadow-md">Studzy</span>
+        </div>
       </div>
     </div>
   );
