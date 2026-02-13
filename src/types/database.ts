@@ -1,4 +1,5 @@
 export type ResourceType = "audio" | "video" | "pdf";
+export type ResourceStatus = "draft" | "published";
 export type UserRole = "user" | "admin";
 
 export interface Profile {
@@ -25,6 +26,8 @@ export interface Resource {
   file_url: string;
   description: string | null;
   featured: boolean;
+  view_count: number;
+  status: ResourceStatus;
   created_at: string;
 }
 

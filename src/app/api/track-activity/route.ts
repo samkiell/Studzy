@@ -36,6 +36,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
+    // Also increment view_count on the resource
+    const { data: resource } = await supabase
+      .from("resources")
+      .select("view_count")
+      .eq("id", resourceId)
+      .single();
+
+    if (resource) {
+      await supabase
+        .from("resources")
+        .update({ view_count: (resource.view_count || 0) + 1 })
+        .eq("id", resourceId);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Track activity error:", error);
