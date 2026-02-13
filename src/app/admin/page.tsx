@@ -18,20 +18,27 @@ export default async function AdminPage() {
   const supabase = await createClient();
 
   // Fetch Stats
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { count: coursesCount },
     { count: resourcesCount },
     { count: usersCount },
+    { count: newUsersCount },
+    { count: activeUsersCount },
     { data: resourceStats }
   ] = await Promise.all([
     supabase.from("courses").select("*", { count: "exact", head: true }),
     supabase.from("resources").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("last_login", thirtyDaysAgo),
     supabase.from("resources").select("view_count, completion_count")
   ]);
 
   const totalViews = (resourceStats || []).reduce((acc, r) => acc + (r.view_count || 0), 0);
-  const totalCompletions = (resourceStats || []).reduce((acc, r) => acc + (r.completion_count || 0), 0);
 
   // Recent Resources (Last 5)
   const { data: recentResources } = await supabase
@@ -71,6 +78,8 @@ export default async function AdminPage() {
     { label: "Total Resources", value: resourcesCount || 0, icon: FileText, color: "text-purple-600", bg: "bg-purple-100 dark:bg-purple-900/30" },
     { label: "Total Views", value: totalViews, icon: Eye, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
     { label: "Total Users", value: usersCount || 0, icon: Users, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
+    { label: "New Users (7d)", value: newUsersCount || 0, icon: Users, color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
+    { label: "Active Users (30d)", value: activeUsersCount || 0, icon: Users, color: "text-indigo-600", bg: "bg-indigo-100 dark:bg-indigo-900/30" },
   ];
 
   return (
