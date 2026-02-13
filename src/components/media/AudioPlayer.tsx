@@ -1,13 +1,15 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 interface AudioPlayerProps {
   src: string;
   title: string;
+  resourceId?: string;
+  onComplete?: () => void;
 }
 
-export function AudioPlayer({ src, title }: AudioPlayerProps) {
+export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -15,6 +17,25 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
+
+  // Mark as complete when 90% listened
+  const markComplete = useCallback(async () => {
+    if (hasMarkedComplete || !resourceId) return;
+    
+    setHasMarkedComplete(true);
+    try {
+      await fetch("/api/mark-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceId }),
+      });
+      onComplete?.();
+    } catch (err) {
+      console.error("Failed to mark audio complete:", err);
+      setHasMarkedComplete(false);
+    }
+  }, [hasMarkedComplete, resourceId, onComplete]);
 
   const copyLink = async () => {
     try {
@@ -30,7 +51,15 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      
+      // Mark complete at 90%
+      const progress = audio.currentTime / audio.duration;
+      if (progress >= 0.9 && !hasMarkedComplete) {
+        markComplete();
+      }
+    };
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => setIsPlaying(false);
 
@@ -43,7 +72,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, []);
+  }, [hasMarkedComplete, markComplete]);
 
   const togglePlay = () => {
     if (audioRef.current) {

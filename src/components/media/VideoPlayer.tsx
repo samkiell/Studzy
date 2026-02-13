@@ -1,13 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 
 interface VideoPlayerProps {
   src: string;
   title: string;
+  resourceId?: string;
+  onComplete?: () => void;
 }
 
-export function VideoPlayer({ src, title }: VideoPlayerProps) {
+export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -16,6 +18,25 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
+
+  // Mark as complete when 90% watched
+  const markComplete = useCallback(async () => {
+    if (hasMarkedComplete || !resourceId) return;
+    
+    setHasMarkedComplete(true);
+    try {
+      await fetch("/api/mark-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceId }),
+      });
+      onComplete?.();
+    } catch (err) {
+      console.error("Failed to mark video complete:", err);
+      setHasMarkedComplete(false);
+    }
+  }, [hasMarkedComplete, resourceId, onComplete]);
 
   const copyLink = async () => {
     try {
@@ -41,6 +62,12 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
+      
+      // Mark complete at 90%
+      const progress = videoRef.current.currentTime / videoRef.current.duration;
+      if (progress >= 0.9 && !hasMarkedComplete) {
+        markComplete();
+      }
     }
   };
 

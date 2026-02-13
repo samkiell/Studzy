@@ -5,12 +5,36 @@ import { useState } from "react";
 interface PDFViewerProps {
   src: string;
   title: string;
+  resourceId?: string;
+  isCompleted?: boolean;
+  onComplete?: () => void;
 }
 
-export function PDFViewer({ src, title }: PDFViewerProps) {
+export function PDFViewer({ src, title, resourceId, isCompleted = false, onComplete }: PDFViewerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isMarking, setIsMarking] = useState(false);
+  const [completed, setCompleted] = useState(isCompleted);
+
+  const markAsDone = async () => {
+    if (!resourceId || isMarking || completed) return;
+    
+    setIsMarking(true);
+    try {
+      await fetch("/api/mark-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceId }),
+      });
+      setCompleted(true);
+      onComplete?.();
+    } catch (err) {
+      console.error("Failed to mark PDF complete:", err);
+    } finally {
+      setIsMarking(false);
+    }
+  };
 
   const copyLink = async () => {
     try {
