@@ -15,6 +15,7 @@ interface FileUpload {
   status: "pending" | "uploading" | "uploaded" | "saving" | "success" | "error";
   message?: string;
   title: string;
+  description: string;
   fileUrl?: string;
   storagePath?: string;
 }
@@ -150,15 +151,13 @@ export function UploadForm({ courses }: UploadFormProps) {
         return;
       }
 
-      // Generate title from filename (remove extension)
-      const title = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-
       validFiles.push({
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file,
         progress: 0,
         status: "pending",
-        title,
+        title: "",
+        description: "",
       });
     });
 
@@ -215,6 +214,12 @@ export function UploadForm({ courses }: UploadFormProps) {
     );
   };
 
+  const updateFileDescription = (id: string, description: string) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, description } : f))
+    );
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -255,6 +260,7 @@ export function UploadForm({ courses }: UploadFormProps) {
           body: JSON.stringify({
             courseId: selectedCourseId,
             title: fileUpload.title.trim(),
+            description: fileUpload.description.trim(),
             type: selectedType,
             fileUrl: fileUpload.fileUrl,
           }),
@@ -529,19 +535,35 @@ export function UploadForm({ courses }: UploadFormProps) {
                   {/* File Info */}
                   <div className="min-w-0 flex-1">
                     {fileUpload.status === "uploaded" || fileUpload.status === "pending" ? (
-                      <input
-                        type="text"
-                        value={fileUpload.title}
-                        onChange={(e) => updateFileTitle(fileUpload.id, e.target.value)}
-                        placeholder="Enter title..."
-                        className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={fileUpload.title}
+                          onChange={(e) => updateFileTitle(fileUpload.id, e.target.value)}
+                          placeholder="Enter title..."
+                          className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                        />
+                        <textarea
+                          value={fileUpload.description}
+                          onChange={(e) => updateFileDescription(fileUpload.id, e.target.value)}
+                          placeholder="Enter description (optional)..."
+                          rows={2}
+                          className="w-full resize-none rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                        />
+                      </div>
                     ) : (
-                      <p className="truncate font-medium text-neutral-900 dark:text-white">
-                        {fileUpload.title}
-                      </p>
+                      <div>
+                        <p className="truncate font-medium text-neutral-900 dark:text-white">
+                          {fileUpload.title}
+                        </p>
+                        {fileUpload.description && (
+                          <p className="mt-0.5 truncate text-xs text-neutral-600 dark:text-neutral-300">
+                            {fileUpload.description}
+                          </p>
+                        )}
+                      </div>
                     )}
-                    <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-400">
                       {fileUpload.file.name} • {formatFileSize(fileUpload.file.size)}
                     </p>
                     {fileUpload.message && (
