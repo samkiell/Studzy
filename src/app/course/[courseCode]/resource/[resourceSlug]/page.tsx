@@ -37,12 +37,24 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
 
   // 2. Fetch resource
   const isResourceUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceSlug);
+  const normalizedSlug = resourceSlug.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
   let { data: resource } = await supabase
     .from("resources")
     .select("*")
     .eq("course_id", course.id)
     .eq("slug", resourceSlug)
     .maybeSingle();
+
+  if (!resource && normalizedSlug !== resourceSlug) {
+    const { data } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("course_id", course.id)
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+    resource = data;
+  }
 
   if (!resource && isResourceUUID) {
     const { data } = await supabase.from("resources").select("*").eq("course_id", course.id).eq("id", resourceSlug).maybeSingle();
@@ -115,7 +127,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
   // 2. Fetch the resource belonging to that course
   const isResourceUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceSlug);
-  
+  const normalizedSlug = resourceSlug.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
   let { data: resource, error: resourceError } = await supabase
     .from("resources")
     .select("*")
@@ -123,6 +136,19 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     .eq("slug", resourceSlug)
     .eq("status", "published")
     .maybeSingle();
+
+  // Try normalized slug if not found
+  if (!resource && !resourceError && normalizedSlug !== resourceSlug) {
+    const { data, error } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("course_id", course.id)
+      .eq("slug", normalizedSlug)
+      .eq("status", "published")
+      .maybeSingle();
+    resource = data;
+    resourceError = error;
+  }
 
   if (!resource && !resourceError && isResourceUUID) {
     const { data, error } = await supabase
