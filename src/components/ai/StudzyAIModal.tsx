@@ -160,6 +160,14 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Log activity
+      const actionType = mode === "image" ? "ai_image" : mode === "code" ? "ai_code" : "ai_chat";
+      fetch("/api/log-activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actionType }),
+      }).catch(console.error);
     } catch (error) {
       console.error("Error:", error);
       const errorMessage: Message = {
