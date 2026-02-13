@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { ResourceCard } from "./ResourceCard";
 import type { Resource } from "@/types/database";
 
@@ -7,6 +10,26 @@ interface ResourceListProps {
 }
 
 export function ResourceList({ resources, courseId }: ResourceListProps) {
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchProgress() {
+      try {
+        const res = await fetch(`/api/mark-complete?courseId=${courseId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCompletedIds(data.completed || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch progress:", err);
+      }
+    }
+
+    if (resources.length > 0) {
+      fetchProgress();
+    }
+  }, [courseId, resources.length]);
+
   if (resources.length === 0) {
     return (
       <div className="rounded-xl border border-neutral-200 bg-white p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
