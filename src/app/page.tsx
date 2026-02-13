@@ -112,6 +112,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 text-sm text-neutral-500 dark:text-neutral-400 md:flex-row">
           <p>© {new Date().getFullYear()} Studzy AI. All rights reserved.</p>
           <nav className="flex gap-6" aria-label="Footer navigation">
+            <Link href="/blog" className="hover:text-primary-600 transition-colors">Blog</Link>
             <Link href="/ai-quiz-generator" className="hover:text-primary-600 transition-colors">AI Quiz Generator</Link>
             <Link href="/ai-flashcard-generator" className="hover:text-primary-600 transition-colors">AI Flashcards</Link>
             <Link href="/ai-exam-predictor" className="hover:text-primary-600 transition-colors">Exam Predictor</Link>
