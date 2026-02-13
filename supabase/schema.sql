@@ -73,11 +73,16 @@ CREATE TABLE resources (
     type TEXT NOT NULL CHECK (type IN ('audio', 'video', 'pdf')),
     file_url TEXT NOT NULL,
     description TEXT,
+    featured BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create index on course_id for faster joins
 CREATE INDEX idx_resources_course_id ON resources(course_id);
+
+-- Create index for featured resources
+CREATE INDEX idx_resources_featured ON resources(featured) WHERE featured = true;
+CREATE INDEX idx_resources_course_featured ON resources(course_id, featured) WHERE featured = true;
 
 -- Create index on type for filtering
 CREATE INDEX idx_resources_type ON resources(type);

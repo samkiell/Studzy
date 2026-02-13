@@ -24,6 +24,7 @@ export interface Resource {
   type: ResourceType;
   file_url: string;
   description: string | null;
+  featured: boolean;
   created_at: string;
 }
 

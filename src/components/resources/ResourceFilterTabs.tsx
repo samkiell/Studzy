@@ -182,29 +182,9 @@ export function ResourceFilterTabs({
               {tab.count}
             </span>
 
-            {/* Active indicator line */}
-            {isActive && (
-              <span
-                className={`absolute -bottom-0.5 left-3 right-3 h-0.5 rounded-full ${tab.activeBorder.replace("border-", "bg-")}`}
-                style={{ animation: "filterSlideIn 200ms ease-out" }}
-              />
-            )}
           </button>
         );
       })}
-
-      <style jsx>{`
-        @keyframes filterSlideIn {
-          from {
-            opacity: 0;
-            transform: scaleX(0);
-          }
-          to {
-            opacity: 1;
-            transform: scaleX(1);
-          }
-        }
-      `}</style>
     </div>
   );
 }
