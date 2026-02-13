@@ -314,42 +314,56 @@ FROM courses c WHERE c.code = 'CSC 201';
 -- ============================================
 -- Run these commands in Supabase SQL Editor to set up storage:
 
--- Create the storage bucket (if not using Supabase Dashboard)
+-- Create the storage bucket (run this in Supabase Dashboard > Storage > New Bucket)
+-- Or uncomment and run:
 -- INSERT INTO storage.buckets (id, name, public) 
 -- VALUES ('studzy-materials', 'studzy-materials', true);
 
 -- Storage policy: Allow authenticated users to read files
--- CREATE POLICY "Allow authenticated users to read files"
---     ON storage.objects
---     FOR SELECT
---     TO authenticated
---     USING (bucket_id = 'studzy-materials');
+CREATE POLICY "Allow authenticated users to read files"
+    ON storage.objects
+    FOR SELECT
+    TO authenticated
+    USING (bucket_id = 'studzy-materials');
 
 -- Storage policy: Allow admins to upload files
--- CREATE POLICY "Allow admins to upload files"
---     ON storage.objects
---     FOR INSERT
---     TO authenticated
---     WITH CHECK (
---         bucket_id = 'studzy-materials' AND
---         EXISTS (
---             SELECT 1 FROM profiles
---             WHERE id = auth.uid() AND role = 'admin'
---         )
---     );
+CREATE POLICY "Allow admins to upload files"
+    ON storage.objects
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        bucket_id = 'studzy-materials' AND
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
 
 -- Storage policy: Allow admins to delete files
--- CREATE POLICY "Allow admins to delete files"
---     ON storage.objects
---     FOR DELETE
---     TO authenticated
---     USING (
---         bucket_id = 'studzy-materials' AND
---         EXISTS (
---             SELECT 1 FROM profiles
---             WHERE id = auth.uid() AND role = 'admin'
---         )
---     );
+CREATE POLICY "Allow admins to delete files"
+    ON storage.objects
+    FOR DELETE
+    TO authenticated
+    USING (
+        bucket_id = 'studzy-materials' AND
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Storage policy: Allow admins to update files
+CREATE POLICY "Allow admins to update files"
+    ON storage.objects
+    FOR UPDATE
+    TO authenticated
+    USING (
+        bucket_id = 'studzy-materials' AND
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
 
 -- ============================================
 -- MAKE A USER AN ADMIN (run manually)
