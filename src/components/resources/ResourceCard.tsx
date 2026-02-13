@@ -4,6 +4,7 @@ import type { Resource } from "@/types/database";
 interface ResourceCardProps {
   resource: Resource;
   courseId: string;
+  isCompleted?: boolean;
 }
 
 const typeIcons = {

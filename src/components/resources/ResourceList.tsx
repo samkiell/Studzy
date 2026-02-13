@@ -61,7 +61,12 @@ export function ResourceList({ resources, courseId }: ResourceListProps) {
   return (
     <div className="space-y-3">
       {resources.map((resource) => (
-        <ResourceCard key={resource.id} resource={resource} courseId={courseId} />
+        <ResourceCard
+          key={resource.id}
+          resource={resource}
+          courseId={courseId}
+          isCompleted={completedIds.includes(resource.id)}
+        />
       ))}
     </div>
   );
