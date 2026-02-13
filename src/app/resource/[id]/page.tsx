@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
+import { TrackResourceView } from "@/components/tracking/TrackResourceView";
 import type { Resource, Course } from "@/types/database";
 
 interface ResourcePageProps {
@@ -66,6 +67,9 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
   return (
     <div>
+      {/* Track resource view for continue studying feature */}
+      <TrackResourceView resourceId={id} />
+      
       {/* Breadcrumb */}
       <nav className="mb-4 sm:mb-6">
         <ol className="flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
