@@ -35,7 +35,7 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo-icon.png" alt="Studzy" width={28} height={28} />
+            <Image src="/favicon.png" alt="Studzy" width={28} height={28} />
             <span className="text-xl font-bold text-primary-600">Studzy</span>
           </Link>
           <div className="hidden items-center gap-4 md:flex">

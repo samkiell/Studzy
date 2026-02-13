@@ -77,7 +77,7 @@ export default async function AdminLayout({
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <Image src="/logo-icon.png" alt="Studzy" width={28} height={28} />
+              <Image src="/favicon.png" alt="Studzy" width={28} height={28} />
               <span className="text-xl font-bold text-primary-600">Studzy</span>
             </Link>
             <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">

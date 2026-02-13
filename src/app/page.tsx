@@ -7,7 +7,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900">
       <nav className="flex items-center justify-between px-4 py-4 md:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo-icon.png" alt="Studzy" width={32} height={32} />
+          <Image src="/favicon.png" alt="Studzy" width={32} height={32} />
           <span className="text-xl font-bold text-primary-600">Studzy</span>
         </Link>
         <div className="flex gap-2">

@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: "Studzy",
   description: "Your modern study companion",
   icons: {
-    icon: "/logo-icon.png",
-    apple: "/logo-icon.png",
+    icon: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
