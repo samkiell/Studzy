@@ -12,46 +12,78 @@ interface CoursePageProps {
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseCode: rawCourseCode } = await params;
-  const courseCode = decodeURIComponent(rawCourseCode);
+  const decodedCourseCode = decodeURIComponent(rawCourseCode);
   const supabase = await createClient();
 
-  console.log(`[CoursePage] Fetching course for code/ID: "${courseCode}"`);
+  console.log(`[CoursePage] Request for: "${rawCourseCode}" (Decoded: "${decodedCourseCode}")`);
 
-  // Try fetching by code first
-  let { data: course, error: courseError } = await supabase
+  // Try fetching by code (raw and decoded)
+  let course = null;
+  let courseError = null;
+
+  // Try decoded first
+  const { data: decodedData, error: decodedError } = await supabase
     .from("courses")
     .select("*")
-    .eq("code", courseCode)
+    .eq("code", decodedCourseCode)
     .maybeSingle();
+  
+  course = decodedData;
+  courseError = decodedError;
 
-  // If not found by code, try by ID if it looks like a UUID
-  if (!course && !courseError && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseCode)) {
-    const { data: idCourse, error: idError } = await supabase
+  // If not found by decoded and raw is different, try raw
+  if (!course && !courseError && rawCourseCode !== decodedCourseCode) {
+    const { data: rawData, error: rawError } = await supabase
       .from("courses")
       .select("*")
-      .eq("id", courseCode)
+      .eq("code", rawCourseCode)
       .maybeSingle();
     
-    if (idCourse) {
-      course = idCourse;
-      courseError = idError;
-    }
+    course = rawData;
+    courseError = rawError;
+  }
+
+  // If still not found, try by ID if it's a UUID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedCourseCode);
+  if (!course && !courseError && isUUID) {
+    const { data: idData, error: idError } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("id", decodedCourseCode)
+      .maybeSingle();
+    
+    course = idData;
+    courseError = idError;
   }
 
   if (courseError) {
     console.error(`[CoursePage] Database error:`, courseError);
-    // Don't call notFound() yet, maybe retry or show error? 
-    // For now, let's stay with notFound but log the error.
-    notFound();
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-600">Connection Error</h2>
+        <p className="mt-2 text-neutral-600 dark:text-neutral-400">
+          We encountered a problem connecting to the learning database. 
+          {courseError.message && <code className="block mt-2 p-2 bg-neutral-100 rounded">{courseError.message}</code>}
+        </p>
+        <button 
+          onClick={() => {}} 
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          // Note: onClick won't work in a server component like this, 
+          // but this is just for debugging visibility for now.
+        >
+          Try Refreshing
+        </button>
+      </div>
+    );
   }
 
   if (!course) {
-    console.warn(`[CoursePage] Course not found for: "${courseCode}"`);
+    console.warn(`[CoursePage] Course not found for: "${decodedCourseCode}"`);
     notFound();
   }
 
   // If the user visited via ID, redirect to the code-based URL
-  if (course.id === courseCode && course.code !== courseCode) {
+  if (course.id === decodedCourseCode && course.code !== decodedCourseCode) {
     const { redirect } = await import("next/navigation");
     redirect(`/course/${course.code}`);
   }
