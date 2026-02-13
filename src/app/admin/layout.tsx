@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -75,8 +76,9 @@ export default async function AdminLayout({
       <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-xl font-bold text-primary-600">
-              Studzy
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <Image src="/logo-icon.png" alt="Studzy" width={28} height={28} />
+              <span className="text-xl font-bold text-primary-600">Studzy</span>
             </Link>
             <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               Admin
