@@ -139,7 +139,7 @@ export function SignupForm() {
         )}
       </Button>
       <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
-        By signing up, you agree to our Terms of Service and Privacy Policy.
+        By signing up, you agree that you will not cheat on the day of the exam, if you do.. walai dem go catch you!
       </p>
     </form>
   );
