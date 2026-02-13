@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { logActivity } from "@/lib/activity";
 
 export default async function DashboardLayout({
   children,
@@ -17,20 +18,28 @@ export default async function DashboardLayout({
   // Check profile and update last login
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, status")
+    .select("role, status, last_login")
     .eq("id", user.id)
     .single();
 
   // Handle suspended users
   if (profile?.status === 'suspended') {
-    // Optionally sign out or just redirect to a suspended page
-    // For now, redirect to a simple page or show message
-    // Actually, I'll just redirect to login with a message
     redirect("/login?error=account_suspended");
   }
 
-  // Update last login (non-blocking)
-  supabase.from("profiles").update({ last_login: new Date().toISOString() }).eq("id", user.id).then();
+  // Activity Logging & Last Login Update
+  const lastLogin = profile?.last_login ? new Date(profile.last_login) : new Date(0);
+  const now = new Date();
+  const timeSinceLogin = now.getTime() - lastLogin.getTime();
+  
+  // Update last_login and log access if > 30 mins since last recorded activity
+  if (timeSinceLogin > 30 * 60 * 1000) {
+    await supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
+    await logActivity("login");
+  } else {
+    // Just update timestamp for accuracy without clogging logs
+    supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id).then();
+  }
 
   const isAdmin = profile?.role === "admin";
 
