@@ -203,14 +203,27 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
         const data = await res.json();
         onClose();
         router.push(`/studzyai/chat/${data.session.id}`);
-      } else {
-        // Fallback: just go to /studzyai which will create a session
+      } else if (res.status === 401) {
         onClose();
-        router.push("/studzyai");
+        router.push("/login");
+      } else {
+        // Show error in chat instead of silently failing
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "Failed to open workspace. The chat sessions table may not be set up yet. Please check your database migrations.",
+          mode: "chat",
+        };
+        setMessages((prev) => [...prev, errorMessage]);
       }
     } catch {
-      onClose();
-      router.push("/studzyai");
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Network error — couldn't open workspace. Please try again.",
+        mode: "chat",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setOpeningWorkspace(false);
     }
