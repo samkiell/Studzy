@@ -116,14 +116,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
       {/* Resources Section */}
       <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-            Course Resources
-          </h2>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            {typedResources.length} resource{typedResources.length !== 1 ? "s" : ""} available
-          </p>
-        </div>
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+          Course Resources
+        </h2>
         <ResourceList resources={typedResources} courseId={courseId} />
       </div>
     </div>

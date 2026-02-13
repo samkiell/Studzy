@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ResourceCard } from "./ResourceCard";
+import { ResourceFilterTabs, type FilterTab } from "./ResourceFilterTabs";
 import type { Resource } from "@/types/database";
 
 interface ResourceListProps {
@@ -11,6 +12,7 @@ interface ResourceListProps {
 
 export function ResourceList({ resources, courseId }: ResourceListProps) {
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
   useEffect(() => {
     async function fetchProgress() {
@@ -29,6 +31,23 @@ export function ResourceList({ resources, courseId }: ResourceListProps) {
       fetchProgress();
     }
   }, [courseId, resources.length]);
+
+  // Count resources by type
+  const counts = useMemo(
+    () => ({
+      all: resources.length,
+      video: resources.filter((r) => r.type === "video").length,
+      audio: resources.filter((r) => r.type === "audio").length,
+      pdf: resources.filter((r) => r.type === "pdf").length,
+    }),
+    [resources]
+  );
+
+  // Filter resources based on active tab
+  const filteredResources = useMemo(() => {
+    if (activeFilter === "all") return resources;
+    return resources.filter((r) => r.type === activeFilter);
+  }, [resources, activeFilter]);
 
   if (resources.length === 0) {
     return (
@@ -59,15 +78,46 @@ export function ResourceList({ resources, courseId }: ResourceListProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {resources.map((resource) => (
-        <ResourceCard
-          key={resource.id}
-          resource={resource}
-          courseId={courseId}
-          isCompleted={completedIds.includes(resource.id)}
-        />
-      ))}
+    <div className="space-y-4">
+      {/* Filter Tabs */}
+      <ResourceFilterTabs
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        counts={counts}
+      />
+
+      {/* Filtered Resource List */}
+      <div
+        id="resource-list-panel"
+        role="tabpanel"
+        aria-labelledby={`filter-tab-${activeFilter}`}
+        className="space-y-3"
+      >
+        {filteredResources.length > 0 ? (
+          filteredResources.map((resource) => (
+            <ResourceCard
+              key={resource.id}
+              resource={resource}
+              courseId={courseId}
+              isCompleted={completedIds.includes(resource.id)}
+            />
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-800/50">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              No{" "}
+              <span className="font-medium">
+                {activeFilter === "video"
+                  ? "video"
+                  : activeFilter === "audio"
+                    ? "audio"
+                    : "PDF"}
+              </span>{" "}
+              resources available for this course.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
