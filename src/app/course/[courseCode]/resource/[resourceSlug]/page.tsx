@@ -15,31 +15,48 @@ import { Metadata } from "next";
 
 export async function generateMetadata({ params }: ResourcePageProps): Promise<Metadata> {
   const { courseCode: rawCourseCode, resourceSlug: rawResourceSlug } = await params;
-  const courseCode = decodeURIComponent(rawCourseCode).replace(/\s+/g, "").toUpperCase();
+  const decodedCourseCode = decodeURIComponent(rawCourseCode);
   const resourceSlug = decodeURIComponent(rawResourceSlug);
+  const canonicalCourseCode = decodedCourseCode.replace(/\s+/g, "").toUpperCase();
   const supabase = await createClient();
 
-  const { data: resource } = await supabase
-    .from("resources")
-    .select("title, description, courses!inner(code, title)")
-    .eq("slug", resourceSlug)
-    .eq("courses.code", courseCode)
+  // 1. Fetch course
+  const isCourseUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalCourseCode);
+  let { data: course } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("code", canonicalCourseCode)
     .maybeSingle();
 
-  if (!resource) {
-    return {
-      title: "Resource Not Found | Studzy",
-    };
+  if (!course && isCourseUUID) {
+    const { data } = await supabase.from("courses").select("*").eq("id", canonicalCourseCode).maybeSingle();
+    course = data;
   }
 
-  const resourceData = resource as any;
+  if (!course) return { title: "Resource Not Found | Studzy" };
+
+  // 2. Fetch resource
+  const isResourceUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceSlug);
+  let { data: resource } = await supabase
+    .from("resources")
+    .select("*")
+    .eq("course_id", course.id)
+    .eq("slug", resourceSlug)
+    .maybeSingle();
+
+  if (!resource && isResourceUUID) {
+    const { data } = await supabase.from("resources").select("*").eq("course_id", course.id).eq("id", resourceSlug).maybeSingle();
+    resource = data;
+  }
+
+  if (!resource) return { title: "Resource Not Found | Studzy" };
 
   return {
-    title: `${resourceData.title} | ${resourceData.courses.code} | Studzy`,
-    description: resourceData.description || `Study material for ${resourceData.courses.title}`,
+    title: `${resource.title} | ${course.code} | Studzy`,
+    description: resource.description || `Study material for ${course.title}`,
     openGraph: {
-      title: resourceData.title,
-      description: resourceData.description || `Study material for ${resourceData.courses.title}`,
+      title: resource.title,
+      description: resource.description || `Study material for ${course.title}`,
       type: "website",
     },
   };
@@ -129,11 +146,16 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     notFound();
   }
 
-  // Removed redundant `if (!resource)` block and `const course = resource.courses;`
+  // FORCE REDIRECT if:
+  // 1. URL has spaces/wrong case (rawCourseCode !== course.code)
+  // 2. URL is via UUID (courseCode === course.id)
+  // 3. Resource URL is legacy/UUID (resourceSlug === resource.id)
+  const isLegacyUrl = 
+    rawCourseCode !== course.code || 
+    courseCode === course.id || 
+    resourceSlug === resource.id;
 
-  // Handle redirect if URI contains UUIDs instead of slugs/codes
-  const isOldUrl = (resource.id === rawResourceSlug || course.id === rawCourseCode);
-  if (isOldUrl) {
+  if (isLegacyUrl) {
     const { redirect } = await import("next/navigation");
     redirect(`/course/${course.code}/resource/${resource.slug}`);
   }
