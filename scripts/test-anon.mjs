@@ -35,10 +35,21 @@ async function testAnonQuery() {
     .eq("code", courseCode)
     .maybeSingle();
 
-  if (error) {
-    console.error("Anon Query Error:", JSON.stringify(error, null, 2));
+  // Test Resource
+  const resourceSlug = "snapchat-397864900";
+  console.log(`Testing ANON query for resource: ${resourceSlug}`);
+  const { data: resData, error: resError } = await supabase
+    .from("resources")
+    .select("*")
+    .eq("slug", resourceSlug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (resError) {
+    console.error("Anon Resource Error:", JSON.stringify(resError, null, 2));
   } else {
-    console.log("Anon Query Result:", data);
+    console.log("Anon Resource Result:", resData ? "FOUND" : "NOT FOUND");
+    if (resData) console.log("Status:", resData.status);
   }
 }
 
