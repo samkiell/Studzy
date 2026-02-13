@@ -584,6 +584,7 @@ export function UploadForm({ courses }: UploadFormProps) {
                     <button
                       type="button"
                       onClick={() => removeFile(fileUpload.id)}
+                      aria-label="Remove file"
                       className="shrink-0 rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

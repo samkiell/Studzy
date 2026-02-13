@@ -174,6 +174,42 @@ export default async function AdminPage() {
           </p>
         </a>
       </div>
+
+      {/* Recent Uploads Section */}
+      {coursesWithLastUpload.length > 0 && (
+        <div>
+          <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">
+            Recent Uploads
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {coursesWithLastUpload.map((course) => (
+              <Link
+                key={course.id}
+                href={`/course/${course.id}`}
+                className="group rounded-xl border border-neutral-200 bg-white p-5 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="inline-flex items-center rounded-lg bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
+                    {course.code}
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {formatDate(course.lastUploadDate)}
+                  </span>
+                </div>
+                <h3 className="font-medium text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400 line-clamp-2">
+                  {course.title}
+                </h3>
+                <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+                  {course.resourceCount} resource{course.resourceCount !== 1 ? "s" : ""}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
