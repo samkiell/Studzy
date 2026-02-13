@@ -107,6 +107,9 @@ export function AdminResourceTable({
               <th className="px-4 py-3 text-center font-semibold text-neutral-700 dark:text-neutral-300">
                 Featured
               </th>
+              <th className="px-4 py-3 text-center font-semibold text-neutral-700 dark:text-neutral-300">
+                Delete
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -215,6 +218,36 @@ export function AdminResourceTable({
                             resource.featured ? "fill-current text-amber-500" : "text-neutral-300 dark:text-neutral-600"
                           }`}
                         />
+                      </button>
+                    </td>
+
+                    {/* Delete Button */}
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Delete resource "${resource.title}"? This cannot be undone.`)) return;
+                          setLoadingId(resource.id);
+                          try {
+                            const response = await fetch("/api/admin/delete-resource", {
+                              method: "DELETE",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ resourceId: resource.id }),
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                              setResources((prev) => prev.filter((r) => r.id !== resource.id));
+                            }
+                          } finally {
+                            setLoadingId(null);
+                          }
+                        }}
+                        disabled={isLoading}
+                        className="group inline-flex items-center justify-center rounded-lg p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:cursor-not-allowed"
+                        aria-label={`Delete ${resource.title}`}
+                        title="Delete resource"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                          <path d="M6 8a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1zm3 0a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1zm3 0a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1z"/><path fillRule="evenodd" d="M4 6a2 2 0 012-2h8a2 2 0 012 2v1H4V6zm2-3a4 4 0 00-4 4v1a1 1 0 001 1h14a1 1 0 001-1V7a4 4 0 00-4-4H6z" clipRule="evenodd"/></svg>
                       </button>
                     </td>
                   </tr>
