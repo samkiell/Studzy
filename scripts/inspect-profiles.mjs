@@ -28,7 +28,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 async function inspectProfiles() {
   const { data, error } = await supabase.rpc("exec_sql", {
-    sql_query:
+    query:
       "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'profiles'",
   });
 
