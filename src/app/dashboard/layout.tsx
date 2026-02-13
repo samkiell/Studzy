@@ -14,9 +14,18 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  const isAdmin = profile?.role === "admin";
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <DashboardNav user={user} />
+      <DashboardNav user={user} isAdmin={isAdmin} />
       <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">{children}</main>
     </div>
   );
