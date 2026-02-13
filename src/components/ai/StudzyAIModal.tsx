@@ -11,7 +11,7 @@ import {
   Sparkles, 
   Trash2, 
   X, 
-  ImagePlus, 
+  ImageUp, 
   Send, 
   Loader2 
 } from "lucide-react";
@@ -378,7 +378,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
             >
-              <ImagePlus className="h-4 w-4" />
+              <ImageUp className="h-4 w-4" />
               Upload Image
             </button>
             <input
