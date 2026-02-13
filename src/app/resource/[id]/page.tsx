@@ -14,11 +14,23 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   const supabase = await createClient();
 
   // Fetch resource details with course info
-  const { data: resource, error: resourceError } = await supabase
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
+  let { data: resource, error: resourceError } = await supabase
     .from("resources")
     .select("slug, courses(code)")
-    .or(`id.eq."${id}",slug.eq."${id}"`)
+    .eq("slug", id)
     .maybeSingle();
+
+  if (!resource && !resourceError && isUUID) {
+    const { data, error } = await supabase
+      .from("resources")
+      .select("slug, courses(code)")
+      .eq("id", id)
+      .maybeSingle();
+    resource = data;
+    resourceError = error;
+  }
 
   if (resourceError || !resource) {
     notFound();

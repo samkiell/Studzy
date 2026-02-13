@@ -28,11 +28,23 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   const canonicalCourseCode = courseCode.replace(/\s+/g, "").toUpperCase();
 
   // 1. Fetch the course first
-  const { data: course, error: courseError } = await supabase
+  const isCourseUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalCourseCode);
+  
+  let { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .or(`code.eq."${canonicalCourseCode}",id.eq."${canonicalCourseCode}"`)
+    .eq("code", canonicalCourseCode)
     .maybeSingle();
+
+  if (!course && !courseError && isCourseUUID) {
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("id", canonicalCourseCode)
+      .maybeSingle();
+    course = data;
+    courseError = error;
+  }
 
   if (courseError) {
     console.error(`[ResourcePage] Course fetch error:`, JSON.stringify(courseError, null, 2));
@@ -51,13 +63,27 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   }
 
   // 2. Fetch the resource belonging to that course
-  const { data: resource, error: resourceError } = await supabase
+  const isResourceUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceSlug);
+  
+  let { data: resource, error: resourceError } = await supabase
     .from("resources")
     .select("*")
     .eq("course_id", course.id)
-    .or(`slug.eq."${resourceSlug}",id.eq."${resourceSlug}"`)
+    .eq("slug", resourceSlug)
     .eq("status", "published")
     .maybeSingle();
+
+  if (!resource && !resourceError && isResourceUUID) {
+    const { data, error } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("course_id", course.id)
+      .eq("id", resourceSlug)
+      .eq("status", "published")
+      .maybeSingle();
+    resource = data;
+    resourceError = error;
+  }
 
   if (resourceError) {
     console.error(`[ResourcePage] Resource fetch error:`, JSON.stringify(resourceError, null, 2));
