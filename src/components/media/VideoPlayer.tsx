@@ -1,6 +1,17 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
+import { 
+  Play, 
+  Pause, 
+  Volume2, 
+  VolumeX, 
+  Share2, 
+  Download, 
+  Maximize2 as Expand, 
+  Minimize2 as Minimize,
+  Check
+} from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
@@ -158,13 +169,9 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 sm:h-10 sm:w-10"
           >
             {isPlaying ? (
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-              </svg>
+              <Pause className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
             ) : (
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
+              <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
             )}
           </button>
 
@@ -183,14 +190,9 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
               className="text-white transition-colors hover:text-white/80"
             >
               {isMuted || volume === 0 ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                </svg>
+                <VolumeX className="h-5 w-5" />
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
+                <Volume2 className="h-5 w-5" />
               )}
             </button>
             <input
@@ -210,14 +212,9 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             className="text-white transition-colors hover:text-white/80 sm:hidden"
           >
             {isMuted || volume === 0 ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-              </svg>
+              <VolumeX className="h-5 w-5" />
             ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-              </svg>
+              <Volume2 className="h-5 w-5" />
             )}
           </button>
 
@@ -228,13 +225,9 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             title="Copy link"
           >
             {copied ? (
-              <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <Check className="h-5 w-5 text-green-400" />
             ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
+              <Share2 className="h-5 w-5" />
             )}
           </button>
 
@@ -245,9 +238,7 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             className="text-white transition-colors hover:text-white/80"
             title="Download video"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
+            <Download className="h-5 w-5" />
           </a>
 
           {/* Fullscreen */}
@@ -257,13 +248,9 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             title="Toggle fullscreen"
           >
             {isFullscreen ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <Minimize className="h-5 w-5" />
             ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
+              <Expand className="h-5 w-5" />
             )}
           </button>
         </div>
@@ -276,9 +263,7 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
           className="absolute inset-0 flex items-center justify-center"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform hover:scale-110 sm:h-20 sm:w-20">
-            <svg className="h-7 w-7 sm:h-10 sm:w-10" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            <Play className="h-7 w-7 sm:h-10 sm:w-10 fill-current" />
           </div>
         </button>
       )}
