@@ -79,6 +79,8 @@ export interface Database {
         Insert: Omit<Profile, "created_at" | "updated_at"> & {
           created_at?: string;
           updated_at?: string;
+          status?: UserStatus;
+          last_login?: string | null;
         };
         Update: Partial<Omit<Profile, "id">>;
       };
@@ -98,6 +100,14 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<Resource, "id">>;
+      };
+      user_activity: {
+        Row: UserActivity;
+        Insert: Omit<UserActivity, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<UserActivity, "id">>;
       };
     };
   };
