@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
-import { VideoPlayer, AudioPlayer, PDFViewer, LockedResourcePreview } from "@/components/media";
+import { VideoPlayer, AudioPlayer, PDFViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
 
 interface ResourcePageProps {
   params: Promise<{
@@ -15,30 +15,82 @@ import { Metadata } from "next";
 
 export async function generateMetadata({ params }: ResourcePageProps): Promise<Metadata> {
   const { courseCode: rawCourseCode, resourceSlug: rawResourceSlug } = await params;
-  const courseCode = decodeURIComponent(rawCourseCode).replace(/\s+/g, "").toUpperCase();
+  const decodedCourseCode = decodeURIComponent(rawCourseCode);
   const resourceSlug = decodeURIComponent(rawResourceSlug);
+  const canonicalCourseCode = decodedCourseCode.replace(/\s+/g, "").toUpperCase();
   const supabase = await createClient();
 
-  const { data: resource } = await supabase
-    .from("resources")
-    .select("title, description, courses!inner(code, title)")
-    .eq("slug", resourceSlug)
-    .eq("courses.code", courseCode)
+  // 1. Fetch course
+  const isCourseUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalCourseCode);
+  let { data: course } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("code", canonicalCourseCode)
     .maybeSingle();
 
-  if (!resource) {
-    return {
-      title: "Resource Not Found | Studzy",
-    };
+  if (!course && isCourseUUID) {
+    const { data } = await supabase.from("courses").select("*").eq("id", canonicalCourseCode).maybeSingle();
+    course = data;
   }
 
+  if (!course) return { title: "Resource Not Found | Studzy" };
+
+  // 2. Fetch resource
+  const isResourceUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceSlug);
+  const normalizedSlug = resourceSlug.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+  let { data: resource } = await supabase
+    .from("resources")
+    .select("*")
+    .eq("course_id", course.id)
+    .eq("slug", resourceSlug)
+    .maybeSingle();
+
+  if (!resource && normalizedSlug !== resourceSlug) {
+    const { data } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("course_id", course.id)
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+    resource = data;
+  }
+
+  if (!resource && isResourceUUID) {
+    const { data } = await supabase.from("resources").select("*").eq("course_id", course.id).eq("id", resourceSlug).maybeSingle();
+    resource = data;
+  }
+
+  if (!resource) return { 
+    title: "Resource Not Found | Studzy",
+    robots: { index: false, follow: false }
+  };
+
+  const titleBase = `${resource.title} – ${course.code} | OAU Resource | Studzy`;
+  const title = resource.featured ? `Featured Resource | ${titleBase}` : titleBase;
+  
+  const description = resource.description 
+    ? resource.description.slice(0, 150) + (resource.description.length > 150 ? "..." : "")
+    : `Study "${resource.title}" from ${course.code} – ${course.title}. Structured resource for Software Engineering students at Obafemi Awolowo University (OAU).`;
+
+  const url = `https://studzy.me/course/${course.code}/resource/${resource.slug}`;
+
   return {
-    title: `${resource.title} | ${resource.courses.code} | Studzy`,
-    description: resource.description || `Study material for ${resource.courses.title}`,
+    title,
+    description,
     openGraph: {
-      title: resource.title,
-      description: resource.description || `Study material for ${resource.courses.title}`,
-      type: "website",
+      title,
+      description,
+      type: "article",
+      url,
+      siteName: "Studzy",
+    },
+    alternates: {
+      canonical: url,
+    },
+    robots: {
+      index: resource.status === "published",
+      follow: resource.status === "published",
     },
   };
 }
@@ -96,7 +148,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
   // 2. Fetch the resource belonging to that course
   const isResourceUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceSlug);
-  
+  const normalizedSlug = resourceSlug.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
   let { data: resource, error: resourceError } = await supabase
     .from("resources")
     .select("*")
@@ -104,6 +157,19 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     .eq("slug", resourceSlug)
     .eq("status", "published")
     .maybeSingle();
+
+  // Try normalized slug if not found
+  if (!resource && !resourceError && normalizedSlug !== resourceSlug) {
+    const { data, error } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("course_id", course.id)
+      .eq("slug", normalizedSlug)
+      .eq("status", "published")
+      .maybeSingle();
+    resource = data;
+    resourceError = error;
+  }
 
   if (!resource && !resourceError && isResourceUUID) {
     const { data, error } = await supabase
@@ -127,19 +193,45 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     notFound();
   }
 
-  // Removed redundant `if (!resource)` block and `const course = resource.courses;`
+  // FORCE REDIRECT if:
+  // 1. URL has spaces/wrong case (rawCourseCode !== course.code)
+  // 2. URL is via UUID (courseCode === course.id)
+  // 3. Resource URL is legacy/UUID (resourceSlug === resource.id)
+  const isLegacyUrl = 
+    rawCourseCode !== course.code || 
+    courseCode === course.id || 
+    resourceSlug === resource.id;
 
-  // Handle redirect if URI contains UUIDs instead of slugs/codes
-  const isOldUrl = (resource.id === rawResourceSlug || course.id === rawCourseCode);
-  if (isOldUrl) {
+  if (isLegacyUrl) {
     const { redirect } = await import("next/navigation");
     redirect(`/course/${course.code}/resource/${resource.slug}`);
   }
+
+  // JSON-LD Structured Data
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "EducationalResource",
+    "name": resource.title,
+    "description": resource.description || `Study material for ${course.code} at Obafemi Awolowo University (OAU).`,
+    "educationalLevel": "University",
+    "learningResourceType": resource.type === 'video' ? 'VideoObject' : 'LectureMaterial',
+    "provider": {
+      "@type": "Organization",
+      "name": "Studzy",
+      "sameAs": "https://studzy.me"
+    },
+    "url": `https://studzy.me/course/${course.code}/resource/${resource.slug}`
+  };
 
   // If not authenticated, show locked preview
   if (!user) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <ViewTracker resourceId={resource.id} />
         {/* Header */}
         <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
           <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
@@ -168,7 +260,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           <LockedResourcePreview
             resourceType={resource.type}
             title={resource.title}
-            courseId={course.id}
+            description={resource.description}
+            courseCode={course.code}
           />
         </main>
       </div>
@@ -178,6 +271,11 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   // User is authenticated - show the resource
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <ViewTracker resourceId={resource.id} />
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">

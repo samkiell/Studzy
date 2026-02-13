@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +43,14 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Increment completion_count in resources table
+    await supabase.rpc("increment_completion_count", {
+      resource_id_input: resourceId,
+    });
+
+    // Log activity
+    await logActivity("complete_resource", resourceId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

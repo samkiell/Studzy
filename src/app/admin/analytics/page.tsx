@@ -6,11 +6,11 @@ interface ResourceAnalytics {
   title: string;
   type: string;
   view_count: number;
+  completion_count: number;
   status: string;
   featured: boolean;
   course_code: string;
   course_title: string;
-  completions: number;
 }
 
 export default async function AdminAnalyticsPage() {
@@ -25,6 +25,7 @@ export default async function AdminAnalyticsPage() {
       title,
       type,
       view_count,
+      completion_count,
       status,
       featured,
       courses (
@@ -35,42 +36,27 @@ export default async function AdminAnalyticsPage() {
     )
     .order("view_count", { ascending: false });
 
-  // Fetch completion counts from user_progress
-  const { data: progressData } = await supabase
-    .from("user_progress")
-    .select("resource_id, completed")
-    .eq("completed", true);
-
-  // Build completion count map
-  const completionMap: Record<string, number> = {};
-  (progressData || []).forEach((p: { resource_id: string }) => {
-    completionMap[p.resource_id] = (completionMap[p.resource_id] || 0) + 1;
-  });
-
   // Combine data
   const analytics: ResourceAnalytics[] = (resources || []).map(
-    (r: Record<string, unknown>) => {
-      const course = r.courses as {
-        code: string;
-        title: string;
-      } | null;
+    (r: any) => {
+      const course = r.courses;
       return {
-        id: r.id as string,
-        title: r.title as string,
-        type: r.type as string,
-        view_count: (r.view_count as number) || 0,
-        status: r.status as string,
-        featured: r.featured as boolean,
+        id: r.id,
+        title: r.title,
+        type: r.type,
+        view_count: r.view_count || 0,
+        completion_count: r.completion_count || 0,
+        status: r.status,
+        featured: r.featured,
         course_code: course?.code || "N/A",
         course_title: course?.title || "Unknown",
-        completions: completionMap[r.id as string] || 0,
       };
     }
   );
 
   // Summary stats
   const totalViews = analytics.reduce((sum, r) => sum + r.view_count, 0);
-  const totalCompletions = analytics.reduce((sum, r) => sum + r.completions, 0);
+  const totalCompletions = analytics.reduce((sum, r) => sum + r.completion_count, 0);
   const totalResources = analytics.length;
   const draftCount = analytics.filter((r) => r.status === "draft").length;
 
@@ -192,7 +178,7 @@ export default async function AdminAnalyticsPage() {
                       {resource.view_count.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-green-600 dark:text-green-400">
-                      {resource.completions.toLocaleString()}
+                      {resource.completion_count.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span

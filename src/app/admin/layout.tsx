@@ -86,6 +86,12 @@ export default async function AdminLayout({
           </div>
           <nav className="flex items-center gap-6">
             <Link
+              href="/admin"
+              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+            >
+              Dashboard
+            </Link>
+            <Link
               href="/admin/upload"
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
@@ -104,10 +110,16 @@ export default async function AdminLayout({
               Analytics
             </Link>
             <Link
-              href="/dashboard"
+              href="/admin/users"
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
-              Dashboard
+              Users
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+            >
+              EXIT
             </Link>
           </nav>
         </div>

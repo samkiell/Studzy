@@ -1,15 +1,28 @@
 export type ResourceType = "audio" | "video" | "pdf";
 export type ResourceStatus = "draft" | "published";
-export type UserRole = "user" | "admin";
+export type UserRole = "student" | "admin";
+export type UserStatus = "active" | "suspended" | "deleted";
 export type ChatMode = "chat" | "image" | "search" | "code";
 export type ChatRole = "user" | "assistant";
 
 export interface Profile {
   id: string;
   email: string | null;
+  full_name: string | null;
   role: UserRole;
+  status: UserStatus;
+  last_login: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserActivity {
+  id: string;
+  user_id: string;
+  action_type: string;
+  resource_id: string | null;
+  metadata: any;
+  created_at: string;
 }
 
 export interface Course {
@@ -66,6 +79,8 @@ export interface Database {
         Insert: Omit<Profile, "created_at" | "updated_at"> & {
           created_at?: string;
           updated_at?: string;
+          status?: UserStatus;
+          last_login?: string | null;
         };
         Update: Partial<Omit<Profile, "id">>;
       };
@@ -85,6 +100,14 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<Resource, "id">>;
+      };
+      user_activity: {
+        Row: UserActivity;
+        Insert: Omit<UserActivity, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<UserActivity, "id">>;
       };
     };
   };

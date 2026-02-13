@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { copyToClipboard } from "@/lib/clipboard";
+import { downloadFile } from "@/lib/download";
+import { Check, Download, Share2 } from "lucide-react";
 
 interface AudioPlayerProps {
   src: string;
@@ -11,6 +14,8 @@ interface AudioPlayerProps {
 
 export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -18,6 +23,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
   const [isMuted, setIsMuted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Mark as complete when 90% listened
   const markComplete = useCallback(async () => {
@@ -37,15 +43,67 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
     }
   }, [hasMarkedComplete, resourceId, onComplete]);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
     }
   };
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    await downloadFile(src, `${title.replace(/\s+/g, "_")}.mp3`);
+    setIsDownloading(false);
+  };
+
+  const togglePlay = useCallback(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  }, [isPlaying]);
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const vol = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.volume = vol;
+      setVolume(vol);
+      setIsMuted(vol === 0);
+    }
+  };
+
+  const toggleMute = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  }, [isMuted]);
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const skipBackward = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+    }
+  }, []);
+
+  const skipForward = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+    }
+  }, [duration]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -74,52 +132,53 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
     };
   }, [hasMarkedComplete, markComplete]);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only invoke if interaction is mainly with body or if container is focused
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+      
+      switch(e.code) {
+        case "Space":
+        case "k":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skipForward();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skipBackward();
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          if (audioRef.current) {
+            const newVol = Math.min(1, audioRef.current.volume + 0.1);
+            audioRef.current.volume = newVol;
+            setVolume(newVol);
+            setIsMuted(newVol === 0);
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (audioRef.current) {
+            const newVol = Math.max(0, audioRef.current.volume - 0.1);
+            audioRef.current.volume = newVol;
+            setVolume(newVol);
+            setIsMuted(newVol === 0);
+          }
+          break;
+        case "KeyM":
+          e.preventDefault();
+          toggleMute();
+          break;
       }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const vol = parseFloat(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.volume = vol;
-      setVolume(vol);
-      setIsMuted(vol === 0);
-    }
-  };
-
-  const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  const skipBackward = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, currentTime - 10);
-    }
-  };
-
-  const skipForward = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.min(duration, currentTime + 10);
-    }
-  };
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlay, skipForward, skipBackward, toggleMute]); // Dependencies updated
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
@@ -131,7 +190,11 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-4 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30 sm:p-6">
+    <div 
+      ref={containerRef}
+      className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-4 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30 sm:p-6 outline-none focus:ring-2 focus:ring-purple-500"
+      tabIndex={0}
+    >
       {/* Studzy Watermark */}
       <div className="pointer-events-none absolute bottom-3 left-3 select-none sm:left-4">
         <span className="text-xs font-bold text-purple-300/60 dark:text-purple-700/60 sm:text-sm">Studzy</span>
@@ -193,8 +256,8 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Skip Backward */}
         <button
           onClick={skipBackward}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          title="Skip back 10 seconds"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          title="Skip back 10s (Left Arrow)"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
@@ -204,7 +267,8 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Play/Pause */}
         <button
           onClick={togglePlay}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          title={isPlaying ? "Pause (Space)" : "Play (Space)"}
         >
           {isPlaying ? (
             <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -220,8 +284,8 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Skip Forward */}
         <button
           onClick={skipForward}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          title="Skip forward 10 seconds"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          title="Skip forward 10s (Right Arrow)"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
@@ -236,6 +300,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
           <button
             onClick={toggleMute}
             className="text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+            title={isMuted ? "Unmute (M)" : "Mute (M)"}
           >
             {isMuted || volume === 0 ? (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -262,34 +327,29 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
           {/* Download Button */}
-          <a
-            href={src}
-            download
-            className="flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:px-4"
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className={`flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:px-4 ${isDownloading ? "opacity-70 cursor-wait" : ""}`}
+            title="Download Audio"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span className="hidden xs:inline">Download</span>
-          </a>
+            <Download className={`h-4 w-4 ${isDownloading ? "animate-pulse" : ""}`} />
+            <span className="hidden xs:inline">{isDownloading ? "Downloading..." : "Download"}</span>
+          </button>
 
           {/* Share Button */}
           <button
-            onClick={copyLink}
+            onClick={handleCopyLink}
             className="flex items-center gap-2 rounded-lg bg-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600 sm:px-4"
           >
             {copied ? (
               <>
-                <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <Check className="h-4 w-4 text-green-600" />
                 <span className="hidden xs:inline">Copied!</span>
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
+                <Share2 className="h-4 w-4" />
                 <span className="hidden xs:inline">Share</span>
               </>
             )}

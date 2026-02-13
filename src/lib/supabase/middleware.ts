@@ -44,6 +44,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/signup") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/blog") &&
+    !request.nextUrl.pathname.startsWith("/course") &&
+    !request.nextUrl.pathname.startsWith("/resource") &&
     !request.nextUrl.pathname.startsWith("/ai-quiz-generator") &&
     !request.nextUrl.pathname.startsWith("/ai-flashcard-generator") &&
     !request.nextUrl.pathname.startsWith("/ai-exam-predictor") &&

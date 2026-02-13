@@ -47,7 +47,6 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
   const [input, setInput] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [enableSearch, setEnableSearch] = useState(false);
   const [openingWorkspace, setOpeningWorkspace] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +143,6 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             image: m.image,
           })),
           mode,
-          enable_search: enableSearch || mode === "search",
           enable_code: mode === "code",
           image: image || undefined,
         }),
@@ -162,6 +160,14 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Log activity
+      const actionType = mode === "image" ? "ai_image" : mode === "code" ? "ai_code" : "ai_chat";
+      fetch("/api/log-activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actionType }),
+      }).catch(console.error);
     } catch (error) {
       console.error("Error:", error);
       const errorMessage: Message = {
@@ -422,15 +428,6 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
 
           {/* Options */}
           <div className="mb-3 flex flex-wrap items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={enableSearch}
-                onChange={(e) => setEnableSearch(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-neutral-600 dark:text-neutral-400">Enable Search</span>
-            </label>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
