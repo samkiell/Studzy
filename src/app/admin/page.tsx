@@ -1,8 +1,74 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
-export default function AdminPage() {
+interface CourseWithLastUpload {
+  id: string;
+  code: string;
+  title: string;
+  lastUploadDate: string;
+  resourceCount: number;
+}
+
+export default async function AdminPage() {
+  const supabase = await createClient();
+
+  // Fetch courses with their latest resource upload dates
+  const { data: coursesWithResources } = await supabase
+    .from("courses")
+    .select(`
+      id,
+      code,
+      title,
+      resources (
+        id,
+        created_at
+      )
+    `)
+    .order("code", { ascending: true });
+
+  // Process courses to get last upload date and count
+  const coursesWithLastUpload: CourseWithLastUpload[] = (coursesWithResources || [])
+    .map((course) => {
+      const resources = course.resources || [];
+      const sortedResources = resources.sort(
+        (a: { created_at: string }, b: { created_at: string }) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return {
+        id: course.id,
+        code: course.code,
+        title: course.title,
+        lastUploadDate: sortedResources[0]?.created_at || "",
+        resourceCount: resources.length,
+      };
+    })
+    .filter((c) => c.resourceCount > 0)
+    .sort((a, b) => new Date(b.lastUploadDate).getTime() - new Date(a.lastUploadDate).getTime())
+    .slice(0, 3);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "No uploads yet";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+    
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    });
+  };
+
   return (
-    <div>
+    <div className="space-y-8">
       {/* Welcome Header */}
       <div className="mb-8 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-6 dark:border-amber-900 dark:from-amber-950/30 dark:to-orange-950/30">
         <div className="flex items-center gap-4">
