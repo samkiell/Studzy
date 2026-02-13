@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Video, Music, FileText, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TrackResourceView } from "@/components/tracking/TrackResourceView";
 import type { Resource, Course } from "@/types/database";
@@ -36,22 +37,9 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   const typedCourse = course as Course | null;
 
   const typeIcons = {
-    video: (
-      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    audio: (
-      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-      </svg>
-    ),
-    pdf: (
-      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-    ),
+    video: <Video className="h-8 w-8" />,
+    audio: <Music className="h-8 w-8" />,
+    pdf: <FileText className="h-8 w-8" />,
   };
 
   const typeColors = {
@@ -149,19 +137,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             className="inline-flex"
           >
             <Button size="lg" className="w-full sm:w-auto">
-              <svg
-                className="mr-2 h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+              <Download className="mr-2 h-5 w-5" />
               {typedResource.type === "video"
                 ? "Watch Video"
                 : typedResource.type === "audio"
@@ -171,19 +147,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           </a>
           <Link href={`/course/${typedResource.course_id}`}>
             <Button variant="outline" size="lg" className="w-full sm:w-auto">
-              <svg
-                className="mr-2 h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
+              <ArrowLeft className="mr-2 h-5 w-5" />
               Back to Course
             </Button>
           </Link>
@@ -201,19 +165,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
               <div className="flex h-full items-center justify-center bg-neutral-900">
                 <div className="text-center">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10">
-                    <svg
-                      className="h-8 w-8 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                    </svg>
+                    <Video className="h-8 w-8 text-white" />
                   </div>
                   <p className="mt-4 text-sm text-white/60">
                     Click &quot;Watch Video&quot; to play
@@ -226,19 +178,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             <div className="p-8">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                  <svg
-                    className="h-7 w-7 text-purple-600 dark:text-purple-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                    />
-                  </svg>
+                  <Music className="h-7 w-7 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="flex-1">
                   <div className="h-2 w-full rounded-full bg-neutral-300 dark:bg-neutral-700">
@@ -254,19 +194,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           {typedResource.type === "pdf" && (
             <div className="p-8">
               <div className="flex flex-col items-center justify-center py-8">
-                <svg
-                  className="h-16 w-16 text-blue-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
+                <FileText className="h-16 w-16 text-blue-500" />
                 <p className="mt-4 font-medium text-neutral-900 dark:text-white">
                   PDF Document
                 </p>
