@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import type { User } from "@supabase/supabase-js";
 
 interface DashboardNavProps {
-  user: User;
+  user: User | null;
   isAdmin?: boolean;
 }
 
@@ -59,27 +59,40 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden items-center gap-2 sm:flex">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-              {user.email?.charAt(0).toUpperCase()}
+          {user ? (
+            <>
+              <div className="hidden items-center gap-2 sm:flex">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                  {user.email?.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {user.email}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleSignOut} disabled={loading}>
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Signing out...
+                  </span>
+                ) : (
+                  "Sign out"
+                )}
+              </Button>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link href="/login">
+                <Button variant="ghost" size="sm">Log in</Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm">Sign up</Button>
+              </Link>
             </div>
-            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              {user.email}
-            </span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut} disabled={loading}>
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Signing out...
-              </span>
-            ) : (
-              "Sign out"
-            )}
-          </Button>
+          )}
         </div>
       </div>
     </nav>
