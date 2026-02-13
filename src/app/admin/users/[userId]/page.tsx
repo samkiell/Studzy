@@ -9,7 +9,9 @@ import {
   Activity, 
   BookOpen, 
   MessageSquare,
-  ChevronLeft
+  ChevronLeft,
+  Eye,
+  ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
 
@@ -195,4 +197,3 @@ export default async function UserDetailsPage({
   );
 }
 
-import { ShieldCheck as ShieldCheckIcon } from "lucide-react";
