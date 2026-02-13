@@ -111,6 +111,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
         </div>
       </div>
 
+      {/* Progress Bar */}
+      <CourseProgress courseId={courseId} totalResources={typedResources.length} />
+
       {/* Resources Section */}
       <div className="space-y-4">
         <div>
