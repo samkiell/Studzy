@@ -20,8 +20,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+interface UserWithProgress extends Profile {
+  courses_enrolled: number;
+}
+
 interface AdminUserTableProps {
-  users: Profile[];
+  users: UserWithProgress[];
 }
 
 export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
