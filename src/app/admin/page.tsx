@@ -185,7 +185,7 @@ export default async function AdminPage() {
             {coursesWithLastUpload.map((course) => (
               <Link
                 key={course.id}
-                href={`/course/${course.id}`}
+                href={`/course/${course.code}`}
                 className="group rounded-xl border border-neutral-200 bg-white p-5 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
               >
                 <div className="mb-3 flex items-center justify-between">
