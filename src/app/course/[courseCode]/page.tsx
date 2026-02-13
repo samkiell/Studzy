@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/Button";
 import { Video, Music, FileText } from "lucide-react";
 import { ResourceList } from "@/components/resources/ResourceList";
 import { CourseProgress } from "@/components/courses/CourseProgress";
@@ -57,22 +58,32 @@ export default async function CoursePage({ params }: CoursePageProps) {
   }
 
   if (courseError) {
-    console.error(`[CoursePage] Database error:`, courseError);
+    console.error(`[CoursePage] Database error for "${decodedCourseCode}":`, courseError);
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold text-red-600">Connection Error</h2>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-          We encountered a problem connecting to the learning database. 
-          {courseError.message && <code className="block mt-2 p-2 bg-neutral-100 rounded">{courseError.message}</code>}
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="mt-6 text-2xl font-bold text-neutral-900 dark:text-white">Connection Error</h2>
+        <p className="mt-2 max-w-md text-neutral-600 dark:text-neutral-400">
+          We couldn&apos;t connect to the database to fetch <strong>{decodedCourseCode}</strong>. 
+          This is often due to a network timeout or temporary service interruption.
         </p>
-        <button 
-          onClick={() => {}} 
-          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          // Note: onClick won't work in a server component like this, 
-          // but this is just for debugging visibility for now.
-        >
-          Try Refreshing
-        </button>
+        <div className="mt-6 space-x-4">
+          <Link href="/dashboard">
+            <Button variant="outline">Back to Dashboard</Button>
+          </Link>
+          <a href="" className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+            Retry Page
+          </a>
+        </div>
+        {courseError.message && (
+          <p className="mt-8 text-xs text-neutral-400">
+            System Error: {courseError.message}
+          </p>
+        )}
       </div>
     );
   }
