@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { CourseGrid } from "@/components/courses/CourseGrid";
+import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
 import type { Course } from "@/types/database";
 
 export default async function DashboardPage() {
@@ -72,6 +73,10 @@ export default async function DashboardPage() {
             </svg>
           }
         />
+      </div>
+
+      <div className="mt-10">
+        <ContinueStudying />
       </div>
 
       <div className="mt-10">
