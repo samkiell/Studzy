@@ -14,12 +14,23 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Check if user is admin
+  // Check profile and update last login
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, status")
     .eq("id", user.id)
     .single();
+
+  // Handle suspended users
+  if (profile?.status === 'suspended') {
+    // Optionally sign out or just redirect to a suspended page
+    // For now, redirect to a simple page or show message
+    // Actually, I'll just redirect to login with a message
+    redirect("/login?error=account_suspended");
+  }
+
+  // Update last login (non-blocking)
+  supabase.from("profiles").update({ last_login: new Date().toISOString() }).eq("id", user.id).then();
 
   const isAdmin = profile?.role === "admin";
 

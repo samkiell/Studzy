@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Studzy AI – AI Study Assistant for University Exam Success",
+    default: "Studzy – Software Engineering ",
     template: "%s | Studzy AI",
   },
   description:
