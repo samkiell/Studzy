@@ -69,6 +69,41 @@ export function PDFViewer({ src, title, resourceId, isCompleted = false, onCompl
           <span className="truncate text-sm font-medium text-neutral-900 dark:text-white sm:text-base">{title}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {resourceId && (
+            <button
+              onClick={markAsDone}
+              disabled={isMarking || completed}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-2 sm:px-3 sm:py-2 sm:text-sm ${
+                completed
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
+            >
+              {completed ? (
+                <>
+                  <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="hidden xs:inline">Completed</span>
+                </>
+              ) : isMarking ? (
+                <>
+                  <svg className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="hidden xs:inline">Marking...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="hidden xs:inline">Mark as Done</span>
+                </>
+              )}
+            </button>
+          )}
           <a
             href={src}
             target="_blank"
