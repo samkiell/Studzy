@@ -123,6 +123,32 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
   }, [duration, resetControlsTimeout]);
 
   // Keyboard Shortcuts
+  const toggleMute = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+    resetControlsTimeout();
+  }, [isMuted, resetControlsTimeout]);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+
+    if (!document.fullscreenElement) {
+      await containerRef.current.requestFullscreen();
+      setIsFullscreen(true);
+      try {
+        await (screen.orientation as any).lock?.("landscape");
+      } catch {}
+    } else {
+      await document.exitFullscreen();
+      setIsFullscreen(false);
+      try {
+        screen.orientation?.unlock?.();
+      } catch {}
+    }
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle if video is focused or fullscreen, or generally focused on page body
@@ -221,31 +247,6 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
     resetControlsTimeout();
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-    resetControlsTimeout();
-  };
-
-  const toggleFullscreen = async () => {
-    if (!containerRef.current) return;
-
-    if (!document.fullscreenElement) {
-      await containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-      try {
-        await (screen.orientation as any).lock?.("landscape");
-      } catch {}
-    } else {
-      await document.exitFullscreen();
-      setIsFullscreen(false);
-      try {
-        screen.orientation?.unlock?.();
-      } catch {}
-    }
-  };
 
   // Touch / Click Handler
   const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement> | React.TouchEvent<HTMLVideoElement>) => {
