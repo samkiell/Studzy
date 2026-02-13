@@ -32,12 +32,14 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
     };
   }
 
+  const resourceData = resource as any;
+
   return {
-    title: `${resource.title} | ${resource.courses.code} | Studzy`,
-    description: resource.description || `Study material for ${resource.courses.title}`,
+    title: `${resourceData.title} | ${resourceData.courses.code} | Studzy`,
+    description: resourceData.description || `Study material for ${resourceData.courses.title}`,
     openGraph: {
-      title: resource.title,
-      description: resource.description || `Study material for ${resource.courses.title}`,
+      title: resourceData.title,
+      description: resourceData.description || `Study material for ${resourceData.courses.title}`,
       type: "website",
     },
   };
@@ -168,7 +170,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           <LockedResourcePreview
             resourceType={resource.type}
             title={resource.title}
-            courseId={course.id}
+            description={resource.description}
+            courseCode={course.code}
           />
         </main>
       </div>
