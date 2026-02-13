@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     siteName: "Studzy AI",
     title: "Studzy AI – Study Smarter with AI",
     description:
-      "Generate quizzes, flashcards, summaries, and exam predictions with AI. Built for university students.",
+      "Generate quizzes, flashhcards, summaries, and exam predictions with AI. Built for university students.",
   },
   twitter: {
     card: "summary_large_image",
