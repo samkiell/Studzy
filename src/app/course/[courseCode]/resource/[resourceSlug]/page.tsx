@@ -24,36 +24,40 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
   console.log(`[ResourcePage] Fetching: Course="${courseCode}", Resource="${resourceSlug}"`);
 
-  // Try to fetch resource with joined course info
-  // We use a join with inner filter to ensure we only get a resource belonging to this course
+  // 1. Fetch the course first
+  const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("*")
+    .or(`code.eq."${courseCode}",id.eq."${courseCode}"`)
+    .maybeSingle();
+
+  if (courseError) {
+    console.error(`[ResourcePage] Course fetch error:`, JSON.stringify(courseError, null, 2));
+    return <ErrorDisplay error={courseError} item={courseCode} />;
+  }
+
+  if (!course) {
+    console.warn(`[ResourcePage] Course not found: "${courseCode}"`);
+    notFound();
+  }
+
+  // 2. Fetch the resource belonging to that course
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
-    .select("*, courses!inner(*)")
+    .select("*")
+    .eq("course_id", course.id)
     .or(`slug.eq."${resourceSlug}",id.eq."${resourceSlug}"`)
-    .or(`courses.code.eq."${courseCode}",courses.id.eq."${courseCode}"`)
     .eq("status", "published")
     .maybeSingle();
 
   if (resourceError) {
-    console.error(`[ResourcePage] Database error:`, resourceError);
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-          <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h2 className="mt-6 text-2xl font-bold text-neutral-900 dark:text-white">Connection Error</h2>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-          We couldn&apos;t reach the database to load this resource.
-        </p>
-        <div className="mt-6">
-          <Link href="/dashboard">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
-        </div>
-      </div>
-    );
+    console.error(`[ResourcePage] Resource fetch error:`, JSON.stringify(resourceError, null, 2));
+    return <ErrorDisplay error={resourceError} item={resourceSlug} />;
+  }
+
+  if (!resource) {
+    console.warn(`[ResourcePage] Resource not found: "${resourceSlug}" in course "${courseCode}"`);
+    notFound();
   }
 
   if (!resource) {
