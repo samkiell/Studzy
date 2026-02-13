@@ -342,84 +342,94 @@ export function ChatPanel({
             </div>
           </div>
         ) : (
-          <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 lg:px-8">
+          <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:px-8">
             {messages.map((message) => (
-              <div key={message.id} className="flex gap-3">
-                {/* Avatar */}
+              <div
+                key={message.id}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
                 <div
-                  className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                    message.role === "user"
-                      ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                      : "bg-gradient-to-br from-primary-500 to-primary-600 text-white"
+                  className={`flex max-w-[85%] gap-3 ${
+                    message.role === "user" ? "flex-row-reverse" : "flex-row"
                   }`}
                 >
-                  {message.role === "user" ? "U" : "S"}
-                </div>
+                  {/* Avatar */}
+                  <div
+                    className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                      message.role === "user"
+                        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+                        : "bg-gradient-to-br from-primary-500 to-primary-600 text-white"
+                    }`}
+                  >
+                    {message.role === "user" ? "U" : "S"}
+                  </div>
 
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <p className="mb-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    {message.role === "user" ? "You" : "STUDZY AI"}
-                  </p>
+                  {/* Content */}
+                  <div
+                    className={`min-w-0 rounded-2xl px-4 py-3 ${
+                      message.role === "user"
+                        ? "bg-primary-600 text-white"
+                        : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                    }`}
+                  >
+                    {message.image_url && (
+                      <img
+                        src={message.image_url}
+                        alt="Uploaded"
+                        className="mb-2 max-h-60 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                      />
+                    )}
 
-                  {message.image_url && (
-                    <img
-                      src={message.image_url}
-                      alt="Uploaded"
-                      className="mb-2 max-h-60 rounded-lg border border-neutral-200 dark:border-neutral-700"
-                    />
-                  )}
-
-                  {message.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
-                      <ReactMarkdown
-                        components={{
-                          code({ className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || "");
-                            const isInline = !match;
-                            return isInline ? (
-                              <code
-                                className="rounded bg-neutral-100 px-1.5 py-0.5 text-sm font-medium text-primary-700 dark:bg-neutral-800 dark:text-primary-400"
-                                {...props}
-                              >
-                                {children}
-                              </code>
-                            ) : (
-                              <pre className="overflow-x-auto rounded-xl bg-neutral-900 p-4 text-sm text-neutral-100">
-                                <code className={className} {...props}>
+                    {message.role === "assistant" ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
+                        <ReactMarkdown
+                          components={{
+                            code({ className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || "");
+                              const isInline = !match;
+                              return isInline ? (
+                                <code
+                                  className="rounded bg-neutral-200 px-1.5 py-0.5 text-sm font-medium text-primary-700 dark:bg-neutral-700 dark:text-primary-400"
+                                  {...props}
+                                >
                                   {children}
                                 </code>
-                              </pre>
-                            );
-                          },
-                        }}
-                      >
+                              ) : (
+                                <pre className="overflow-x-auto rounded-xl bg-neutral-900 p-4 text-sm text-neutral-100">
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              );
+                            },
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">
                         {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap text-neutral-900 dark:text-neutral-100">
-                      {message.content}
-                    </p>
-                  )}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
 
             {/* Loading indicator */}
             {isLoading && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-bold text-white">
-                  S
-                </div>
-                <div className="flex-1">
-                  <p className="mb-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    STUDZY AI
-                  </p>
-                  <div className="flex items-center gap-1.5 py-2">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.3s]" />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.15s]" />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500" />
+              <div className="flex justify-start">
+                <div className="flex max-w-[85%] gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-bold text-white">
+                    S
+                  </div>
+                  <div className="rounded-2xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800">
+                    <div className="flex items-center gap-1.5 py-1">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.3s]" />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.15s]" />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500" />
+                    </div>
                   </div>
                 </div>
               </div>
