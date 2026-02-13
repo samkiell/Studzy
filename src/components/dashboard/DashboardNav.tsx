@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
@@ -33,8 +34,9 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
     <nav className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold text-primary-600">
-            Studzy
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Image src="/logo-icon.png" alt="Studzy" width={28} height={28} />
+            <span className="text-xl font-bold text-primary-600">Studzy</span>
           </Link>
           <div className="hidden items-center gap-4 md:flex">
             <Link 

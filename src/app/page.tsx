@@ -1,11 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900">
       <nav className="flex items-center justify-between px-4 py-4 md:px-8">
-        <span className="text-xl font-bold text-primary-600">Studzy</span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo-icon.png" alt="Studzy" width={32} height={32} />
+          <span className="text-xl font-bold text-primary-600">Studzy</span>
+        </Link>
         <div className="flex gap-2">
           <Link href="/login">
             <Button variant="ghost" size="sm">
