@@ -7,29 +7,37 @@ import { CourseProgress } from "@/components/courses/CourseProgress";
 import type { Course, Resource } from "@/types/database";
 
 interface CoursePageProps {
-  params: Promise<{ courseId: string }>;
+  params: Promise<{ courseCode: string }>;
 }
 
 export default async function CoursePage({ params }: CoursePageProps) {
-  const { courseId } = await params;
+  const { courseCode } = await params;
   const supabase = await createClient();
 
-  // Fetch course details
+  // Fetch course details - try by code first, then by ID (for redirect support)
   const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .eq("id", courseId)
-    .single();
+    .or(`code.eq."${courseCode}",id.eq."${courseCode}"`)
+    .maybeSingle();
 
   if (courseError || !course) {
     notFound();
   }
 
+  // If the user visited via ID, redirect to the code-based URL
+  if (course.id === courseCode && course.code !== courseCode) {
+    const { redirect } = await import("next/navigation");
+    redirect(`/course/${course.code}`);
+  }
+
+  const typedCourse = course as Course;
+
   // Fetch resources for this course (only published for students)
   const { data: resources, error: resourcesError } = await supabase
     .from("resources")
     .select("*")
-    .eq("course_id", courseId)
+    .eq("course_id", typedCourse.id)
     .eq("status", "published")
     .order("created_at", { ascending: false });
 
@@ -37,7 +45,6 @@ export default async function CoursePage({ params }: CoursePageProps) {
     console.error("Error fetching resources:", resourcesError);
   }
 
-  const typedCourse = course as Course;
   const typedResources = (resources as Resource[]) || [];
 
   // Count resources by type
@@ -107,14 +114,14 @@ export default async function CoursePage({ params }: CoursePageProps) {
       </div>
 
       {/* Progress Bar */}
-      <CourseProgress courseId={courseId} totalResources={typedResources.length} />
+      <CourseProgress courseId={typedCourse.id} totalResources={typedResources.length} />
 
       {/* Resources Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
           Course Resources
         </h2>
-        <ResourceList resources={typedResources} courseId={courseId} />
+        <ResourceList resources={typedResources} courseId={typedCourse.id} courseCode={typedCourse.code} />
       </div>
     </div>
   );

@@ -9,9 +9,10 @@ import { Inbox, Star } from "lucide-react";
 interface ResourceListProps {
   resources: Resource[];
   courseId: string;
+  courseCode: string;
 }
 
-export function ResourceList({ resources, courseId }: ResourceListProps) {
+export function ResourceList({ resources, courseId, courseCode }: ResourceListProps) {
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
