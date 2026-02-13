@@ -24,11 +24,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
     notFound();
   }
 
-  // Fetch resources for this course
+  // Fetch resources for this course (only published for students)
   const { data: resources, error: resourcesError } = await supabase
     .from("resources")
     .select("*")
     .eq("course_id", courseId)
+    .eq("status", "published")
     .order("created_at", { ascending: false });
 
   if (resourcesError) {
