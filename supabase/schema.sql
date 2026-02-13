@@ -275,3 +275,44 @@ CREATE POLICY "Users can update own activity"
     FOR UPDATE
     TO authenticated
     USING (auth.uid() = user_id);
+
+-- ============================================
+-- USER PROGRESS TABLE (tracks resource completion)
+-- ============================================
+CREATE TABLE user_progress (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    resource_id UUID NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+    completed BOOLEAN NOT NULL DEFAULT false,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(user_id, resource_id)
+);
+
+-- Create indexes for faster queries
+CREATE INDEX idx_user_progress_user_id ON user_progress(user_id);
+CREATE INDEX idx_user_progress_resource_id ON user_progress(resource_id);
+CREATE INDEX idx_user_progress_completed ON user_progress(user_id, completed);
+
+-- Enable RLS on user_progress
+ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own progress
+CREATE POLICY "Users can read own progress"
+    ON user_progress
+    FOR SELECT
+    TO authenticated
+    USING (auth.uid() = user_id);
+
+-- Users can insert their own progress
+CREATE POLICY "Users can insert own progress"
+    ON user_progress
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = user_id);
+
+-- Users can update their own progress
+CREATE POLICY "Users can update own progress"
+    ON user_progress
+    FOR UPDATE
+    TO authenticated
+    USING (auth.uid() = user_id);
