@@ -5,18 +5,18 @@ import { ResourceList } from "@/components/resources/ResourceList";
 import type { Course, Resource } from "@/types/database";
 
 interface CoursePageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ courseId: string }>;
 }
 
 export default async function CoursePage({ params }: CoursePageProps) {
-  const { id } = await params;
+  const { courseId } = await params;
   const supabase = await createClient();
 
   // Fetch course details
   const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .eq("id", id)
+    .eq("id", courseId)
     .single();
 
   if (courseError || !course) {
@@ -27,7 +27,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const { data: resources, error: resourcesError } = await supabase
     .from("resources")
     .select("*")
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .order("created_at", { ascending: false });
 
   if (resourcesError) {
@@ -119,7 +119,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
           {typedResources.length} resource{typedResources.length !== 1 ? "s" : ""} available
         </p>
         <div className="mt-4">
-          <ResourceList resources={typedResources} courseId={id} />
+          <ResourceList resources={typedResources} courseId={courseId} />
         </div>
       </div>
     </div>
