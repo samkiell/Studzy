@@ -31,6 +31,7 @@ interface FileUpload {
   description: string;
   fileUrl?: string;
   storagePath?: string;
+  type: ResourceType;
 }
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -41,9 +42,24 @@ const FILE_TYPES: Record<ResourceType, { accept: string; label: string }> = {
   pdf: { accept: ".pdf,application/pdf", label: "PDF documents" },
 };
 
+// Auto-detect resource type from MIME type
+const detectResourceType = (file: File): ResourceType | null => {
+  const mimeType = file.type.toLowerCase();
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+  if (mimeType === "application/pdf") return "pdf";
+  
+  // Fallback: check file extension
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (["mp4", "webm", "mov", "avi"].includes(ext || "")) return "video";
+  if (["mp3", "wav", "ogg", "m4a", "flac"].includes(ext || "")) return "audio";
+  if (ext === "pdf") return "pdf";
+  
+  return null;
+};
+
 export function UploadForm({ courses }: UploadFormProps) {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<ResourceType>("video");
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<FileUpload[]>([]);
@@ -78,7 +94,7 @@ export function UploadForm({ courses }: UploadFormProps) {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFilesSelect(Array.from(e.dataTransfer.files));
     }
-  }, [selectedCourseId, selectedType]);
+  }, [selectedCourseId]);
 
   // Upload file to storage immediately
   const uploadFileToStorage = useCallback((fileUpload: FileUpload): Promise<{ fileUrl: string; storagePath: string } | null> => {
@@ -143,12 +159,12 @@ export function UploadForm({ courses }: UploadFormProps) {
 
       const formData = new FormData();
       formData.append("file", fileUpload.file);
-      formData.append("type", selectedType);
+      formData.append("type", fileUpload.type);
 
       xhr.open("POST", "/api/admin/upload-file");
       xhr.send(formData);
     });
-  }, [selectedType]);
+  }, []);
 
   const handleFilesSelect = async (newFiles: File[]) => {
     if (!selectedCourseId) {
@@ -165,6 +181,13 @@ export function UploadForm({ courses }: UploadFormProps) {
         return;
       }
 
+      // Auto-detect file type
+      const detectedType = detectResourceType(file);
+      if (!detectedType) {
+        errors.push(`${file.name}: unsupported file type`);
+        return;
+      }
+
       // Auto-generate title from filename (strip extension)
       const autoTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
 
@@ -175,6 +198,7 @@ export function UploadForm({ courses }: UploadFormProps) {
         status: "pending",
         title: autoTitle,
         description: "",
+        type: detectedType,
       });
     });
 
@@ -278,7 +302,7 @@ export function UploadForm({ courses }: UploadFormProps) {
             courseId: selectedCourseId,
             title: fileUpload.title.trim(),
             description: fileUpload.description.trim(),
-            type: selectedType,
+            type: fileUpload.type,
             fileUrl: fileUpload.fileUrl,
             status: selectedStatus,
           }),
