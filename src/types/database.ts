@@ -1,4 +1,13 @@
 export type ResourceType = "audio" | "video" | "pdf";
+export type UserRole = "user" | "admin";
+
+export interface Profile {
+  id: string;
+  email: string | null;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Course {
   id: string;
@@ -25,6 +34,14 @@ export interface CourseWithResources extends Course {
 export interface Database {
   public: {
     Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Omit<Profile, "created_at" | "updated_at"> & {
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<Profile, "id">>;
+      };
       courses: {
         Row: Course;
         Insert: Omit<Course, "id" | "created_at"> & {
