@@ -3,6 +3,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
+import { 
+  MessageSquare, 
+  Image as ImageIcon, 
+  Globe, 
+  Code, 
+  Sparkles, 
+  Trash2, 
+  X, 
+  ImagePlus, 
+  Send, 
+  Loader2 
+} from "lucide-react";
 
 type ChatMode = "chat" | "image" | "search" | "code";
 
@@ -20,10 +32,10 @@ interface StudzyAIModalProps {
 }
 
 const modeConfig = {
-  chat: { icon: "💬", label: "Chat" },
-  image: { icon: "🖼", label: "Image" },
-  search: { icon: "🌍", label: "Search" },
-  code: { icon: "💻", label: "Code" },
+  chat: { icon: <MessageSquare className="h-4 w-4" />, label: "Chat" },
+  image: { icon: <ImageIcon className="h-4 w-4" />, label: "Image" },
+  search: { icon: <Globe className="h-4 w-4" />, label: "Search" },
+  code: { icon: <Code className="h-4 w-4" />, label: "Code" },
 };
 
 export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
@@ -190,19 +202,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
         <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
           <div>
             <h2 className="flex items-center gap-2 text-xl font-bold text-neutral-900 dark:text-white">
-              <svg
-                className="h-6 w-6 text-primary-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                />
-              </svg>
+              <Sparkles className="h-6 w-6 text-primary-500" />
               STUDZY AI
             </h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -215,18 +215,14 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               className="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
               title="Clear chat"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Trash2 className="h-5 w-5" />
             </button>
             <button
               onClick={onClose}
               className="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
               title="Close"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -254,19 +250,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
-                <svg
-                  className="h-8 w-8 text-primary-600 dark:text-primary-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                  />
-                </svg>
+                <Sparkles className="h-8 w-8 text-primary-600 dark:text-primary-400" />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
                 How can I help you today?
@@ -373,9 +357,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                   onClick={removeImage}
                   className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -396,9 +378,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <ImagePlus className="h-4 w-4" />
               Upload Image
             </button>
             <input
@@ -435,14 +415,9 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
-                <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send className="h-5 w-5" />
               )}
             </button>
           </form>
