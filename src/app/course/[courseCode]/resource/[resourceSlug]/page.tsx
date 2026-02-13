@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
-import { VideoPlayer, AudioPlayer, PDFViewer, LockedResourcePreview } from "@/components/media";
+import { VideoPlayer, AudioPlayer, PDFViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
 
 interface ResourcePageProps {
   params: Promise<{
@@ -190,6 +190,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   if (!user) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+        <ViewTracker resourceId={resource.id} />
         {/* Header */}
         <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
           <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
@@ -229,6 +230,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   // User is authenticated - show the resource
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+      <ViewTracker resourceId={resource.id} />
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">

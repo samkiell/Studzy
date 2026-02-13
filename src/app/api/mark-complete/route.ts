@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Increment completion_count in resources table
+    await supabase.rpc("increment_completion_count", {
+      resource_id_input: resourceId,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in mark-complete API:", error);
