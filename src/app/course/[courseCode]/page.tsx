@@ -6,9 +6,60 @@ import { Video, Music, FileText } from "lucide-react";
 import { ResourceList } from "@/components/resources/ResourceList";
 import { CourseProgress } from "@/components/courses/CourseProgress";
 import type { Course, Resource } from "@/types/database";
+import type { Metadata } from "next";
 
 interface CoursePageProps {
   params: Promise<{ courseCode: string }>;
+}
+
+export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
+  const { courseCode: rawCourseCode } = await params;
+  const decodedCourseCode = decodeURIComponent(rawCourseCode);
+  const supabase = await createClient();
+
+  const canonicalCode = decodedCourseCode.replace(/\s+/g, "").toUpperCase();
+
+  let { data: course } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("code", canonicalCode)
+    .maybeSingle();
+
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedCourseCode);
+  if (!course && isUUID) {
+    const { data } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("id", decodedCourseCode)
+      .maybeSingle();
+    course = data;
+  }
+
+  if (!course) {
+    return {
+      title: "Course Not Found | Studzy",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${course.code} – ${course.title} | Software Engineering University | Studzy`;
+  const description = course.description || 
+    `Access ${course.code} – ${course.title} course materials, lecture resources, and structured study content for Software Engineering students at the University.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `https://studzy.me/course/${course.code}`,
+      siteName: "Studzy",
+    },
+    alternates: {
+      canonical: `https://studzy.me/course/${course.code}`,
+    },
+  };
 }
 
 export default async function CoursePage({ params }: CoursePageProps) {

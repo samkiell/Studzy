@@ -10,29 +10,26 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Studzy – Software Engineering ",
-    template: "%s | Studzy AI",
+    default: "Studzy – Software Engineering Learning Platform | University",
+    template: "%s | Studzy",
   },
   description:
-    "Studzy AI is an intelligent academic assistant that helps university students generate quizzes, flashcards, summaries, and exam predictions instantly. Study smarter with AI-powered learning tools.",
+    "Studzy is a dedicated learning and revision platform for Software Engineering students at the University. Access course materials, structured resources, and exam-focused content in one organized workspace.",
   keywords: [
-    "AI study assistant",
+    "software engineering university resources",
+    "university software engineering courses",
+    "software engineering study platform",
+    "programming course materials university",
+    "computer science revision",
     "university exam preparation",
-    "AI quiz generator",
-    "AI flashcards",
-    "AI learning platform",
-    "student revision tool",
-    "campus study platform",
-    "AI exam predictor",
-    "study smarter with AI",
-    "university study tools",
+    "engineering student resources",
   ],
   authors: [{ name: "Samkiel", url: "https://samkiel.dev" }],
   creator: "Samkiel",
   publisher: "Studzy",
   robots: { index: true, follow: true },
   metadataBase: new URL("https://studzy.me"),
-  alternates: { canonical: "/" },
+  alternates: { canonical: "https://studzy.me" },
   icons: {
     icon: "/favicon.png",
     apple: "/favicon.png",
@@ -41,15 +38,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://studzy.me",
-    siteName: "Studzy AI",
-    title: "Studzy AI – Study Smarter with AI",
+    siteName: "Studzy",
+    title: "Studzy – Software Engineering Learning Platform | University",
     description:
-      "Generate quizzes, flashcards, summaries, and exam predictions with AI. Built for university students.",
+      "Studzy is a dedicated learning and revision platform for Software Engineering students at the University. Access course materials, structured resources, and exam-focused content in one organized workspace.",
+    images: [
+      {
+        url: "/og-image.png", // Ensure this exists or fallback to a default
+        width: 1200,
+        height: 630,
+        alt: "Studzy - Software Engineering Learning Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Studzy AI – AI Study Assistant",
-    description: "Smarter revision. Better results. Powered by AI.",
+    title: "Studzy – Software Engineering Learning Platform",
+    description: "Dedicated learning platform for Software Engineering university students.",
+    images: ["/og-image.png"],
   },
 };
 
