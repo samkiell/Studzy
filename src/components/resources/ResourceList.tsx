@@ -119,7 +119,7 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
                     <ResourceCard
                       key={resource.id}
                       resource={resource}
-                      courseId={courseId}
+                      courseCode={courseCode}
                       isCompleted={completedIds.includes(resource.id)}
                     />
                   ))}
@@ -139,7 +139,7 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
                   <ResourceCard
                     key={resource.id}
                     resource={resource}
-                    courseId={courseId}
+                    courseCode={courseCode}
                     isCompleted={completedIds.includes(resource.id)}
                   />
                 ))}
