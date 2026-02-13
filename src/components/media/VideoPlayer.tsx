@@ -15,6 +15,17 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -165,6 +176,23 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
             />
           </div>
 
+          {/* Share */}
+          <button
+            onClick={copyLink}
+            className="relative text-white transition-colors hover:text-white/80"
+            title="Copy link"
+          >
+            {copied ? (
+              <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            )}
+          </button>
+
           {/* Download */}
           <a
             href={src}
@@ -177,7 +205,7 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
             </svg>
           </a>
 
-          {/* Fullscreen */}
+          {/* Fullscreen */
           <button
             onClick={toggleFullscreen}
             className="text-white transition-colors hover:text-white/80"
