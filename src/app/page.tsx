@@ -28,11 +28,11 @@ export default function Home() {
       {/* Hero Section */}
       <section className="mx-auto mt-20 max-w-3xl px-6 text-center md:mt-32">
         <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white md:text-6xl">
-          Software Engineering <br />
-          <span className="text-primary-600">University Resources</span>
+          Study smarter, <br />
+          <span className="text-primary-600">not harder</span>
         </h1>
         <p className="mx-auto mt-6 max-w-lg text-lg text-neutral-500 dark:text-neutral-400">
-          Access structured course materials, programming resources, and a focused academic workspace for your degree.
+         Resources your lecturers don&apos;t want you to see, organised and summarised podcast, videos, audios, pdf and more.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link href="/signup">
@@ -58,15 +58,15 @@ export default function Home() {
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <h3 className="font-semibold text-neutral-900 dark:text-white">Structured Study Workflow</h3>
+            <h3 className="font-semibold text-neutral-900 dark:text-white">Smart AI Assistant</h3>
             <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-              Follow a clear path through your semester syllabus and materials.
+             A smart AI that can understand texts, images and provide concise summary, flashcards, quizzes and more.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <h3 className="font-semibold text-neutral-900 dark:text-white">Focused Software Engineering Content</h3>
+            <h3 className="font-semibold text-neutral-900 dark:text-white">Made for Software Engineering Pioneers</h3>
             <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-              Curated specifically for programming and engineering modules.
+              Curated specifically for Part 2 SWE Students, OAU.
             </p>
           </div>
         </div>
