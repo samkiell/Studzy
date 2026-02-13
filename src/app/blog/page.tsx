@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import { blogPosts } from "@/lib/blog-data";
 
 export const metadata: Metadata = {
   title: "Blog – Study Smarter with AI | Studzy AI",
@@ -21,17 +22,6 @@ export const metadata: Metadata = {
     url: "https://studzy.me/blog",
   },
 };
-
-const blogPosts = [
-  {
-    title: "How to Study for University Exams Using AI",
-    description: "Discover how to study for exams with AI. This step-by-step guide shows university students how to use AI study assistants like Studzy AI for smarter revision.",
-    href: "/blog/how-to-study-for-university-exams-using-ai",
-    date: "February 13, 2026",
-    readingTime: "5 min read",
-    category: "Study Guides",
-  },
-];
 
 export default function BlogIndexPage() {
   return (
@@ -60,8 +50,8 @@ export default function BlogIndexPage() {
         <div className="grid gap-8">
           {blogPosts.map((post) => (
             <Link 
-              key={post.href} 
-              href={post.href}
+              key={post.slug} 
+              href={`/blog/${post.slug}`}
               className="group relative flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700 md:p-8"
             >
               <div className="flex items-center gap-3 text-sm">
