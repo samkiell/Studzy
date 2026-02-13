@@ -1,0 +1,101 @@
+import Link from "next/link";
+import type { Resource } from "@/types/database";
+
+interface ResourceCardProps {
+  resource: Resource;
+}
+
+const typeIcons = {
+  video: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  ),
+  audio: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+      />
+    </svg>
+  ),
+  pdf: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+      />
+    </svg>
+  ),
+};
+
+const typeColors = {
+  video: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  audio: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  pdf: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+};
+
+const typeLabels = {
+  video: "Video",
+  audio: "Audio",
+  pdf: "PDF",
+};
+
+export function ResourceCard({ resource }: ResourceCardProps) {
+  return (
+    <Link href={`/resource/${resource.id}`}>
+      <div className="group flex items-start gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${typeColors[resource.type]}`}
+        >
+          {typeIcons[resource.type]}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${typeColors[resource.type]}`}
+            >
+              {typeLabels[resource.type]}
+            </span>
+          </div>
+          <h4 className="mt-1 font-medium text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
+            {resource.title}
+          </h4>
+          {resource.description && (
+            <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
+              {resource.description}
+            </p>
+          )}
+        </div>
+        <svg
+          className="h-5 w-5 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-primary-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </div>
+    </Link>
+  );
+}
