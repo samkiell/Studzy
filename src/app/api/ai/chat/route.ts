@@ -38,8 +38,7 @@ Rules:
 - If coding → clean code blocks + explanation.
 - For math: Use clear notation and step-by-step explanations.
 - Encourage critical thinking rather than just giving answers.
-- Never encourage cheating.
-- Sometimes sign off with: — STUDZY AI 🧠✨`;
+- Never encourage cheating.`;
 
 interface ChatMessage {
   role: "user" | "assistant";
