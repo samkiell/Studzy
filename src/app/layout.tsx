@@ -45,7 +45,7 @@ export const metadata: Metadata = {
       "Studzy is a dedicated learning and revision platform for Software Engineering students at Obafemi Awolowo University (OAU). Access course materials, structured resources, and exam-focused content in one organized workspace.",
     images: [
       {
-        url: "/og-image.png", // Ensure this exists or fallback to a default
+        url: "/favicon.png", // Ensure this exists or fallback to a default
         width: 1200,
         height: 630,
         alt: "Studzy - Software Engineering Learning Platform OAU",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Studzy – Software Engineering Learning Platform",
     description: "Dedicated learning platform for Software Engineering university students.",
-    images: ["/og-image.png"],
+    images: ["/favicon.png"],
   },
 };
 

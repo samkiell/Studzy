@@ -382,56 +382,61 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+              {messages.map((message) => {
+                // Don't show empty assistant message while loading (loader is shown instead)
+                if (message.role === "assistant" && !message.content && !message.image) return null;
+
+                return (
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                      message.role === "user"
-                        ? "bg-primary-600 text-white"
-                        : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
-                    }`}
+                    key={message.id}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {message.image && (
-                      <img
-                        src={message.image}
-                        alt="Uploaded"
-                        className="mb-2 max-h-48 rounded-lg"
-                      />
-                    )}
-                    {message.role === "assistant" ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown
-                          components={{
-                            code({ className, children, ...props }) {
-                              const match = /language-(\w+)/.exec(className || "");
-                              const isInline = !match;
-                              return isInline ? (
-                                <code className="rounded bg-neutral-200 px-1.5 py-0.5 text-sm dark:bg-neutral-700" {...props}>
-                                  {children}
-                                </code>
-                              ) : (
-                                <pre className="overflow-x-auto rounded-lg bg-neutral-900 p-4 text-sm text-neutral-100">
-                                  <code className={className} {...props}>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                        message.role === "user"
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
+                      }`}
+                    >
+                      {message.image && (
+                        <img
+                          src={message.image}
+                          alt="Uploaded"
+                          className="mb-2 max-h-48 rounded-lg"
+                        />
+                      )}
+                      {message.role === "assistant" ? (
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <ReactMarkdown
+                            components={{
+                              code({ className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || "");
+                                const isInline = !match;
+                                return isInline ? (
+                                  <code className="rounded bg-neutral-200 px-1.5 py-0.5 text-sm dark:bg-neutral-700" {...props}>
                                     {children}
                                   </code>
-                                </pre>
-                              );
-                            },
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                    ) : (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    )}
+                                ) : (
+                                  <pre className="overflow-x-auto rounded-lg bg-neutral-900 p-4 text-sm text-neutral-100">
+                                    <code className={className} {...props}>
+                                      {children}
+                                    </code>
+                                  </pre>
+                                );
+                              },
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {isLoading && (
+                );
+              })}
+              {isLoading && messages[messages.length - 1]?.content === "" && (
                 <div className="flex justify-start">
                   <div className="rounded-2xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800">
                     <div className="flex items-center gap-2">
