@@ -11,6 +11,38 @@ interface ResourcePageProps {
   }>;
 }
 
+import { Metadata } from "next";
+
+export async function generateMetadata({ params }: ResourcePageProps): Promise<Metadata> {
+  const { courseCode: rawCourseCode, resourceSlug: rawResourceSlug } = await params;
+  const courseCode = decodeURIComponent(rawCourseCode).replace(/\s+/g, "").toUpperCase();
+  const resourceSlug = decodeURIComponent(rawResourceSlug);
+  const supabase = await createClient();
+
+  const { data: resource } = await supabase
+    .from("resources")
+    .select("title, description, courses!inner(code, title)")
+    .eq("slug", resourceSlug)
+    .eq("courses.code", courseCode)
+    .maybeSingle();
+
+  if (!resource) {
+    return {
+      title: "Resource Not Found | Studzy",
+    };
+  }
+
+  return {
+    title: `${resource.title} | ${resource.courses.code} | Studzy`,
+    description: resource.description || `Study material for ${resource.courses.title}`,
+    openGraph: {
+      title: resource.title,
+      description: resource.description || `Study material for ${resource.courses.title}`,
+      type: "website",
+    },
+  };
+}
+
 export default async function ResourcePage({ params }: ResourcePageProps) {
   const { courseCode: rawCourseCode, resourceSlug: rawResourceSlug } = await params;
   const courseCode = decodeURIComponent(rawCourseCode);
