@@ -5,8 +5,8 @@
  *   node scripts/run-migration.mjs [migration-file]
  *
  * Examples:
- *   node scripts/run-migration.mjs                                          # runs ALL pending migrations
- *   node scripts/run-migration.mjs supabase/migrations/admin_enhancements.sql  # runs specific file
+ *   node scripts/run-migration.mjs                                            # runs ALL pending migrations
+ *   node scripts/run-migration.mjs supabase/migrations/admin_enhancements.sql # runs specific file
  *
  * Requires SUPABASE_SERVICE_ROLE_KEY in .env.local
  */
@@ -14,6 +14,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -52,58 +53,91 @@ if (!SERVICE_ROLE_KEY) {
   process.exit(1);
 }
 
-// Extract project ref from URL (e.g., https://abcdef.supabase.co → abcdef)
-const projectRef = new URL(SUPABASE_URL).hostname.split(".")[0];
+// Create admin Supabase client with service role key
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
 async function runSQL(sql) {
-  // Use the Supabase REST SQL endpoint (requires service role key)
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify({ query: sql }),
-  });
+  // Split into individual statements and run each one
+  const statements = sql
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !s.startsWith("--"));
 
-  // If RPC doesn't exist, try the PostgreSQL query endpoint
-  if (!response.ok) {
-    // Fallback: use Supabase's pg endpoint
-    const pgResponse = await fetch(`${SUPABASE_URL}/pg/query`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({ query: sql }),
+  for (const statement of statements) {
+    // Use supabase.rpc to call a raw SQL function if available,
+    // otherwise fall back to individual operations
+    const { error } = await supabase.rpc("exec_sql", {
+      query: statement,
     });
 
-    if (!pgResponse.ok) {
-      // Final fallback: Management API
-      const mgmtResponse = await fetch(
-        `https://api.supabase.com/v1/projects/${projectRef}/database/query`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+    if (error) {
+      // If exec_sql RPC doesn't exist, try creating it first
+      if (
+        error.message.includes("function") &&
+        error.message.includes("does not exist")
+      ) {
+        console.log("   ⚠️  exec_sql function not found, creating it...");
+        // We need to create the function via the Management API
+        const projectRef = new URL(SUPABASE_URL).hostname.split(".")[0];
+        const createFnSQL = `
+          CREATE OR REPLACE FUNCTION exec_sql(query text) 
+          RETURNS void 
+          LANGUAGE plpgsql 
+          SECURITY DEFINER 
+          AS $$ 
+          BEGIN 
+            EXECUTE query; 
+          END; 
+          $$;
+        `;
+
+        // Try the Management API to bootstrap the function
+        const mgmtResponse = await fetch(
+          `https://api.supabase.com/v1/projects/${projectRef}/database/query`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({ query: createFnSQL }),
           },
-          body: JSON.stringify({ query: sql }),
-        },
-      );
+        );
 
-      if (!mgmtResponse.ok) {
-        const errorText = await mgmtResponse.text();
-        throw new Error(`SQL execution failed: ${errorText}`);
+        if (!mgmtResponse.ok) {
+          // Management API also failed — provide manual instructions
+          console.error("");
+          console.error("   ❌ Could not auto-create exec_sql function.");
+          console.error("");
+          console.error(
+            "   Please run this SQL once in your Supabase SQL Editor:",
+          );
+          console.error("   ─────────────────────────────────────────");
+          console.error("   CREATE OR REPLACE FUNCTION exec_sql(query text)");
+          console.error("   RETURNS void LANGUAGE plpgsql SECURITY DEFINER");
+          console.error("   AS $$ BEGIN EXECUTE query; END; $$;");
+          console.error("   ─────────────────────────────────────────");
+          console.error("");
+          console.error("   Then re-run: npm run db:migrate");
+          process.exit(1);
+        }
+
+        console.log("   ✅ exec_sql function created! Retrying...\n");
+
+        // Retry the original statement
+        const { error: retryError } = await supabase.rpc("exec_sql", {
+          query: statement,
+        });
+        if (retryError) {
+          throw new Error(retryError.message);
+        }
+      } else {
+        throw new Error(error.message);
       }
-      return await mgmtResponse.json();
     }
-    return await pgResponse.json();
   }
-
-  return await response.json();
 }
 
 async function main() {
@@ -112,7 +146,6 @@ async function main() {
   let migrationFiles;
 
   if (specificFile) {
-    // Run a specific migration file
     const fullPath = path.resolve(rootDir, specificFile);
     if (!fs.existsSync(fullPath)) {
       console.error(`❌ File not found: ${fullPath}`);
@@ -120,7 +153,6 @@ async function main() {
     }
     migrationFiles = [fullPath];
   } else {
-    // Run all migration files in order
     const migrationsDir = path.join(rootDir, "supabase", "migrations");
     if (!fs.existsSync(migrationsDir)) {
       console.error("❌ No migrations directory found");
