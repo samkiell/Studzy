@@ -35,6 +35,9 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       const name = u.full_name || "";
@@ -46,6 +49,12 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, search, filterRole, filterStatus]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleUpdateStatus = async (userId: string, newStatus: UserStatus) => {
     if (newStatus === 'deleted' && !window.confirm("Are you sure you want to delete this user? This will mark them as deleted.")) return;
@@ -84,7 +93,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
       setLoadingId(null);
     }
   };
-
+  
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -104,7 +113,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             type="text"
             placeholder="Search name or email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
             className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-800 dark:bg-neutral-950"
           />
         </div>
@@ -113,7 +122,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             <Filter className="h-4 w-4 text-neutral-400" />
             <select
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
+              onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1); }}
               className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none dark:border-neutral-800 dark:bg-neutral-950"
             >
               <option value="all">All Roles</option>
@@ -123,7 +132,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
           </div>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
             className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none dark:border-neutral-800 dark:bg-neutral-950"
           >
             <option value="all">All Status</option>
@@ -142,6 +151,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">User</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Role</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Courses</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Joined</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Last Login</th>
                 <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
@@ -151,12 +161,12 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-neutral-500">
                     No users found
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => {
+                paginatedUsers.map((user) => {
                   const isLoading = loadingId === user.id;
 
                   return (
@@ -188,6 +198,9 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                           {user.role === 'admin' ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
                           {user.role}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-medium tabular-nums">
+                        {user.courses_enrolled}
                       </td>
                       <td className="px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
                         {formatDate(user.created_at)}
@@ -271,6 +284,31 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {filteredUsers.length > 0 && (
+          <div className="flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-6 py-4 dark:border-neutral-800 dark:bg-neutral-900">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> of <span className="font-medium">{filteredUsers.length}</span> users
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

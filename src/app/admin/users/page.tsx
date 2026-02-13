@@ -5,13 +5,36 @@ import { Users, UserPlus, UserCheck, Activity } from "lucide-react";
 export default async function AdminUsersPage() {
   const supabase = await createClient();
 
-  // Fetch all profiles
+  // Fetch profiles and user_progress for stats
   const { data: profiles } = await supabase
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
 
-  const users = profiles || [];
+  // Fetch progress to count enrolled courses
+  // Since we don't have a direct 'enrolled' table, we use resources interacted with
+  const { data: progress } = await supabase
+    .from("user_progress")
+    .select("user_id, resources!inner(course_id)");
+
+  // Calculate enrolled courses per user
+  const progressMap = new Map<string, Set<string>>();
+  if (progress) {
+    progress.forEach((p: any) => {
+      const courseId = p.resources?.course_id;
+      if (courseId) {
+        if (!progressMap.has(p.user_id)) {
+          progressMap.set(p.user_id, new Set());
+        }
+        progressMap.get(p.user_id)?.add(courseId);
+      }
+    });
+  }
+
+  const users = (profiles || []).map(p => ({
+    ...p,
+    courses_enrolled: progressMap.get(p.id)?.size || 0
+  }));
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.status === 'active').length;
   const suspendedUsers = users.filter(u => u.status === 'suspended').length;
