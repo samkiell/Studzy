@@ -93,8 +93,8 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
   return (
     <div className="group relative overflow-hidden rounded-xl bg-black">
       {/* Studzy Watermark */}
-      <div className="pointer-events-none absolute bottom-16 left-4 z-10 select-none">
-        <span className="text-lg font-bold text-white/40 drop-shadow-lg">Studzy</span>
+      <div className="pointer-events-none absolute bottom-12 left-2 z-10 select-none sm:bottom-16 sm:left-4">
+        <span className="text-sm font-bold text-white/40 drop-shadow-lg sm:text-lg">Studzy</span>
       </div>
 
       <video
@@ -110,9 +110,9 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
       />
 
       {/* Controls Overlay */}
-      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
         {/* Progress Bar */}
-        <div className="px-4">
+        <div className="px-2 sm:px-4">
           <input
             type="range"
             min={0}
@@ -124,32 +124,33 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-4 p-4">
+        <div className="flex items-center gap-2 p-2 sm:gap-4 sm:p-4">
           {/* Play/Pause */}
           <button
             onClick={togglePlay}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 sm:h-10 sm:w-10"
           >
             {isPlaying ? (
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
           </button>
 
           {/* Time */}
-          <span className="text-sm text-white">
-            {formatTime(currentTime)} / {formatTime(duration)}
+          <span className="text-xs text-white sm:text-sm">
+            {formatTime(currentTime)}
+            <span className="hidden xs:inline"> / {formatTime(duration)}</span>
           </span>
 
           <div className="flex-1" />
 
-          {/* Volume */}
-          <div className="flex items-center gap-2">
+          {/* Volume - hidden on mobile */}
+          <div className="hidden items-center gap-2 sm:flex">
             <button
               onClick={toggleMute}
               className="text-white transition-colors hover:text-white/80"
@@ -175,6 +176,23 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
               className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-white/30 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
             />
           </div>
+
+          {/* Mute button on mobile only */}
+          <button
+            onClick={toggleMute}
+            className="text-white transition-colors hover:text-white/80 sm:hidden"
+          >
+            {isMuted || volume === 0 ? (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            )}
+          </button>
 
           {/* Share */}
           <button
@@ -230,8 +248,8 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
           onClick={togglePlay}
           className="absolute inset-0 flex items-center justify-center"
         >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform hover:scale-110">
-            <svg className="h-10 w-10" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform hover:scale-110 sm:h-20 sm:w-20">
+            <svg className="h-7 w-7 sm:h-10 sm:w-10" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>

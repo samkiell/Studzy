@@ -102,19 +102,19 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-6 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30">
+    <div className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-4 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30 sm:p-6">
       {/* Studzy Watermark */}
-      <div className="pointer-events-none absolute bottom-3 left-4 select-none">
-        <span className="text-sm font-bold text-purple-300/60 dark:text-purple-700/60">Studzy</span>
+      <div className="pointer-events-none absolute bottom-3 left-3 select-none sm:left-4">
+        <span className="text-xs font-bold text-purple-300/60 dark:text-purple-700/60 sm:text-sm">Studzy</span>
       </div>
 
       <audio ref={audioRef} src={src} preload="metadata" />
 
       {/* Title */}
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30">
+      <div className="mb-4 flex items-center gap-3 sm:mb-6 sm:gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30 sm:h-16 sm:w-16">
           <svg
-            className="h-8 w-8 text-purple-600 dark:text-purple-400"
+            className="h-6 w-6 text-purple-600 dark:text-purple-400 sm:h-8 sm:w-8"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -201,8 +201,9 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
       </div>
 
       {/* Volume Control & Download */}
-      <div className="mt-6 flex items-center justify-center gap-6">
-        <div className="flex items-center gap-3">
+      <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
+        {/* Volume - hidden on mobile */}
+        <div className="hidden items-center gap-3 sm:flex">
           <button
             onClick={toggleMute}
             className="text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -229,39 +230,42 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
           />
         </div>
 
-        {/* Download Button */}
-        <a
-          href={src}
-          download
-          className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Download
-        </a>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          {/* Download Button */}
+          <a
+            href={src}
+            download
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:px-4"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span className="hidden xs:inline">Download</span>
+          </a>
 
-        {/* Share Button */}
-        <button
-          onClick={copyLink}
-          className="flex items-center gap-2 rounded-lg bg-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
-        >
-          {copied ? (
-            <>
-              <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Copied!
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              Share
-            </>
-          )}
-        </button>
+          {/* Share Button */}
+          <button
+            onClick={copyLink}
+            className="flex items-center gap-2 rounded-lg bg-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600 sm:px-4"
+          >
+            {copied ? (
+              <>
+                <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="hidden xs:inline">Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                <span className="hidden xs:inline">Share</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
