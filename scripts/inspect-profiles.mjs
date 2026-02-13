@@ -36,7 +36,7 @@ async function inspectProfiles() {
     console.error("Inspection Error:", error);
   } else {
     console.log("Profiles Table Columns:");
-    console.table(data);
+    console.log(JSON.stringify(data, null, 2));
   }
 }
 
