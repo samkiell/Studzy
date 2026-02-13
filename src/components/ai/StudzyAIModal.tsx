@@ -420,15 +420,6 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
 
           {/* Options */}
           <div className="mb-3 flex flex-wrap items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={enableSearch}
-                onChange={(e) => setEnableSearch(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-neutral-600 dark:text-neutral-400">Enable Search</span>
-            </label>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"

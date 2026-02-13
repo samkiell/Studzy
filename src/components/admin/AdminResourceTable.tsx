@@ -145,6 +145,7 @@ export function AdminResourceTable({
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Stats</th>
                 <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
                 <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Featured</th>
+                <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Updated</th>
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
               </tr>
             </thead>
@@ -216,6 +217,14 @@ export function AdminResourceTable({
                         >
                           <Star className={`h-5 w-5 ${resource.featured ? "fill-current" : ""}`} />
                         </button>
+                      </td>
+
+                      {/* Updated */}
+                      <td className="px-6 py-4 text-right text-xs font-medium text-neutral-500 whitespace-nowrap">
+                        {new Date(resource.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </td>
 
                       {/* Actions */}
