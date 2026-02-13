@@ -2,6 +2,19 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { 
+  Video, 
+  Music, 
+  FileText, 
+  Check, 
+  PencilLine, 
+  CloudUpload, 
+  CheckCircle2, 
+  AlertCircle, 
+  FileStack,
+  Trash2,
+  Loader2
+} from "lucide-react";
 import type { Course, ResourceType, ResourceStatus } from "@/types/database";
 
 interface UploadFormProps {
@@ -389,35 +402,13 @@ export function UploadForm({ courses }: UploadFormProps) {
               }`}
             >
               {type === "video" && (
-                <svg
-                  className={`h-6 w-6 ${selectedType === type ? "text-red-600" : "text-neutral-500"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Video className={`h-6 w-6 ${selectedType === type ? "text-red-600" : "text-neutral-500"}`} />
               )}
               {type === "audio" && (
-                <svg
-                  className={`h-6 w-6 ${selectedType === type ? "text-purple-600" : "text-neutral-500"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                </svg>
+                <Music className={`h-6 w-6 ${selectedType === type ? "text-purple-600" : "text-neutral-500"}`} />
               )}
               {type === "pdf" && (
-                <svg
-                  className={`h-6 w-6 ${selectedType === type ? "text-blue-600" : "text-neutral-500"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
+                <FileText className={`h-6 w-6 ${selectedType === type ? "text-blue-600" : "text-neutral-500"}`} />
               )}
               <span
                 className={`text-sm font-medium capitalize ${
@@ -446,9 +437,7 @@ export function UploadForm({ courses }: UploadFormProps) {
                 : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600"
             }`}
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="h-4 w-4" />
             Published
           </button>
           <button
@@ -460,9 +449,7 @@ export function UploadForm({ courses }: UploadFormProps) {
                 : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600"
             }`}
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <PencilLine className="h-4 w-4" />
             Draft
           </button>
         </div>
@@ -498,9 +485,7 @@ export function UploadForm({ courses }: UploadFormProps) {
 
           <div className="flex flex-col items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
-              <svg className="h-7 w-7 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
+              <CloudUpload className="h-7 w-7 text-neutral-400" />
             </div>
             <div>
               <p className="font-medium text-neutral-900 dark:text-white">
@@ -551,26 +536,15 @@ export function UploadForm({ courses }: UploadFormProps) {
                   {/* Status Icon */}
                   <div className="mt-1 shrink-0">
                     {fileUpload.status === "success" ? (
-                      <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
                     ) : fileUpload.status === "error" ? (
-                      <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
+                      <AlertCircle className="h-5 w-5 text-red-600" />
                     ) : fileUpload.status === "uploaded" ? (
-                      <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
+                      <CloudUpload className="h-5 w-5 text-green-500" />
                     ) : fileUpload.status === "uploading" || fileUpload.status === "saving" ? (
-                      <svg className="h-5 w-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                     ) : (
-                      <svg className="h-5 w-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                      <FileStack className="h-5 w-5 text-neutral-400" />
                     )}
                   </div>
 
@@ -651,9 +625,7 @@ export function UploadForm({ courses }: UploadFormProps) {
                       aria-label="Remove file"
                       className="shrink-0 rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -671,25 +643,17 @@ export function UploadForm({ courses }: UploadFormProps) {
       >
         {isSaving ? (
           <>
-            <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <Loader2 className="h-5 w-5 animate-spin" />
             Saving...
           </>
         ) : pendingOrUploadingCount > 0 ? (
           <>
-            <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <Loader2 className="h-5 w-5 animate-spin" />
             Uploading files...
           </>
         ) : (
           <>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="h-5 w-5" />
             Save {uploadedCount > 0 ? `${uploadedCount} Resource${uploadedCount > 1 ? "s" : ""}` : "Resources"}
           </>
         )}
@@ -707,13 +671,9 @@ export function UploadForm({ courses }: UploadFormProps) {
         >
           <div className="flex items-start gap-3">
             {globalMessage.type === "success" ? (
-              <svg className="mt-0.5 h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
             ) : (
-              <svg className="mt-0.5 h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             )}
             <p className="font-medium">{globalMessage.text}</p>
           </div>
