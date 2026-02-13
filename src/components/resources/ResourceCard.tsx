@@ -3,7 +3,7 @@ import type { Resource } from "@/types/database";
 
 interface ResourceCardProps {
   resource: Resource;
-  courseId: string;
+  courseCode: string;
   isCompleted?: boolean;
 }
 
@@ -58,9 +58,9 @@ const typeLabels = {
   pdf: "PDF",
 };
 
-export function ResourceCard({ resource, courseId, isCompleted = false }: ResourceCardProps) {
+export function ResourceCard({ resource, courseCode, isCompleted = false }: ResourceCardProps) {
   return (
-    <Link href={`/course/${courseId}/resource/${resource.id}`}>
+    <Link href={`/course/${courseCode}/resource/${resource.slug}`}>
       <div className="group flex items-start gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700">
         <div className="relative">
           <div

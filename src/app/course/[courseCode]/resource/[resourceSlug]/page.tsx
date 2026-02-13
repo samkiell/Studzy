@@ -5,13 +5,13 @@ import { VideoPlayer, AudioPlayer, PDFViewer, LockedResourcePreview } from "@/co
 
 interface ResourcePageProps {
   params: Promise<{
-    courseId: string;
-    resourceId: string;
+    courseCode: string;
+    resourceSlug: string;
   }>;
 }
 
 export default async function ResourcePage({ params }: ResourcePageProps) {
-  const { courseId, resourceId } = await params;
+  const { courseCode, resourceSlug } = await params;
   const supabase = await createClient();
 
   // Check if user is authenticated
@@ -20,19 +20,27 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   } = await supabase.auth.getUser();
 
   // Fetch the resource with course info
+  // Try slug first, then ID (for redirect support)
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
-    .select("*, courses(*)")
-    .eq("id", resourceId)
-    .eq("course_id", courseId)
+    .select("*, courses!inner(*)")
+    .or(`slug.eq."${resourceSlug}",id.eq."${resourceSlug}"`)
+    .or(`courses.code.eq."${courseCode}",courses.id.eq."${courseCode}"`)
     .eq("status", "published")
-    .single();
+    .maybeSingle();
 
   if (resourceError || !resource) {
     notFound();
   }
 
   const course = resource.courses;
+
+  // Handle redirect if URI contains UUIDs instead of slugs/codes
+  const isOldUrl = (resource.id === resourceSlug || course.id === courseCode);
+  if (isOldUrl) {
+    const { redirect } = await import("next/navigation");
+    redirect(`/course/${course.code}/resource/${resource.slug}`);
+  }
 
   // If not authenticated, show locked preview
   if (!user) {
