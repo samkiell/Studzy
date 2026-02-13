@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ResourceCard } from "./ResourceCard";
 import { ResourceFilterTabs, type FilterTab } from "./ResourceFilterTabs";
 import type { Resource } from "@/types/database";
+import { Inbox, Star } from "lucide-react";
 
 interface ResourceListProps {
   resources: Resource[];
@@ -64,19 +65,7 @@ export function ResourceList({ resources, courseId }: ResourceListProps) {
     return (
       <div className="rounded-xl border border-neutral-200 bg-white p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
-          <svg
-            className="h-8 w-8 text-neutral-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
+          <Inbox className="h-8 w-8 text-neutral-400" />
         </div>
         <h3 className="mt-4 font-semibold text-neutral-900 dark:text-white">
           No resources yet
@@ -111,13 +100,7 @@ export function ResourceList({ resources, courseId }: ResourceListProps) {
               <div className="space-y-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                    <svg
-                      className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                    <Star className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400 fill-current" />
                   </div>
                   <div>
                     <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
