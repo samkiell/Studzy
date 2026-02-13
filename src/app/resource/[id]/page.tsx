@@ -67,8 +67,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   return (
     <div>
       {/* Breadcrumb */}
-      <nav className="mb-6">
-        <ol className="flex flex-wrap items-center gap-2 text-sm">
+      <nav className="mb-4 sm:mb-6">
+        <ol className="flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
           <li>
             <Link
               href="/dashboard"
@@ -98,12 +98,14 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       </nav>
 
       {/* Resource Card */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-start">
+      <div className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 sm:p-6 md:p-8">
+        <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-start">
           <div
-            className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-xl ${typeColors[typedResource.type]}`}
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl sm:h-20 sm:w-20 ${typeColors[typedResource.type]}`}
           >
-            {typeIcons[typedResource.type]}
+            <div className="scale-75 sm:scale-100">
+              {typeIcons[typedResource.type]}
+            </div>
           </div>
           <div className="flex-1">
             <span
@@ -111,7 +113,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             >
               {typeLabels[typedResource.type]}
             </span>
-            <h1 className="mt-2 text-2xl font-bold text-neutral-900 dark:text-white md:text-3xl">
+            <h1 className="mt-2 text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl md:text-3xl">
               {typedResource.title}
             </h1>
             {typedResource.description && (
@@ -134,7 +136,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-8 flex flex-col gap-3 border-t border-neutral-200 pt-6 dark:border-neutral-800 sm:flex-row">
+        <div className="mt-6 flex flex-col gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800 sm:mt-8 sm:flex-row sm:pt-6">
           <a
             href={typedResource.file_url}
             target="_blank"
@@ -184,8 +186,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       </div>
 
       {/* Preview Section */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+      <div className="mt-6 sm:mt-8">
+        <h2 className="text-base font-semibold text-neutral-900 dark:text-white sm:text-lg">
           Preview
         </h2>
         <div className="mt-4 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900">
