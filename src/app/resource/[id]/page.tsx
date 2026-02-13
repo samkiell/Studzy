@@ -36,7 +36,9 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     notFound();
   }
 
-  const courseCode = resource.courses?.code;
+  const courses = resource.courses as any;
+  const courseCode = Array.isArray(courses) ? courses[0]?.code : courses?.code;
+
   if (courseCode && resource.slug) {
     redirect(`/course/${courseCode}/resource/${resource.slug}`);
   }
