@@ -60,12 +60,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     notFound();
   }
 
-  if (!resource) {
-    console.warn(`[ResourcePage] Resource not found: Course="${courseCode}", Slug="${resourceSlug}"`);
-    notFound();
-  }
-
-  const course = resource.courses;
+  // Removed redundant `if (!resource)` block and `const course = resource.courses;`
 
   // Handle redirect if URI contains UUIDs instead of slugs/codes
   const isOldUrl = (resource.id === rawResourceSlug || course.id === rawCourseCode);
@@ -235,6 +230,35 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           </Link>
         </div>
       </main>
+    </div>
+  );
+}
+
+function ErrorDisplay({ error, item }: { error: any; item: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+        <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 className="mt-6 text-2xl font-bold text-neutral-900 dark:text-white">Connection Error</h2>
+      <p className="mt-2 max-w-md text-neutral-600 dark:text-neutral-400">
+        We couldn&apos;t connect to the database to fetch <strong>{item}</strong>.
+      </p>
+      <div className="mt-6 space-x-4">
+        <Link href="/dashboard">
+          <Button variant="outline">Back to Dashboard</Button>
+        </Link>
+        <a href="" className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+          Retry Page
+        </a>
+      </div>
+      {error && (
+        <p className="mt-8 text-xs text-neutral-400">
+          Error Detail: {error.message || JSON.stringify(error)}
+        </p>
+      )}
     </div>
   );
 }
