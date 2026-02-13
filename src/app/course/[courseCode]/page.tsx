@@ -157,8 +157,25 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const audioCount = typedResources.filter((r) => r.type === "audio").length;
   const pdfCount = typedResources.filter((r) => r.type === "pdf").length;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": typedCourse.title,
+    "description": typedCourse.description || `Study materials for ${typedCourse.code} at the University.`,
+    "provider": {
+      "@type": "Organization",
+      "name": "Studzy",
+      "sameAs": "https://studzy.me"
+    },
+    "courseCode": typedCourse.code
+  };
+
   return (
     <div className="space-y-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav>
         <ol className="flex items-center gap-2 text-sm">

@@ -63,13 +63,31 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
 
   if (!resource) return { title: "Resource Not Found | Studzy" };
 
+  const titleBase = `${resource.title} – ${course.code} Resource | Studzy`;
+  const title = resource.featured ? `Featured Resource | ${titleBase}` : titleBase;
+  
+  const description = resource.description 
+    ? resource.description.slice(0, 150) + (resource.description.length > 150 ? "..." : "")
+    : `Study "${resource.title}" from ${course.code} – ${course.title}. Structured resource for Software Engineering students at the University.`;
+
+  const url = `https://studzy.me/course/${course.code}/resource/${resource.slug}`;
+
   return {
-    title: `${resource.title} | ${course.code} | Studzy`,
-    description: resource.description || `Study material for ${course.title}`,
+    title,
+    description,
     openGraph: {
-      title: resource.title,
-      description: resource.description || `Study material for ${course.title}`,
-      type: "website",
+      title,
+      description,
+      type: "article",
+      url,
+      siteName: "Studzy",
+    },
+    alternates: {
+      canonical: url,
+    },
+    robots: {
+      index: resource.status === "published",
+      follow: resource.status === "published",
     },
   };
 }
@@ -186,10 +204,30 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     redirect(`/course/${course.code}/resource/${resource.slug}`);
   }
 
+  // JSON-LD Structured Data
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "EducationalResource",
+    "name": resource.title,
+    "description": resource.description || `Study material for ${course.code}`,
+    "educationalLevel": "University",
+    "learningResourceType": resource.type === 'video' ? 'VideoObject' : 'LectureMaterial',
+    "provider": {
+      "@type": "Organization",
+      "name": "Studzy",
+      "sameAs": "https://studzy.me"
+    },
+    "url": `https://studzy.me/course/${course.code}/resource/${resource.slug}`
+  };
+
   // If not authenticated, show locked preview
   if (!user) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ViewTracker resourceId={resource.id} />
         {/* Header */}
         <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
