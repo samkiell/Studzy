@@ -167,13 +167,13 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Media Player */}
         {resource.type === "video" && (
-          <VideoPlayer src={resource.file_url} title={resource.title} />
+          <VideoPlayer src={resource.file_url} title={resource.title} resourceId={resourceId} />
         )}
         {resource.type === "audio" && (
-          <AudioPlayer src={resource.file_url} title={resource.title} />
+          <AudioPlayer src={resource.file_url} title={resource.title} resourceId={resourceId} />
         )}
         {resource.type === "pdf" && (
-          <PDFViewer src={resource.file_url} title={resource.title} />
+          <PDFViewer src={resource.file_url} title={resource.title} resourceId={resourceId} />
         )}
 
         {/* Back Link */}
