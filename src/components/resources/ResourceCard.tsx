@@ -58,14 +58,23 @@ const typeLabels = {
   pdf: "PDF",
 };
 
-export function ResourceCard({ resource, courseId }: ResourceCardProps) {
+export function ResourceCard({ resource, courseId, isCompleted = false }: ResourceCardProps) {
   return (
     <Link href={`/course/${courseId}/resource/${resource.id}`}>
       <div className="group flex items-start gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700">
-        <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${typeColors[resource.type]}`}
-        >
-          {typeIcons[resource.type]}
+        <div className="relative">
+          <div
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${typeColors[resource.type]}`}
+          >
+            {typeIcons[resource.type]}
+          </div>
+          {isCompleted && (
+            <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white">
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

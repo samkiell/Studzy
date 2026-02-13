@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ResourceList } from "@/components/resources/ResourceList";
+import { CourseProgress } from "@/components/courses/CourseProgress";
 import type { Course, Resource } from "@/types/database";
 
 interface CoursePageProps {
