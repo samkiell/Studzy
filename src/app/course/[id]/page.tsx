@@ -119,7 +119,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
           {typedResources.length} resource{typedResources.length !== 1 ? "s" : ""} available
         </p>
         <div className="mt-4">
-          <ResourceList resources={typedResources} />
+          <ResourceList resources={typedResources} courseId={id} />
         </div>
       </div>
     </div>
