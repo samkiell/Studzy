@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS user_activity (
 -- Add RLS to user_activity (admins can read all, users can read their own)
 ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can read all activity" ON user_activity;
 CREATE POLICY "Admins can read all activity" ON user_activity
   FOR SELECT USING (
     EXISTS (
@@ -24,8 +25,10 @@ CREATE POLICY "Admins can read all activity" ON user_activity
     )
   );
 
+DROP POLICY IF EXISTS "Users can read own activity" ON user_activity;
 CREATE POLICY "Users can read own activity" ON user_activity
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own activity" ON user_activity;
 CREATE POLICY "Users can insert own activity" ON user_activity
   FOR INSERT WITH CHECK (auth.uid() = user_id);
