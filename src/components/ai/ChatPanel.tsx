@@ -7,13 +7,13 @@ import {
   Image as ImageIcon,
   Globe,
   Code,
-  Sparkles,
   Send,
   Loader2,
   ImageUp,
   X,
   Menu,
 } from "lucide-react";
+import NextImage from "next/image";
 import type { ChatMessage, ChatMode } from "@/types/database";
 
 interface ChatPanelProps {
@@ -256,7 +256,7 @@ export function ChatPanel({
 
         <div className="flex-1">
           <h1 className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
-            <Sparkles className="h-5 w-5 text-primary-500" />
+            <NextImage src="/favicon.png" alt="Studzy" width={20} height={20} />
             STUDZY AI
           </h1>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -314,7 +314,7 @@ export function ChatPanel({
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
-              <Sparkles className="h-10 w-10 text-primary-600 dark:text-primary-400" />
+              <NextImage src="/favicon.png" alt="Studzy" width={40} height={40} />
             </div>
             <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
               How can I help you today?

@@ -6,10 +6,10 @@ import {
   Plus,
   MessageSquare,
   ChevronLeft,
-  Sparkles,
   Trash2,
   ArrowLeft,
 } from "lucide-react";
+import Image from "next/image";
 import type { ChatSession } from "@/types/database";
 
 interface ChatSidebarProps {
@@ -98,7 +98,7 @@ export function ChatSidebar({
         {/* Sidebar Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-4 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary-500" />
+            <Image src="/favicon.png" alt="Studzy" width={20} height={20} />
             <span className="text-sm font-bold text-neutral-900 dark:text-white">
               STUDZY AI
             </span>

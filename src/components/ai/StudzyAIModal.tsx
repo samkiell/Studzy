@@ -9,7 +9,6 @@ import {
   Image as ImageIcon, 
   Globe, 
   Code, 
-  Sparkles, 
   Trash2, 
   X, 
   ImageUp, 
@@ -17,6 +16,7 @@ import {
   Loader2,
   ExternalLink 
 } from "lucide-react";
+import NextImage from "next/image";
 
 type ChatMode = "chat" | "image" | "search" | "code";
 
@@ -246,7 +246,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
         <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
           <div>
             <h2 className="flex items-center gap-2 text-xl font-bold text-neutral-900 dark:text-white">
-              <Sparkles className="h-6 w-6 text-primary-500" />
+              <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
               STUDZY AI
             </h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -307,7 +307,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
-                <Sparkles className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+                <NextImage src="/favicon.png" alt="Studzy" width={32} height={32} />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
                 How can I help you today?
