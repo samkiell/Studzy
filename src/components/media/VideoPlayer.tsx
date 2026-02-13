@@ -205,10 +205,11 @@ export function VideoPlayer({ src, title }: VideoPlayerProps) {
             </svg>
           </a>
 
-          {/* Fullscreen */
+          {/* Fullscreen */}
           <button
             onClick={toggleFullscreen}
             className="text-white transition-colors hover:text-white/80"
+            title="Toggle fullscreen"
           >
             {isFullscreen ? (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
