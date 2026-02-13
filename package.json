@@ -12,10 +12,13 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.47.0",
     "clsx": "^2.1.1",
+    "micromark-core-commonmark": "^2.0.3",
+    "micromark-factory-space": "^2.0.1",
+    "micromark-util-character": "^2.1.1",
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
+    "react-markdown": "^9.1.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
