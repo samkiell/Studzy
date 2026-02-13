@@ -24,11 +24,14 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
   console.log(`[ResourcePage] Fetching: Course="${courseCode}", Resource="${resourceSlug}"`);
 
+  // Canonicalize: Remove all spaces and make uppercase
+  const canonicalCourseCode = courseCode.replace(/\s+/g, "").toUpperCase();
+
   // 1. Fetch the course first
   const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .or(`code.eq."${courseCode}",id.eq."${courseCode}"`)
+    .or(`code.eq."${canonicalCourseCode}",id.eq."${canonicalCourseCode}"`)
     .maybeSingle();
 
   if (courseError) {
@@ -39,6 +42,12 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   if (!course) {
     console.warn(`[ResourcePage] Course not found: "${courseCode}"`);
     notFound();
+  }
+
+  // FORCE REDIRECT if course part of URL has spaces or is ID
+  if (rawCourseCode !== course.code || courseCode === course.id) {
+    const { redirect } = await import("next/navigation");
+    redirect(`/course/${course.code}/resource/${rawResourceSlug}`);
   }
 
   // 2. Fetch the resource belonging to that course

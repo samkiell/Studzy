@@ -18,31 +18,15 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
   console.log(`[CoursePage] Request for: "${rawCourseCode}" (Decoded: "${decodedCourseCode}")`);
 
-  // Try fetching by code (raw and decoded)
-  let course = null;
-  let courseError = null;
+  // Canonicalize: Remove all spaces and make uppercase
+  const canonicalCode = decodedCourseCode.replace(/\s+/g, "").toUpperCase();
 
-  // Try decoded first
-  const { data: decodedData, error: decodedError } = await supabase
+  // Try fetching by the normalized canonical code
+  let { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .eq("code", decodedCourseCode)
+    .eq("code", canonicalCode)
     .maybeSingle();
-  
-  course = decodedData;
-  courseError = decodedError;
-
-  // If not found by decoded and raw is different, try raw
-  if (!course && !courseError && rawCourseCode !== decodedCourseCode) {
-    const { data: rawData, error: rawError } = await supabase
-      .from("courses")
-      .select("*")
-      .eq("code", rawCourseCode)
-      .maybeSingle();
-    
-    course = rawData;
-    courseError = rawError;
-  }
 
   // If still not found, try by ID if it's a UUID
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedCourseCode);
@@ -93,8 +77,10 @@ export default async function CoursePage({ params }: CoursePageProps) {
     notFound();
   }
 
-  // If the user visited via ID, redirect to the code-based URL
-  if (course.id === decodedCourseCode && course.code !== decodedCourseCode) {
+  // FORCE REDIRECT if:
+  // 1. URL contains spaces (rawCourseCode !== canonicalCode)
+  // 2. URL is via UUID (decodedCourseCode === course.id)
+  if (rawCourseCode !== course.code || decodedCourseCode === course.id) {
     const { redirect } = await import("next/navigation");
     redirect(`/course/${course.code}`);
   }
