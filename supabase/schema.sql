@@ -236,3 +236,42 @@ CREATE POLICY "Allow admins to update files"
 -- MAKE A USER AN ADMIN (run manually)
 -- ============================================
 -- UPDATE profiles SET role = 'admin' WHERE email = 'your-admin-email@example.com';
+
+-- ============================================
+-- USER ACTIVITY TABLE (tracks resource access)
+-- ============================================
+CREATE TABLE user_activity (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    resource_id UUID NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+    last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, resource_id)
+);
+
+-- Create index for faster queries
+CREATE INDEX idx_user_activity_user_id ON user_activity(user_id);
+CREATE INDEX idx_user_activity_last_accessed ON user_activity(last_accessed DESC);
+
+-- Enable RLS on user_activity
+ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own activity
+CREATE POLICY "Users can read own activity"
+    ON user_activity
+    FOR SELECT
+    TO authenticated
+    USING (auth.uid() = user_id);
+
+-- Users can insert their own activity
+CREATE POLICY "Users can insert own activity"
+    ON user_activity
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = user_id);
+
+-- Users can update their own activity
+CREATE POLICY "Users can update own activity"
+    ON user_activity
+    FOR UPDATE
+    TO authenticated
+    USING (auth.uid() = user_id);
