@@ -24,12 +24,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { courseId, title, type, fileUrl, description } = body as {
+    const { courseId, title, type, fileUrl, description, status } = body as {
       courseId: string;
       title: string;
       type: ResourceType;
       fileUrl: string;
       description?: string;
+      status?: "draft" | "published";
     };
 
     if (!courseId || !title || !type || !fileUrl) {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
         type,
         file_url: fileUrl,
         description: description?.trim() || null,
+        status: status || "published",
       })
       .select()
       .single();

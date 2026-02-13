@@ -92,6 +92,18 @@ export default async function AdminLayout({
               Upload
             </Link>
             <Link
+              href="/admin/resources"
+              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+            >
+              Resources
+            </Link>
+            <Link
+              href="/admin/analytics"
+              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+            >
+              Analytics
+            </Link>
+            <Link
               href="/dashboard"
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >

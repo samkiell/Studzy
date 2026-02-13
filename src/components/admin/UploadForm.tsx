@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import type { Course, ResourceType } from "@/types/database";
+import type { Course, ResourceType, ResourceStatus } from "@/types/database";
 
 interface UploadFormProps {
   courses: Course[];
@@ -35,6 +35,7 @@ export function UploadForm({ courses }: UploadFormProps) {
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<ResourceStatus>("published");
   const [globalMessage, setGlobalMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
@@ -151,12 +152,15 @@ export function UploadForm({ courses }: UploadFormProps) {
         return;
       }
 
+      // Auto-generate title from filename (strip extension)
+      const autoTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+
       validFiles.push({
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file,
         progress: 0,
         status: "pending",
-        title: "",
+        title: autoTitle,
         description: "",
       });
     });
@@ -263,6 +267,7 @@ export function UploadForm({ courses }: UploadFormProps) {
             description: fileUpload.description.trim(),
             type: selectedType,
             fileUrl: fileUpload.fileUrl,
+            status: selectedStatus,
           }),
         });
 
@@ -423,6 +428,43 @@ export function UploadForm({ courses }: UploadFormProps) {
               </span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Status Selector */}
+      <div>
+        <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          Publish Status
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setSelectedStatus("published")}
+            className={`flex items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+              selectedStatus === "published"
+                ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600"
+            }`}
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Published
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatus("draft")}
+            className={`flex items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+              selectedStatus === "draft"
+                ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600"
+            }`}
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Draft
+          </button>
         </div>
       </div>
 
