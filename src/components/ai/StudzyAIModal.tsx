@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import ReactMarkdown from "react-markdown";
 
 type ChatMode = "chat" | "image" | "search" | "code";
 
