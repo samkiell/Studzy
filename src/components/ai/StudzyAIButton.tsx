@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { StudzyAIModal } from "./StudzyAIModal";
 import { createClient } from "@/lib/supabase/client";
 
 export function StudzyAIButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const supabase = createClient();
@@ -15,7 +17,8 @@ export function StudzyAIButton() {
     });
   }, []);
 
-  if (!isAuthenticated) return null;
+  // Hide on the full AI workspace
+  if (!isAuthenticated || pathname.startsWith("/studzyai")) return null;
 
   return (
     <>
