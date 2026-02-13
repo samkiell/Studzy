@@ -9,6 +9,13 @@
  *   node scripts/run-migration.mjs supabase/migrations/admin_enhancements.sql # runs specific file
  *
  * Requires SUPABASE_SERVICE_ROLE_KEY in .env.local
+ *
+ * FIRST TIME SETUP:
+ *   Run this SQL once in your Supabase SQL Editor (Dashboard > SQL Editor):
+ *
+ *   CREATE OR REPLACE FUNCTION exec_sql(query text)
+ *   RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+ *   AS $$ BEGIN EXECUTE query; END; $$;
  */
 
 import fs from "fs";
@@ -58,91 +65,119 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+/**
+ * Split SQL into statements, respecting $$ blocks (DO blocks, function bodies)
+ */
+function splitSQL(sql) {
+  const results = [];
+  let current = "";
+  let inDollarBlock = false;
+
+  const lines = sql.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip pure comment lines outside $$ blocks
+    if (trimmed.startsWith("--") && !inDollarBlock) {
+      continue;
+    }
+
+    // Track $$ blocks
+    const dollarMatches = (trimmed.match(/\$\$/g) || []).length;
+    if (dollarMatches % 2 === 1) {
+      inDollarBlock = !inDollarBlock;
+    }
+
+    current += line + "\n";
+
+    // End of statement: semicolon at end of line, not inside $$ block
+    if (trimmed.endsWith(";") && !inDollarBlock) {
+      const stmt = current.trim();
+      if (stmt.length > 0) {
+        results.push(stmt);
+      }
+      current = "";
+    }
+  }
+
+  const remaining = current.trim();
+  if (remaining.length > 0) {
+    results.push(remaining);
+  }
+
+  return results;
+}
+
 async function runSQL(sql) {
-  // Split into individual statements and run each one
-  const statements = sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith("--"));
+  const statements = splitSQL(sql);
 
   for (const statement of statements) {
-    // Use supabase.rpc to call a raw SQL function if available,
-    // otherwise fall back to individual operations
     const { error } = await supabase.rpc("exec_sql", {
       query: statement,
     });
 
     if (error) {
-      // If exec_sql RPC doesn't exist, try creating it first
       if (
-        error.message.includes("function") &&
+        error.message.includes("schema cache") ||
         error.message.includes("does not exist")
       ) {
-        console.log("   ⚠️  exec_sql function not found, creating it...");
-        // We need to create the function via the Management API
-        const projectRef = new URL(SUPABASE_URL).hostname.split(".")[0];
-        const createFnSQL = `
-          CREATE OR REPLACE FUNCTION exec_sql(query text) 
-          RETURNS void 
-          LANGUAGE plpgsql 
-          SECURITY DEFINER 
-          AS $$ 
-          BEGIN 
-            EXECUTE query; 
-          END; 
-          $$;
-        `;
-
-        // Try the Management API to bootstrap the function
-        const mgmtResponse = await fetch(
-          `https://api.supabase.com/v1/projects/${projectRef}/database/query`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-            },
-            body: JSON.stringify({ query: createFnSQL }),
-          },
+        console.error("");
+        console.error("   ❌ The exec_sql function is not available.");
+        console.error("");
+        console.error(
+          "   Please run this SQL ONCE in your Supabase SQL Editor:",
         );
-
-        if (!mgmtResponse.ok) {
-          // Management API also failed — provide manual instructions
-          console.error("");
-          console.error("   ❌ Could not auto-create exec_sql function.");
-          console.error("");
-          console.error(
-            "   Please run this SQL once in your Supabase SQL Editor:",
-          );
-          console.error("   ─────────────────────────────────────────");
-          console.error("   CREATE OR REPLACE FUNCTION exec_sql(query text)");
-          console.error("   RETURNS void LANGUAGE plpgsql SECURITY DEFINER");
-          console.error("   AS $$ BEGIN EXECUTE query; END; $$;");
-          console.error("   ─────────────────────────────────────────");
-          console.error("");
-          console.error("   Then re-run: npm run db:migrate");
-          process.exit(1);
-        }
-
-        console.log("   ✅ exec_sql function created! Retrying...\n");
-
-        // Retry the original statement
-        const { error: retryError } = await supabase.rpc("exec_sql", {
-          query: statement,
-        });
-        if (retryError) {
-          throw new Error(retryError.message);
-        }
-      } else {
-        throw new Error(error.message);
+        console.error(
+          "   ──────────────────────────────────────────────────────",
+        );
+        console.error("   CREATE OR REPLACE FUNCTION exec_sql(query text)");
+        console.error("   RETURNS void LANGUAGE plpgsql SECURITY DEFINER");
+        console.error("   AS $$ BEGIN EXECUTE query; END; $$;");
+        console.error(
+          "   ──────────────────────────────────────────────────────",
+        );
+        console.error("");
+        console.error("   Then re-run: npm run db:migrate");
+        process.exit(1);
       }
+      throw new Error(error.message);
     }
   }
 }
 
 async function main() {
-  const specificFile = process.argv[2];
+  // First, test if exec_sql is available
+  console.log("🔍 Checking exec_sql function...");
+  const { error: testError } = await supabase.rpc("exec_sql", {
+    query: "SELECT 1",
+  });
 
+  if (testError) {
+    if (
+      testError.message.includes("schema cache") ||
+      testError.message.includes("does not exist")
+    ) {
+      console.error("");
+      console.error(
+        "❌ The exec_sql function is not available in your database.",
+      );
+      console.error("");
+      console.error("Run this SQL ONCE in Supabase Dashboard → SQL Editor:");
+      console.error("────────────────────────────────────────────────────────");
+      console.error("CREATE OR REPLACE FUNCTION exec_sql(query text)");
+      console.error("RETURNS void LANGUAGE plpgsql SECURITY DEFINER");
+      console.error("AS $$ BEGIN EXECUTE query; END; $$;");
+      console.error("────────────────────────────────────────────────────────");
+      console.error("");
+      console.error("Then re-run: npm run db:migrate");
+      process.exit(1);
+    }
+    console.error("❌ Unexpected error:", testError.message);
+    process.exit(1);
+  }
+  console.log("✅ exec_sql function ready\n");
+
+  const specificFile = process.argv[2];
   let migrationFiles;
 
   if (specificFile) {
@@ -170,7 +205,7 @@ async function main() {
     return;
   }
 
-  console.log(`\n🔄 Running ${migrationFiles.length} migration(s)...\n`);
+  console.log(`🔄 Running ${migrationFiles.length} migration(s)...\n`);
 
   for (const file of migrationFiles) {
     const fileName = path.basename(file);
