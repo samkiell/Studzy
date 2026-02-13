@@ -10,19 +10,20 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Studzy – Software Engineering Learning Platform | University",
+    default: "Studzy – Software Engineering Learning Platform | OAU",
     template: "%s | Studzy",
   },
   description:
-    "Studzy is a dedicated learning and revision platform for Software Engineering students at the University. Access course materials, structured resources, and exam-focused content in one organized workspace.",
+    "Studzy is a dedicated learning and revision platform for Software Engineering students at Obafemi Awolowo University (OAU). Access course materials, structured resources, and exam-focused content in one organized workspace.",
   keywords: [
-    "software engineering university resources",
-    "university software engineering courses",
+    "OAU software engineering",
+    "Obafemi Awolowo University resources",
+    "OAU department of computer science",
     "software engineering study platform",
-    "programming course materials university",
-    "computer science revision",
+    "programming course materials OAU",
+    "CSC 201 OAU",
+    "OAU lecture notes",
     "university exam preparation",
-    "engineering student resources",
   ],
   authors: [{ name: "Samkiel", url: "https://samkiel.dev" }],
   creator: "Samkiel",
@@ -39,15 +40,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://studzy.me",
     siteName: "Studzy",
-    title: "Studzy – Software Engineering Learning Platform | University",
+    title: "Studzy – Software Engineering Learning Platform | OAU",
     description:
-      "Studzy is a dedicated learning and revision platform for Software Engineering students at the University. Access course materials, structured resources, and exam-focused content in one organized workspace.",
+      "Studzy is a dedicated learning and revision platform for Software Engineering students at Obafemi Awolowo University (OAU). Access course materials, structured resources, and exam-focused content in one organized workspace.",
     images: [
       {
         url: "/og-image.png", // Ensure this exists or fallback to a default
         width: 1200,
         height: 630,
-        alt: "Studzy - Software Engineering Learning Platform",
+        alt: "Studzy - Software Engineering Learning Platform OAU",
       },
     ],
   },

@@ -58,6 +58,53 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
     setIsDownloading(false);
   };
 
+  const togglePlay = useCallback(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  }, [isPlaying]);
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const vol = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.volume = vol;
+      setVolume(vol);
+      setIsMuted(vol === 0);
+    }
+  };
+
+  const toggleMute = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  }, [isMuted]);
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const skipBackward = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+    }
+  }, []);
+
+  const skipForward = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+    }
+  }, [duration]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -84,37 +131,6 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
       audio.removeEventListener("ended", handleEnded);
     };
   }, [hasMarkedComplete, markComplete]);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  };
-
-  const skipBackward = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, currentTime - 10);
-    }
-  };
-
-  const skipForward = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.min(duration, currentTime + 10);
-    }
-  };
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -162,24 +178,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPlaying, currentTime, duration]); // Dependencies for closure stability if using simple variables, but here methods access refs/state
-
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const vol = parseFloat(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.volume = vol;
-      setVolume(vol);
-      setIsMuted(vol === 0);
-    }
-  };
-
-  const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
+  }, [togglePlay, skipForward, skipBackward, toggleMute]); // Dependencies updated
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";

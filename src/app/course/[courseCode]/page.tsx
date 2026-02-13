@@ -42,9 +42,9 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
     };
   }
 
-  const title = `${course.code} – ${course.title} | Software Engineering University | Studzy`;
+  const title = `${course.code} – ${course.title} | Software Engineering OAU | Studzy`;
   const description = course.description || 
-    `Access ${course.code} – ${course.title} course materials, lecture resources, and structured study content for Software Engineering students at the University.`;
+    `Access ${course.code} – ${course.title} course materials, lecture resources, and structured study content for Software Engineering students at Obafemi Awolowo University (OAU).`;
 
   return {
     title,
@@ -161,7 +161,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
     "@context": "https://schema.org",
     "@type": "Course",
     "name": typedCourse.title,
-    "description": typedCourse.description || `Study materials for ${typedCourse.code} at the University.`,
+    "description": typedCourse.description || `Study materials for ${typedCourse.code} at Obafemi Awolowo University (OAU).`,
     "provider": {
       "@type": "Organization",
       "name": "Studzy",
