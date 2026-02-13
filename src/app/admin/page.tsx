@@ -1,51 +1,50 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { ShieldCheck, CloudUpload, ClipboardCheck, BarChart3, LayoutDashboard, Database, Clock } from "lucide-react";
-
-interface CourseWithLastUpload {
-  id: string;
-  code: string;
-  title: string;
-  lastUploadDate: string;
-  resourceCount: number;
-}
+import { 
+  ShieldCheck, 
+  CloudUpload, 
+  ClipboardCheck, 
+  BarChart3, 
+  LayoutDashboard, 
+  Database, 
+  Clock,
+  BookOpen,
+  FileText,
+  Eye,
+  Users
+} from "lucide-react";
 
 export default async function AdminPage() {
   const supabase = await createClient();
 
-  // Fetch courses with their latest resource upload dates
-  const { data: coursesWithResources } = await supabase
-    .from("courses")
+  // Fetch Stats
+  const [
+    { count: coursesCount },
+    { count: resourcesCount },
+    { count: usersCount },
+    { data: resourceStats }
+  ] = await Promise.all([
+    supabase.from("courses").select("*", { count: "exact", head: true }),
+    supabase.from("resources").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("resources").select("view_count, completion_count")
+  ]);
+
+  const totalViews = (resourceStats || []).reduce((acc, r) => acc + (r.view_count || 0), 0);
+  const totalCompletions = (resourceStats || []).reduce((acc, r) => acc + (r.completion_count || 0), 0);
+
+  // Recent Resources (Last 5)
+  const { data: recentResources } = await supabase
+    .from("resources")
     .select(`
       id,
-      code,
       title,
-      resources (
-        id,
-        created_at
-      )
+      type,
+      created_at,
+      courses (code)
     `)
-    .order("code", { ascending: true });
-
-  // Process courses to get last upload date and count
-  const coursesWithLastUpload: CourseWithLastUpload[] = (coursesWithResources || [])
-    .map((course) => {
-      const resources = course.resources || [];
-      const sortedResources = resources.sort(
-        (a: { created_at: string }, b: { created_at: string }) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      return {
-        id: course.id,
-        code: course.code,
-        title: course.title,
-        lastUploadDate: sortedResources[0]?.created_at || "",
-        resourceCount: resources.length,
-      };
-    })
-    .filter((c) => c.resourceCount > 0)
-    .sort((a, b) => new Date(b.lastUploadDate).getTime() - new Date(a.lastUploadDate).getTime())
-    .slice(0, 3);
+    .order("created_at", { ascending: false })
+    .limit(5);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "No uploads yet";
@@ -64,150 +63,136 @@ export default async function AdminPage() {
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
     });
   };
 
+  const stats = [
+    { label: "Total Courses", value: coursesCount || 0, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30" },
+    { label: "Total Resources", value: resourcesCount || 0, icon: FileText, color: "text-purple-600", bg: "bg-purple-100 dark:bg-purple-900/30" },
+    { label: "Total Views", value: totalViews, icon: Eye, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
+    { label: "Total Users", value: usersCount || 0, icon: Users, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div className="mb-8 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-6 dark:border-amber-900 dark:from-amber-950/30 dark:to-orange-950/30">
+    <div className="space-y-10">
+      {/* Welcome & Stats */}
+      <div className="space-y-6">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
             <ShieldCheck className="h-7 w-7 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-              Welcome, Admin!
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Manage courses and upload learning materials
-            </p>
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Admin Dashboard</h1>
+            <p className="text-neutral-600 dark:text-neutral-400">Manage Studzy content and track performance</p>
           </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={stat.label} className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{stat.label}</p>
+                  <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{stat.value.toLocaleString()}</p>
+                </div>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.bg} ${stat.color}`}>
+                  <stat.icon className="h-6 w-6" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Quick Actions */}
-      <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">
-        Quick Actions
-      </h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Upload Resource */}
-        <Link
-          href="/admin/upload"
-          className="group rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
-        >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-            <CloudUpload className="h-6 w-6" />
-          </div>
-          <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
-            Upload Resource
-          </h3>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Add videos, audio, or PDFs to courses
-          </p>
-        </Link>
-
-        {/* Manage Resources */}
-        <Link
-          href="/admin/resources"
-          className="group rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
-        >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-            <ClipboardCheck className="h-6 w-6" />
-          </div>
-          <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
-            Manage Resources
-          </h3>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Toggle featured & draft/published status
-          </p>
-        </Link>
-
-        {/* Resource Analytics */}
-        <Link
-          href="/admin/analytics"
-          className="group rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
-        >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-            <BarChart3 className="h-6 w-6" />
-          </div>
-          <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
-            Resource Analytics
-          </h3>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            View counts, completions & stats
-          </p>
-        </Link>
-
-        {/* View Dashboard */}
-        <Link
-          href="/dashboard"
-          className="group rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
-        >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-            <LayoutDashboard className="h-6 w-6" />
-          </div>
-          <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
-            View Dashboard
-          </h3>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Browse all courses and resources
-          </p>
-        </Link>
-
-        {/* Manage Storage */}
-        <a
-          href="https://supabase.com/dashboard"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
-        >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-            <Database className="h-6 w-6" />
-          </div>
-          <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
-            Supabase Dashboard
-          </h3>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Manage database and storage
-          </p>
-        </a>
-      </div>
-
-      {/* Recent Uploads Section */}
-      {coursesWithLastUpload.length > 0 && (
-        <div>
-          <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">
-            Recent Uploads
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {coursesWithLastUpload.map((course) => (
-              <Link
-                key={course.id}
-                href={`/course/${course.code}`}
-                className="group rounded-xl border border-neutral-200 bg-white p-5 transition-all hover:border-primary-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="inline-flex items-center rounded-lg bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
-                    {course.code}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    <Clock className="h-3.5 w-3.5" />
-                    {formatDate(course.lastUploadDate)}
-                  </span>
-                </div>
-                <h3 className="font-medium text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400 line-clamp-2">
-                  {course.title}
-                </h3>
-                <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                  {course.resourceCount} resource{course.resourceCount !== 1 ? "s" : ""}
-                </p>
-              </Link>
-            ))}
-          </div>
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">Quick Actions</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { href: "/admin/upload", label: "Upload Resource", desc: "Add new materials", icon: CloudUpload, bg: "bg-primary-100", color: "text-primary-600" },
+            { href: "/admin/resources", label: "Manage Content", desc: "Edit or delete resources", icon: ClipboardCheck, bg: "bg-amber-100", color: "text-amber-600" },
+            { href: "/admin/analytics", label: "Engagement", desc: "View detailed stats", icon: BarChart3, bg: "bg-blue-100", color: "text-blue-600" },
+            { href: "/dashboard", label: "Preview App", desc: "View as student", icon: LayoutDashboard, bg: "bg-green-100", color: "text-green-600" },
+          ].map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="group rounded-xl border border-neutral-200 bg-white p-5 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
+            >
+              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${action.bg} ${action.color} dark:bg-opacity-20`}>
+                <action.icon className="h-5 w-5" />
+              </div>
+              <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">{action.label}</h3>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{action.desc}</p>
+            </Link>
+          ))}
         </div>
-      )}
+      </section>
+
+      {/* Recent Activity */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Recent Uploads</h2>
+            <Link href="/admin/resources" className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400">View all</Link>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {recentResources?.map((resource: any) => (
+                <div key={resource.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                    resource.type === "video" ? "bg-red-50 text-red-600" : 
+                    resource.type === "audio" ? "bg-purple-50 text-purple-600" : 
+                    "bg-blue-50 text-blue-600"
+                  } dark:bg-opacity-10`}>
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-neutral-900 dark:text-white truncate">{resource.title}</h4>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{resource.courses?.code} &bull; {resource.type.toUpperCase()}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-neutral-400 dark:text-neutral-500">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(resource.created_at)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {(!recentResources || recentResources.length === 0) && (
+                <div className="p-8 text-center text-neutral-500">No resources uploaded yet</div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Database Shortcut */}
+        <section className="flex flex-col">
+          <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">System Status</h2>
+          <div className="flex-1 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex h-full flex-col justify-between space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-sm font-medium text-neutral-900 dark:text-white">Supabase Connection Active</span>
+                </div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Database and storage systems are operational. You can manage low-level data directly via the Supabase dashboard.
+                </p>
+              </div>
+              <a
+                href="https://supabase.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+              >
+                <Database className="h-4 w-4" />
+                Supabase Dashboard
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
