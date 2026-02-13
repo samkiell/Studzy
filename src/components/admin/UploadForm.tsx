@@ -25,6 +25,7 @@ interface FileUpload {
   status: "pending" | "uploading" | "uploaded" | "saving" | "success" | "error";
   message?: string;
   title: string;
+  slug: string;
   description: string;
   fileUrl?: string;
   storagePath?: string;
@@ -187,6 +188,12 @@ export function UploadForm({ courses }: UploadFormProps) {
 
       // Auto-generate title from filename (strip extension)
       const autoTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      
+      // Auto-generate slug from title
+      const autoSlug = autoTitle.toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 50);
 
       validFiles.push({
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -194,6 +201,7 @@ export function UploadForm({ courses }: UploadFormProps) {
         progress: 0,
         status: "pending",
         title: autoTitle,
+        slug: autoSlug,
         description: "",
         type: detectedType,
       });
@@ -248,7 +256,24 @@ export function UploadForm({ courses }: UploadFormProps) {
 
   const updateFileTitle = (id: string, title: string) => {
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, title } : f))
+      prev.map((f) => {
+        if (f.id === id) {
+          // Also update slug if it was just auto-generated and not manually edited?
+          // For now, let's just make it easier for admin to edit both.
+          const newSlug = title.toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 50);
+          return { ...f, title, slug: newSlug };
+        }
+        return f;
+      })
+    );
+  };
+
+  const updateFileSlug = (id: string, slug: string) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, slug: slug.toLowerCase().replace(/[^a-z0-9-]+/g, "") } : f))
     );
   };
 
@@ -298,6 +323,7 @@ export function UploadForm({ courses }: UploadFormProps) {
           body: JSON.stringify({
             courseId: selectedCourseId,
             title: fileUpload.title.trim(),
+            slug: fileUpload.slug.trim(),
             description: fileUpload.description.trim(),
             type: fileUpload.type,
             fileUrl: fileUpload.fileUrl,
@@ -543,6 +569,16 @@ export function UploadForm({ courses }: UploadFormProps) {
                           }`}>
                             {fileUpload.type}
                           </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-neutral-400">Slug:</span>
+                          <input
+                            type="text"
+                            value={fileUpload.slug}
+                            onChange={(e) => updateFileSlug(fileUpload.id, e.target.value)}
+                            placeholder="url-slug"
+                            className="flex-1 rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                          />
                         </div>
                         <textarea
                           value={fileUpload.description}
