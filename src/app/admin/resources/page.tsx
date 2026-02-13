@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { AdminResourceTable } from "@/components/admin/AdminResourceTable";
+            <Star className="h-4 w-4 fill-current" />
 
 export default async function AdminResourcesPage() {
   const supabase = await createClient();
