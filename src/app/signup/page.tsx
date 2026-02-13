@@ -15,7 +15,7 @@ export default function SignupPage() {
             Create your account
           </h1>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            Start your learning journey today
+            Start your learning journey today, make you sha no go fail.
           </p>
         </div>
         <SignupForm />
