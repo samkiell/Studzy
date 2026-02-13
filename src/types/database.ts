@@ -23,6 +23,7 @@ export interface Course {
 export interface Resource {
   id: string;
   course_id: string;
+  slug: string;
   title: string;
   type: ResourceType;
   file_url: string;
@@ -80,6 +81,7 @@ export interface Database {
         Row: Resource;
         Insert: Omit<Resource, "id" | "created_at"> & {
           id?: string;
+          slug?: string;
           created_at?: string;
         };
         Update: Partial<Omit<Resource, "id">>;
