@@ -66,12 +66,12 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
     robots: { index: false, follow: false }
   };
 
-  const titleBase = `${resource.title} – ${course.code} Resource | Studzy`;
+  const titleBase = `${resource.title} – ${course.code} | OAU Resource | Studzy`;
   const title = resource.featured ? `Featured Resource | ${titleBase}` : titleBase;
   
   const description = resource.description 
     ? resource.description.slice(0, 150) + (resource.description.length > 150 ? "..." : "")
-    : `Study "${resource.title}" from ${course.code} – ${course.title}. Structured resource for Software Engineering students at the University.`;
+    : `Study "${resource.title}" from ${course.code} – ${course.title}. Structured resource for Software Engineering students at Obafemi Awolowo University (OAU).`;
 
   const url = `https://studzy.me/course/${course.code}/resource/${resource.slug}`;
 
@@ -212,7 +212,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     "@context": "https://schema.org",
     "@type": "EducationalResource",
     "name": resource.title,
-    "description": resource.description || `Study material for ${course.code}`,
+    "description": resource.description || `Study material for ${course.code} at Obafemi Awolowo University (OAU).`,
     "educationalLevel": "University",
     "learningResourceType": resource.type === 'video' ? 'VideoObject' : 'LectureMaterial',
     "provider": {
