@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { 
   MessageSquare, 
@@ -13,7 +14,8 @@ import {
   X, 
   ImageUp, 
   Send, 
-  Loader2 
+  Loader2,
+  ExternalLink 
 } from "lucide-react";
 
 type ChatMode = "chat" | "image" | "search" | "code";
@@ -39,12 +41,14 @@ const modeConfig = {
 };
 
 export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<ChatMode>("chat");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [enableSearch, setEnableSearch] = useState(false);
+  const [openingWorkspace, setOpeningWorkspace] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -185,6 +189,33 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     setInput("");
   };
 
+  const openFullWorkspace = async () => {
+    setOpeningWorkspace(true);
+    try {
+      // Create a new session and redirect
+      const res = await fetch("/api/ai/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New Chat" }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        onClose();
+        router.push(`/studzyai/chat/${data.session.id}`);
+      } else {
+        // Fallback: just go to /studzyai which will create a session
+        onClose();
+        router.push("/studzyai");
+      }
+    } catch {
+      onClose();
+      router.push("/studzyai");
+    } finally {
+      setOpeningWorkspace(false);
+    }
+  };
+
   if (!mounted) return null;
   if (!isOpen) return null;
 
@@ -209,7 +240,20 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               Created by Samkiel
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={openFullWorkspace}
+              disabled={openingWorkspace}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
+              title="Open Full Workspace"
+            >
+              {openingWorkspace ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Full Workspace</span>
+            </button>
             <button
               onClick={clearChat}
               className="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
