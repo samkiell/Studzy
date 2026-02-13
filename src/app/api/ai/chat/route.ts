@@ -98,7 +98,6 @@ export async function POST(request: NextRequest) {
     // Convert messages to Mistral format
     for (const msg of messages) {
       if (msg.role === "user") {
-        // Check if this message has an image
         if (msg.image) {
           mistralMessages.push({
             role: "user",
@@ -147,6 +146,7 @@ export async function POST(request: NextRequest) {
         temperature: mode === "code" ? 0.3 : 0.7,
         max_tokens: mode === "code" ? 4096 : 2048,
         top_p: 0.95,
+        stream: true, // Enable streaming
       }),
     });
 
@@ -159,10 +159,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
+    // Create a streaming response
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    
+    const stream = new ReadableStream({
+      async start(controller) {
+        if (!response.body) {
+          controller.close();
+          return;
+        }
+        const reader = response.body.getReader();
+        let buffer = "";
 
-    return NextResponse.json({ content });
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            // Decode the chunk and add to buffer
+            const chunk = decoder.decode(value, { stream: true });
+            buffer += chunk;
+
+            // Process lines in buffer
+            const lines = buffer.split('\n');
+            // Keep the last partial line in buffer
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (!trimmedLine) continue;
+              
+              if (trimmedLine === "data: [DONE]") {
+                continue;
+              }
+
+              if (trimmedLine.startsWith("data: ")) {
+                try {
+                  const jsonStr = trimmedLine.slice(6);
+                  const data = JSON.parse(jsonStr);
+                  const content = data.choices[0]?.delta?.content || "";
+                  if (content) {
+                    controller.enqueue(encoder.encode(content));
+                  }
+                } catch (e) {
+                  console.error("Error parsing JSON chunk", e);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Stream reading error", err);
+          controller.error(err);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new NextResponse(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+      },
+    });
+
   } catch (error) {
     console.error("Error in AI chat API:", error);
     return NextResponse.json(
