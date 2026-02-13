@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StudzyAIModal } from "./StudzyAIModal";
+import { createClient } from "@/lib/supabase/client";
 
 export function StudzyAIButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsAuthenticated(!!user);
+    });
+  }, []);
+
+  if (!isAuthenticated) return null;
 
   return (
     <>
