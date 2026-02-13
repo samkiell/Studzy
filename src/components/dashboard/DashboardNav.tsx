@@ -9,9 +9,10 @@ import type { User } from "@supabase/supabase-js";
 
 interface DashboardNavProps {
   user: User;
+  isAdmin?: boolean;
 }
 
-export function DashboardNav({ user }: DashboardNavProps) {
+export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +43,17 @@ export function DashboardNav({ user }: DashboardNavProps) {
             >
               Dashboard
             </Link>
+            {isAdmin && (
+              <Link 
+                href="/admin"
+                className="flex items-center gap-1.5 rounded-md bg-amber-100 px-2.5 py-1 text-sm font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Admin
+              </Link>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-4">
