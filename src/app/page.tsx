@@ -70,6 +70,9 @@ export default function Home() {
             </p>
           </div>
         </div>
+        <p className="mt-8 text-center text-xs italic text-neutral-400 dark:text-neutral-600">
+          we dont have a name yet i could have used it.
+        </p>
       </section>
 
       {/* Footer */}
