@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export function SignupForm() {
   const router = useRouter();
@@ -101,9 +102,8 @@ export function SignupForm() {
         required
         autoComplete="email"
       />
-      <Input
+      <PasswordInput
         id="password"
-        type="password"
         label="Password"
         placeholder="••••••••"
         value={password}
@@ -111,9 +111,8 @@ export function SignupForm() {
         required
         autoComplete="new-password"
       />
-      <Input
+      <PasswordInput
         id="confirmPassword"
-        type="password"
         label="Confirm Password"
         placeholder="••••••••"
         value={confirmPassword}
