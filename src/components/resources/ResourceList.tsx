@@ -3,9 +3,10 @@ import type { Resource } from "@/types/database";
 
 interface ResourceListProps {
   resources: Resource[];
+  courseId: string;
 }
 
-export function ResourceList({ resources }: ResourceListProps) {
+export function ResourceList({ resources, courseId }: ResourceListProps) {
   if (resources.length === 0) {
     return (
       <div className="rounded-xl border border-neutral-200 bg-white p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
@@ -37,7 +38,7 @@ export function ResourceList({ resources }: ResourceListProps) {
   return (
     <div className="space-y-3">
       {resources.map((resource) => (
-        <ResourceCard key={resource.id} resource={resource} />
+        <ResourceCard key={resource.id} resource={resource} courseId={courseId} />
       ))}
     </div>
   );
