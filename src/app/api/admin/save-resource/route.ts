@@ -106,3 +106,44 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Check admin status
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    if (profile?.role !== "admin") return NextResponse.json({ success: false, message: "Admin only" }, { status: 403 });
+
+    const body = await request.json();
+    const { id, title, slug, type, description, status, featured } = body;
+
+    if (!id) return NextResponse.json({ success: false, message: "Resource ID required" }, { status: 400 });
+
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (slug !== undefined) updateData.slug = slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (type !== undefined) updateData.type = type;
+    if (description !== undefined) updateData.description = description?.trim() || null;
+    if (status !== undefined) updateData.status = status;
+    if (featured !== undefined) updateData.featured = featured;
+
+    const { error: updateError } = await supabase
+      .from("resources")
+      .update(updateData)
+      .eq("id", id);
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({ success: true, message: "Resource updated successfully" });
+  } catch (error) {
+    console.error("Update resource error:", error);
+    return NextResponse.json({
+      success: false,
+      message: error instanceof Error ? error.message : "Update failed",
+    }, { status: 500 });
+  }
+}
