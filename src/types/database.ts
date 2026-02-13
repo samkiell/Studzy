@@ -1,6 +1,8 @@
 export type ResourceType = "audio" | "video" | "pdf";
 export type ResourceStatus = "draft" | "published";
 export type UserRole = "user" | "admin";
+export type ChatMode = "chat" | "image" | "search" | "code";
+export type ChatRole = "user" | "assistant";
 
 export interface Profile {
   id: string;
@@ -33,6 +35,26 @@ export interface Resource {
 
 export interface CourseWithResources extends Course {
   resources: Resource[];
+}
+
+export interface ChatSession {
+  id: string;
+  user_id: string;
+  title: string;
+  is_starred: boolean;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  role: ChatRole;
+  content: string;
+  mode: ChatMode;
+  image_url: string | null;
+  created_at: string;
 }
 
 export interface Database {
