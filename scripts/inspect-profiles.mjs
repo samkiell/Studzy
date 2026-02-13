@@ -27,15 +27,12 @@ const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 async function inspectProfiles() {
-  const { data, error } = await supabase.rpc("exec_sql", {
-    query:
-      "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'profiles'",
-  });
+  const { data, error } = await supabase.from("profiles").select("*").limit(1);
 
   if (error) {
     console.error("Inspection Error:", error);
   } else {
-    console.log("Profiles Table Columns:");
+    console.log("Profiles Sample Data:");
     console.log(JSON.stringify(data, null, 2));
   }
 }
