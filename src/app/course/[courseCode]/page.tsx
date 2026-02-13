@@ -11,17 +11,42 @@ interface CoursePageProps {
 }
 
 export default async function CoursePage({ params }: CoursePageProps) {
-  const { courseCode } = await params;
+  const { courseCode: rawCourseCode } = await params;
+  const courseCode = decodeURIComponent(rawCourseCode);
   const supabase = await createClient();
 
-  // Fetch course details - try by code first, then by ID (for redirect support)
-  const { data: course, error: courseError } = await supabase
+  console.log(`[CoursePage] Fetching course for code/ID: "${courseCode}"`);
+
+  // Try fetching by code first
+  let { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .or(`code.eq."${courseCode}",id.eq."${courseCode}"`)
+    .eq("code", courseCode)
     .maybeSingle();
 
-  if (courseError || !course) {
+  // If not found by code, try by ID if it looks like a UUID
+  if (!course && !courseError && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseCode)) {
+    const { data: idCourse, error: idError } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("id", courseCode)
+      .maybeSingle();
+    
+    if (idCourse) {
+      course = idCourse;
+      courseError = idError;
+    }
+  }
+
+  if (courseError) {
+    console.error(`[CoursePage] Database error:`, courseError);
+    // Don't call notFound() yet, maybe retry or show error? 
+    // For now, let's stay with notFound but log the error.
+    notFound();
+  }
+
+  if (!course) {
+    console.warn(`[CoursePage] Course not found for: "${courseCode}"`);
     notFound();
   }
 
