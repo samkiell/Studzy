@@ -40,7 +40,9 @@ export function ChatPanel({
   const [mode, setMode] = useState<ChatMode>("chat");
   const [input, setInput] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [enableSearch, setEnableSearch] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,12 +71,7 @@ export function ChatPanel({
       if (item.type.startsWith("image/")) {
         const file = item.getAsFile();
         if (file) {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            setImage(ev.target?.result as string);
-            setMode("image");
-          };
-          reader.readAsDataURL(file);
+          processImageFile(file);
         }
       }
     }
@@ -85,30 +82,74 @@ export function ChatPanel({
     return () => document.removeEventListener("paste", handlePaste);
   }, [handlePaste]);
 
+  const processImageFile = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image must be under 10MB");
+      return;
+    }
+    setImageFile(file);
+    setMode("image");
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setImage(ev.target?.result as string);
-        setMode("image");
-      };
-      reader.readAsDataURL(file);
+    if (file) processImageFile(file);
+  };
+
+  const uploadImageToStorage = async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/ai/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        console.error("Image upload failed:", data.error);
+        return null;
+      }
+
+      const data = await res.json();
+      return data.url;
+    } catch (err) {
+      console.error("Image upload error:", err);
+      return null;
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const removeImage = () => {
     setImage(null);
+    setImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if ((!input.trim() && !image) || isLoading) return;
+    if ((!input.trim() && !image) || isLoading || isUploading) return;
 
     const content = input.trim();
     setInput("");
     setIsLoading(true);
+
+    // Upload image to storage if present
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      imageUrl = await uploadImageToStorage(imageFile);
+      if (!imageUrl && !content) {
+        setIsLoading(false);
+        return; // Image upload failed and no text
+      }
+    }
 
     // Optimistic user message
     const tempUserMsg: ChatMessage = {
@@ -117,12 +158,12 @@ export function ChatPanel({
       role: "user",
       content,
       mode,
-      image_url: image,
+      image_url: imageUrl || image,
       created_at: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, tempUserMsg]);
-    const sentImage = image;
     setImage(null);
+    setImageFile(null);
 
     try {
       const response = await fetch(`/api/ai/sessions/${sessionId}/messages`, {
@@ -131,7 +172,7 @@ export function ChatPanel({
         body: JSON.stringify({
           content,
           mode,
-          image: sentImage,
+          image: imageUrl,
           enable_search: enableSearch || mode === "search",
         }),
       });
@@ -394,20 +435,30 @@ export function ChatPanel({
         <div className="mx-auto max-w-3xl">
           {/* Image Preview */}
           {image && (
-            <div className="mb-3 flex items-start gap-2">
+            <div className="mb-3 flex items-start gap-3">
               <div className="relative">
                 <img
                   src={image}
                   alt="Preview"
                   className="h-20 w-20 rounded-lg border border-neutral-200 object-cover dark:border-neutral-700"
                 />
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
+                    <Loader2 className="h-5 w-5 animate-spin text-white" />
+                  </div>
+                )}
                 <button
                   onClick={removeImage}
-                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+                  disabled={isUploading}
+                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 disabled:opacity-50"
+                  title="Remove image"
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {imageFile?.name || "Pasted image"}
+              </p>
             </div>
           )}
 
@@ -467,10 +518,10 @@ export function ChatPanel({
             <div className="shrink-0 pb-1">
               <button
                 onClick={() => handleSubmit()}
-                disabled={(!input.trim() && !image) || isLoading}
+                disabled={(!input.trim() && !image) || isLoading || isUploading}
                 className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-primary-600 text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? (
+                {isLoading || isUploading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   <Send className="h-5 w-5" />
