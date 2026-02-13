@@ -14,7 +14,8 @@ import {
   ImageUp, 
   Send, 
   Loader2,
-  ExternalLink 
+  ExternalLink,
+  StopCircle
 } from "lucide-react";
 import NextImage from "next/image";
 
@@ -115,9 +116,19 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     }
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if ((!input.trim() && !image) || isLoading) return;
+
+    // Previous controller cleanup (just in case)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -127,7 +138,15 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
       mode,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const assistantMsgId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMsgId,
+      role: "assistant",
+      content: "",
+      mode,
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
     setImage(null);
     setIsLoading(true);
@@ -146,38 +165,61 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           enable_code: mode === "code",
           image: image || undefined,
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) throw new Error("Failed to get response");
+      if (!response.body) throw new Error("No response body");
 
-      const data = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.content,
-        mode,
-      };
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunkValue = decoder.decode(value, { stream: !done });
+        
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? { ...msg, content: msg.content + chunkValue }
+              : msg
+          )
+        );
+      }
 
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      // Log activity
+      // Log activity only on success/completion
       const actionType = mode === "image" ? "ai_image" : mode === "code" ? "ai_code" : "ai_chat";
       fetch("/api/log-activity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ actionType }),
       }).catch(console.error);
-    } catch (error) {
-      console.error("Error:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-        mode,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.log("Request aborted");
+      } else {
+        console.error("Error:", error);
+        setMessages((prev) => 
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? { ...msg, content: msg.content + "\n\n[Error: Message generation failed. Please try again.]" }
+              : msg
+          )
+        );
+      }
     } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
   };
@@ -464,12 +506,18 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               rows={1}
             />
             <button
-              type="submit"
-              disabled={(!input.trim() && !image) || isLoading}
-              className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+              type={isLoading ? "button" : "submit"}
+              onClick={isLoading ? handleStop : undefined}
+              disabled={!isLoading && (!input.trim() && !image)}
+              className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                isLoading 
+                  ? "bg-red-500 hover:bg-red-600" 
+                  : "bg-primary-600 hover:bg-primary-700"
+              }`}
+              title={isLoading ? "Stop generating" : "Send message"}
             >
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <StopCircle className="h-5 w-5" />
               ) : (
                 <Send className="h-5 w-5" />
               )}
