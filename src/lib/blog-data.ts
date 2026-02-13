@@ -53,4 +53,52 @@ export const blogPosts: BlogPost[] = [
       </p>
     `,
   },
+  {
+    slug: "ai-quiz-generation-guide",
+    title: "How to Generate Smart Quizzes from Your Lecture Notes",
+    description: "Learn how to use Studzy AI to transform your static lecture notes into interactive practice quizzes that test your understanding and identify knowledge gaps.",
+    date: "February 12, 2026",
+    readingTime: "4 min read",
+    category: "Tutorials",
+    content: `
+      <h2>The Power of Active Recall</h2>
+      <p>Active recall is one of the most effective study techniques. Instead of just reading, you force your brain to retrieve information. AI makes this easy.</p>
+      <h2>Step-by-Step Quiz Generation</h2>
+      <p>1. Upload your PDF notes.<br/>2. Select 'Generate Quiz'.<br/>3. Review the AI-generated questions.</p>
+      <h2>Tailoring Your Practice</h2>
+      <p>Studzy AI allows you to choose the difficulty level and question types, making your practice sessions as close to the real exam as possible.</p>
+    `,
+  },
+  {
+    slug: "benefits-of-ai-flashcards",
+    title: "Why AI-Powered Flashcards Are Better for Retention",
+    description: "Traditional flashcards are great, but AI flashcards take learning to the next level by automatically identifying key concepts and using spaced repetition.",
+    date: "February 10, 2026",
+    readingTime: "6 min read",
+    category: "Learning Science",
+    content: `
+      <h2>The Problem with Manual Flashcards</h2>
+      <p>Making flashcards manually takes forever. Usually, by the time you're done making them, you're too tired to actually study them.</p>
+      <h2>How AI Fixes the Workflow</h2>
+      <p>Our AI reads your material and instantly identifies definitions, formulas, and key facts. It then formats them into perfect front-and-back cards.</p>
+      <h2>Science-Backed Learning</h2>
+      <p>Combine AI generation with spaced repetition to ensure you never forget what you've learned.</p>
+    `,
+  },
+  {
+    slug: "exam-prediction-explained",
+    title: "Can AI Really Predict Your Exam Questions?",
+    description: "Explore the technology behind Studzy AI's exam predictor and how it analyzes syllabus patterns and lecture emphasis to highlight likely exam topics.",
+    date: "February 8, 2026",
+    readingTime: "5 min read",
+    category: "Technology",
+    content: `
+      <h2>Data-Driven Revision</h2>
+      <p>Modern exams often follow predictable patterns based on the syllabus and previous years' papers. Our AI finds these patterns for you.</p>
+      <h2>Analyzing Lecture Emphasis</h2>
+      <p>The AI identifies which topics your professor spent the most time on in your uploaded audio or notes, as these are statistically more likely to be tested.</p>
+      <h2>A Focused Revision Strategy</h2>
+      <p>Stop guessing what will be on the test. Use data to prioritize your study time effectively.</p>
+    `,
+  },
 ];
