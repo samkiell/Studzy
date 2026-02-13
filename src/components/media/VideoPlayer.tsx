@@ -261,23 +261,18 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
       const width = rect.width;
 
       if (relativeX < width * 0.3) {
-        // Left 30% -> Seek back
         seek(-10);
       } else if (relativeX > width * 0.7) {
-        // Right 30% -> Seek forward
         seek(10);
       } else {
-        // Center -> Toggle play/pause (optional, usually users expect toggle controls or play)
         togglePlay();
       }
-      lastTapRef.current = 0; // Reset
+      // Ensure controls are visible after double tap action
+      resetControlsTimeout();
+      lastTapRef.current = 0; 
     } else {
       // Single tap
       lastTapRef.current = now;
-      // Wait to see if it's a double tap? 
-      // For immediate response, we toggle controls on single tap.
-      // If double tap follows, the seek action happens.
-      // We might want to delay the single tap action, but toggle controls is harmless.
       setShowControls(prev => !prev);
     }
   };
