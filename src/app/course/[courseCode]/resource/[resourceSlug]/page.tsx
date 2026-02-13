@@ -74,7 +74,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           <LockedResourcePreview
             resourceType={resource.type}
             title={resource.title}
-            courseId={courseId}
+            courseId={course.id}
           />
         </main>
       </div>
@@ -97,7 +97,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             </Link>
             <span className="text-neutral-300 dark:text-neutral-700">/</span>
             <Link
-              href={`/course/${courseId}`}
+              href={`/course/${course.code}`}
               className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
             >
               {course?.code || "Course"}
@@ -176,19 +176,19 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Media Player */}
         {resource.type === "video" && (
-          <VideoPlayer src={resource.file_url} title={resource.title} resourceId={resourceId} />
+          <VideoPlayer src={resource.file_url} title={resource.title} resourceId={resource.id} />
         )}
         {resource.type === "audio" && (
-          <AudioPlayer src={resource.file_url} title={resource.title} resourceId={resourceId} />
+          <AudioPlayer src={resource.file_url} title={resource.title} resourceId={resource.id} />
         )}
         {resource.type === "pdf" && (
-          <PDFViewer src={resource.file_url} title={resource.title} resourceId={resourceId} />
+          <PDFViewer src={resource.file_url} title={resource.title} resourceId={resource.id} />
         )}
 
         {/* Back Link */}
         <div className="mt-8">
           <Link
-            href={`/course/${courseId}`}
+            href={`/course/${course.code}`}
             className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
