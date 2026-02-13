@@ -61,7 +61,10 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
     resource = data;
   }
 
-  if (!resource) return { title: "Resource Not Found | Studzy" };
+  if (!resource) return { 
+    title: "Resource Not Found | Studzy",
+    robots: { index: false, follow: false }
+  };
 
   const titleBase = `${resource.title} – ${course.code} Resource | Studzy`;
   const title = resource.featured ? `Featured Resource | ${titleBase}` : titleBase;
