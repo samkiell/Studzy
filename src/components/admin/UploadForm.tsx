@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { uploadResource } from "@/app/admin/actions";
 import type { Course, ResourceType } from "@/types/database";
 
@@ -24,6 +24,14 @@ export function UploadForm({ courses }: UploadFormProps) {
   const [dragActive, setDragActive] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to message when it appears
+  useEffect(() => {
+    if (message && messageRef.current) {
+      messageRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [message]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -104,38 +112,6 @@ export function UploadForm({ courses }: UploadFormProps) {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-      {/* Status Message */}
-      {message && (
-        <div
-          className={`rounded-lg p-4 ${
-            message.type === "success"
-              ? "border border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-900/20 dark:text-green-400"
-              : "border border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {message.type === "success" ? (
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-            <p className="font-medium">{message.text}</p>
-          </div>
-        </div>
-      )}
-
       {/* Course Selection */}
       <div>
         <label
@@ -423,6 +399,50 @@ export function UploadForm({ courses }: UploadFormProps) {
           </>
         )}
       </button>
+
+      {/* Status Message - Below Button */}
+      {message && (
+        <div
+          ref={messageRef}
+          className={`rounded-lg p-4 ${
+            message.type === "success"
+              ? "border border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-900/20 dark:text-green-400"
+              : "border border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {message.type === "success" ? (
+              <svg className="h-5 w-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+            <div className="flex-1">
+              <p className="font-medium">{message.text}</p>
+              {message.type === "error" && (
+                <button
+                  type="button"
+                  onClick={() => setMessage(null)}
+                  className="mt-2 text-sm underline hover:no-underline"
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
