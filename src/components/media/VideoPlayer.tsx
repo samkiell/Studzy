@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { 
   Play, 
   Pause, 
@@ -112,15 +112,48 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
     }
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = async () => {
+    const container = videoRef.current?.parentElement;
+    if (!container) return;
+
     if (!document.fullscreenElement) {
-      videoRef.current?.parentElement?.requestFullscreen();
+      await container.requestFullscreen();
       setIsFullscreen(true);
+
+      // Lock to landscape on mobile if supported
+      try {
+        await (screen.orientation as any).lock?.("landscape");
+      } catch {
+        // Orientation lock not supported or not allowed — ignore
+      }
     } else {
-      document.exitFullscreen();
+      await document.exitFullscreen();
       setIsFullscreen(false);
+
+      // Unlock orientation
+      try {
+        screen.orientation?.unlock?.();
+      } catch {
+        // ignore
+      }
     }
   };
+
+  // Sync fullscreen state when user exits via Escape or device back button
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+        try {
+          screen.orientation?.unlock?.();
+        } catch {
+          // ignore
+        }
+      }
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
