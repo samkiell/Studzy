@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { BookOpen, Search } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -9,7 +10,7 @@ export default function NotFound() {
           404
         </h1>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-6xl">📚</span>
+          <BookOpen className="h-16 w-16 text-primary-500" />
         </div>
       </div>
       
@@ -38,7 +39,7 @@ export default function NotFound() {
       </div>
 
       <p className="mt-8 text-xs text-neutral-400 dark:text-neutral-600">
-        Error 404 • Page not found • Maybe try the search bar next time? 🤷
+        Error 404 • Page not found • Maybe try the search bar next time? <Search className="inline h-3 w-3" />
       </p>
     </main>
   );
