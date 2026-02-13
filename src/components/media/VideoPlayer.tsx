@@ -10,8 +10,12 @@ import {
   Download, 
   Maximize2 as Expand, 
   Minimize2 as Minimize,
-  Check
+  Check,
+  RotateCcw,
+  RotateCw
 } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
+import { downloadFile } from "@/lib/download";
 
 interface VideoPlayerProps {
   src: string;
@@ -22,6 +26,10 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTapRef = useRef<number>(0);
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -30,6 +38,33 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Auto-hide controls
+  const resetControlsTimeout = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    resetControlsTimeout();
+    return () => {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [isPlaying, resetControlsTimeout]);
+
+  // Handle interaction to keep controls visible
+  const handleInteraction = () => {
+    resetControlsTimeout();
+  };
 
   // Mark as complete when 90% watched
   const markComplete = useCallback(async () => {
@@ -49,17 +84,24 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
     }
   }, [hasMarkedComplete, resourceId, onComplete]);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
     }
   };
 
-  const togglePlay = () => {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isDownloading) return;
+    
+    setIsDownloading(true);
+    await downloadFile(src, `${title.replace(/\s+/g, "_")}.mp4`);
+    setIsDownloading(false);
+  };
+
+  const togglePlay = useCallback(() => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -67,8 +109,80 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
+      resetControlsTimeout();
     }
-  };
+  }, [isPlaying, resetControlsTimeout]);
+
+  const seek = useCallback((seconds: number) => {
+    if (videoRef.current) {
+      const newTime = Math.min(Math.max(0, videoRef.current.currentTime + seconds), duration);
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+      resetControlsTimeout();
+    }
+  }, [duration, resetControlsTimeout]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if video is focused or fullscreen, or generally focused on page body
+      // But avoid interfering with inputs
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+      
+      // Check if container contains focus or just global listeners
+      // For better UX, let's attach global listeners when video is visible/playing
+      // or attach strictly to container when focused.
+      // BUT for simplicity and standard player behavior, users expect Space to pause if they just clicked the video.
+      // We'll rely on global listener but check context.
+      
+      switch(e.code) {
+        case "Space":
+        case "k":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          seek(10);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          seek(-10);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          if (videoRef.current) {
+            const newVol = Math.min(1, videoRef.current.volume + 0.1);
+            videoRef.current.volume = newVol;
+            setVolume(newVol);
+            setIsMuted(newVol === 0);
+            resetControlsTimeout();
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (videoRef.current) {
+            const newVol = Math.max(0, videoRef.current.volume - 0.1);
+            videoRef.current.volume = newVol;
+            setVolume(newVol);
+            setIsMuted(newVol === 0);
+            resetControlsTimeout();
+          }
+          break;
+        case "KeyF":
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case "KeyM":
+          e.preventDefault();
+          toggleMute();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlay, seek, toggleFullscreen, toggleMute]); // Dependencies need to be stable or wrapped in useCallback
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -88,12 +202,13 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
     }
   };
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value);
     if (videoRef.current) {
       videoRef.current.currentTime = time;
       setCurrentTime(time);
     }
+    resetControlsTimeout();
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +218,7 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
       setVolume(vol);
       setIsMuted(vol === 0);
     }
+    resetControlsTimeout();
   };
 
   const toggleMute = () => {
@@ -110,45 +226,68 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
+    resetControlsTimeout();
   };
 
   const toggleFullscreen = async () => {
-    const container = videoRef.current?.parentElement;
-    if (!container) return;
+    if (!containerRef.current) return;
 
     if (!document.fullscreenElement) {
-      await container.requestFullscreen();
+      await containerRef.current.requestFullscreen();
       setIsFullscreen(true);
-
-      // Lock to landscape on mobile if supported
       try {
         await (screen.orientation as any).lock?.("landscape");
-      } catch {
-        // Orientation lock not supported or not allowed — ignore
-      }
+      } catch {}
     } else {
       await document.exitFullscreen();
       setIsFullscreen(false);
-
-      // Unlock orientation
       try {
         screen.orientation?.unlock?.();
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
   };
 
-  // Sync fullscreen state when user exits via Escape or device back button
+  // Touch / Click Handler
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement> | React.TouchEvent<HTMLVideoElement>) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    // Tap logic
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      const rect = (e.target as HTMLVideoElement).getBoundingClientRect();
+      const x = "clientX" in e ? (e as React.MouseEvent).clientX : (e as React.TouchEvent).touches[0].clientX;
+      const relativeX = x - rect.left;
+      const width = rect.width;
+
+      if (relativeX < width * 0.3) {
+        // Left 30% -> Seek back
+        seek(-10);
+      } else if (relativeX > width * 0.7) {
+        // Right 30% -> Seek forward
+        seek(10);
+      } else {
+        // Center -> Toggle play/pause (optional, usually users expect toggle controls or play)
+        togglePlay();
+      }
+      lastTapRef.current = 0; // Reset
+    } else {
+      // Single tap
+      lastTapRef.current = now;
+      // Wait to see if it's a double tap? 
+      // For immediate response, we toggle controls on single tap.
+      // If double tap follows, the seek action happens.
+      // We might want to delay the single tap action, but toggle controls is harmless.
+      setShowControls(prev => !prev);
+    }
+  };
+
+  // Sync fullscreen state
   useEffect(() => {
     const onFullscreenChange = () => {
       if (!document.fullscreenElement) {
         setIsFullscreen(false);
-        try {
-          screen.orientation?.unlock?.();
-        } catch {
-          // ignore
-        }
+        try { screen.orientation?.unlock?.(); } catch {}
       }
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
@@ -162,7 +301,13 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-black">
+    <div 
+      ref={containerRef}
+      className="group relative overflow-hidden rounded-xl bg-black outline-none focus:ring-2 focus:ring-primary-500"
+      onMouseMove={handleInteraction}
+      onTouchStart={handleInteraction}
+      tabIndex={0} // Make focusable for keyboard events
+    >
       {/* Studzy Watermark */}
       <div className="pointer-events-none absolute bottom-12 left-2 z-10 select-none sm:bottom-16 sm:left-4">
         <span className="text-sm font-bold text-white/40 drop-shadow-lg sm:text-lg">Studzy</span>
@@ -171,17 +316,25 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
       <video
         ref={videoRef}
         src={src}
-        className="aspect-video w-full"
+        className="aspect-video w-full cursor-pointer"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => { setIsPlaying(false); setShowControls(true); }}
+        onClick={handleVideoClick}
         title={title}
       />
 
+      {/* Touch Action Indicators (visual feedback could be added here for double tap) */}
+
       {/* Controls Overlay */}
-      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+      <div 
+        className={`absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={(e) => e.stopPropagation()} // Prevent clicking controls from toggling controls
+      >
         {/* Progress Bar */}
         <div className="px-2 sm:px-4">
           <input
@@ -189,17 +342,18 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             min={0}
             max={duration || 100}
             value={currentTime}
-            onChange={handleSeek}
-            className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/30 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+            onChange={handleSeekChange}
+            className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/30 hover:bg-white/50 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-125"
           />
         </div>
 
-        {/* Controls */}
+        {/* Controls Bar */}
         <div className="flex items-center gap-2 p-2 sm:gap-4 sm:p-4">
           {/* Play/Pause */}
           <button
             onClick={togglePlay}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 sm:h-10 sm:w-10"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 sm:h-10 sm:w-10 focus:outline-none focus:ring-2 focus:ring-white/50"
+            title={isPlaying ? "Pause (Space)" : "Play (Space)"}
           >
             {isPlaying ? (
               <Pause className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
@@ -208,19 +362,36 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
             )}
           </button>
 
+          {/* Skip Buttons (Mobile/Desktop friendly) */}
+          <button 
+            onClick={() => seek(-10)}
+            className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/10"
+            title="Rewind 10s (Left Arrow)"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+          <button 
+            onClick={() => seek(10)}
+            className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/10"
+            title="Forward 10s (Right Arrow)"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
+
           {/* Time */}
-          <span className="text-xs text-white sm:text-sm">
+          <span className="text-xs text-white sm:text-sm font-mono">
             {formatTime(currentTime)}
-            <span className="hidden xs:inline"> / {formatTime(duration)}</span>
+            <span className="text-white/70"> / {formatTime(duration)}</span>
           </span>
 
           <div className="flex-1" />
 
-          {/* Volume - hidden on mobile */}
-          <div className="hidden items-center gap-2 sm:flex">
+          {/* Volume Group */}
+          <div className="group/volume relative flex items-center">
             <button
               onClick={toggleMute}
-              className="text-white transition-colors hover:text-white/80"
+              className="p-2 text-white transition-colors hover:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg"
+              title={isMuted ? "Unmute (M)" : "Mute (M)"}
             >
               {isMuted || volume === 0 ? (
                 <VolumeX className="h-5 w-5" />
@@ -228,34 +399,24 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
                 <Volume2 className="h-5 w-5" />
               )}
             </button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.1}
-              value={isMuted ? 0 : volume}
-              onChange={handleVolumeChange}
-              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-white/30 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-            />
+            <div className="hidden sm:flex w-0 overflow-hidden transition-all duration-300 group-hover/volume:w-24 pl-2">
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.1}
+                value={isMuted ? 0 : volume}
+                onChange={handleVolumeChange}
+                className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-white/30 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+              />
+            </div>
           </div>
-
-          {/* Mute button on mobile only */}
-          <button
-            onClick={toggleMute}
-            className="text-white transition-colors hover:text-white/80 sm:hidden"
-          >
-            {isMuted || volume === 0 ? (
-              <VolumeX className="h-5 w-5" />
-            ) : (
-              <Volume2 className="h-5 w-5" />
-            )}
-          </button>
 
           {/* Share */}
           <button
-            onClick={copyLink}
-            className="relative text-white transition-colors hover:text-white/80"
-            title="Copy link"
+            onClick={handleCopyLink}
+            className="relative p-2 text-white transition-colors hover:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg"
+            title="Copy link to clipboard"
           >
             {copied ? (
               <Check className="h-5 w-5 text-green-400" />
@@ -265,20 +426,20 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
           </button>
 
           {/* Download */}
-          <a
-            href={src}
-            download
-            className="text-white transition-colors hover:text-white/80"
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className={`p-2 text-white transition-colors hover:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg ${isDownloading ? "opacity-50 cursor-wait" : ""}`}
             title="Download video"
           >
-            <Download className="h-5 w-5" />
-          </a>
+            <Download className={`h-5 w-5 ${isDownloading ? "animate-pulse" : ""}`} />
+          </button>
 
           {/* Fullscreen */}
           <button
             onClick={toggleFullscreen}
-            className="text-white transition-colors hover:text-white/80"
-            title="Toggle fullscreen"
+            className="p-2 text-white transition-colors hover:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg"
+            title="Toggle fullscreen (F)"
           >
             {isFullscreen ? (
               <Minimize className="h-5 w-5" />
@@ -289,14 +450,14 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
         </div>
       </div>
 
-      {/* Center Play Button (when paused) */}
-      {!isPlaying && (
+      {/* Center Play Button (when paused and controls visible) */}
+      {!isPlaying && showControls && (
         <button
-          onClick={togglePlay}
-          className="absolute inset-0 flex items-center justify-center"
+          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+          className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none"
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform hover:scale-110 sm:h-20 sm:w-20">
-            <Play className="h-7 w-7 sm:h-10 sm:w-10 fill-current" />
+          <div className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform hover:scale-110 sm:h-20 sm:w-20 shadow-lg">
+            <Play className="h-7 w-7 sm:h-10 sm:w-10 fill-current ml-1" />
           </div>
         </button>
       )}
