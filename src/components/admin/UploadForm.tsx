@@ -3,9 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  Video, 
-  Music, 
-  FileText, 
   Check, 
   PencilLine, 
   CloudUpload, 
@@ -391,59 +388,12 @@ export function UploadForm({ courses }: UploadFormProps) {
         </select>
       </div>
 
-      {/* Resource Type */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Resource Type <span className="text-red-500">*</span>
-        </label>
-        <div className="grid grid-cols-3 gap-3">
-          {(["video", "audio", "pdf"] as ResourceType[]).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => {
-                setSelectedType(type);
-                // Clear files when type changes
-                files.forEach(f => {
-                  if (f.storagePath) {
-                    fetch("/api/admin/delete-file", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ path: f.storagePath }),
-                    }).catch(console.error);
-                  }
-                });
-                setFiles([]);
-              }}
-              className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
-                selectedType === type
-                  ? type === "video"
-                    ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                    : type === "audio"
-                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                    : "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                  : "border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-neutral-600"
-              }`}
-            >
-              {type === "video" && (
-                <Video className={`h-6 w-6 ${selectedType === type ? "text-red-600" : "text-neutral-500"}`} />
-              )}
-              {type === "audio" && (
-                <Music className={`h-6 w-6 ${selectedType === type ? "text-purple-600" : "text-neutral-500"}`} />
-              )}
-              {type === "pdf" && (
-                <FileText className={`h-6 w-6 ${selectedType === type ? "text-blue-600" : "text-neutral-500"}`} />
-              )}
-              <span
-                className={`text-sm font-medium capitalize ${
-                  selectedType === type ? "text-neutral-900 dark:text-white" : "text-neutral-600 dark:text-neutral-400"
-                }`}
-              >
-                {type}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* Resource Type Info */}
+      <div className="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <span className="font-medium text-neutral-900 dark:text-white">Supported file types:</span>{" "}
+          Videos (MP4, WebM, MOV), Audio (MP3, WAV, OGG, M4A), PDFs — file type is auto-detected
+        </p>
       </div>
 
       {/* Status Selector */}
@@ -500,7 +450,7 @@ export function UploadForm({ courses }: UploadFormProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept={FILE_TYPES[selectedType].accept}
+            accept="video/*,audio/*,.pdf,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a"
             onChange={handleFileChange}
             multiple
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -516,11 +466,11 @@ export function UploadForm({ courses }: UploadFormProps) {
                 {selectedCourseId ? "Drag and drop files here" : "Select a course first"}
               </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                {selectedCourseId ? "or click to browse • Files upload immediately" : "Choose a course to enable uploads"}
+                {selectedCourseId ? "or click to browse • Mixed file types allowed" : "Choose a course to enable uploads"}
               </p>
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
-              {FILE_TYPES[selectedType].label} • Max 100MB per file
+              Videos, Audio, PDFs • Max 100MB per file
             </p>
           </div>
         </div>
@@ -576,13 +526,24 @@ export function UploadForm({ courses }: UploadFormProps) {
                   <div className="min-w-0 flex-1">
                     {fileUpload.status === "uploaded" || fileUpload.status === "pending" ? (
                       <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={fileUpload.title}
-                          onChange={(e) => updateFileTitle(fileUpload.id, e.target.value)}
-                          placeholder="Enter title..."
-                          className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={fileUpload.title}
+                            onChange={(e) => updateFileTitle(fileUpload.id, e.target.value)}
+                            placeholder="Enter title..."
+                            className="flex-1 rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                          />
+                          <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium uppercase ${
+                            fileUpload.type === "video"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : fileUpload.type === "audio"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          }`}>
+                            {fileUpload.type}
+                          </span>
+                        </div>
                         <textarea
                           value={fileUpload.description}
                           onChange={(e) => updateFileDescription(fileUpload.id, e.target.value)}
@@ -593,9 +554,20 @@ export function UploadForm({ courses }: UploadFormProps) {
                       </div>
                     ) : (
                       <div>
-                        <p className="truncate font-medium text-neutral-900 dark:text-white">
-                          {fileUpload.title}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate font-medium text-neutral-900 dark:text-white">
+                            {fileUpload.title}
+                          </p>
+                          <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium uppercase ${
+                            fileUpload.type === "video"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : fileUpload.type === "audio"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          }`}>
+                            {fileUpload.type}
+                          </span>
+                        </div>
                         {fileUpload.description && (
                           <p className="mt-0.5 truncate text-xs text-neutral-600 dark:text-neutral-300">
                             {fileUpload.description}
