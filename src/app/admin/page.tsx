@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { 
   ShieldCheck, 
   CloudUpload, 
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 
 export default async function AdminPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Fetch Stats
   const now = new Date();
