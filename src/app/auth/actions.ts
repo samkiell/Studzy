@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getURL } from "@/lib/utils";
+import { sendEmail } from "@/lib/email";
+import { getEmailTemplate } from "@/lib/email-templates";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -65,33 +68,76 @@ export async function signup(formData: FormData) {
 }
 
 export async function resetPassword(email: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getURL()}auth/callback?type=recovery`,
-  });
+  try {
+    const adminClient = createAdminClient();
+    
+    // Generate the recovery link
+    const { data, error } = await adminClient.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: {
+        redirectTo: `${getURL()}auth/callback?type=recovery`,
+      },
+    });
 
-  if (error) {
-    return { error: error.message };
+    if (error) {
+      return { error: error.message };
+    }
+
+    // Send the email manually via SMTP
+    const template = getEmailTemplate('reset', {
+      link: data.properties.action_link,
+    });
+
+    const emailResult = await sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+    });
+
+    if (!emailResult.success) {
+      return { error: "Failed to send reset email. Please try again later." };
+    }
+
+    return { success: true, message: "Password reset link sent to your email" };
+  } catch (err: any) {
+    return { error: err.message || "An error occurred during password reset" };
   }
-
-  return { success: true, message: "Password reset link sent to your email" };
 }
 
 export async function resendConfirmation(email: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resend({
-    type: 'signup',
-    email,
-    options: {
-      emailRedirectTo: `${getURL()}auth/callback`,
-    },
-  });
+  try {
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient.auth.admin.generateLink({
+      type: 'signup',
+      email,
+      options: {
+        redirectTo: `${getURL()}auth/callback`,
+      },
+    });
 
-  if (error) {
-    return { error: error.message };
+    if (error) {
+      return { error: error.message };
+    }
+
+    const template = getEmailTemplate('confirm', {
+      link: data.properties.action_link,
+    });
+
+    const emailResult = await sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+    });
+
+    if (!emailResult.success) {
+      return { error: "Failed to resend confirmation email." };
+    }
+
+    return { success: true, message: "Confirmation email resent" };
+  } catch (err: any) {
+    return { error: err.message || "Failed to resend confirmation" };
   }
-
-  return { success: true, message: "Confirmation email resent" };
 }
 
 export async function updatePassword(formData: FormData) {
