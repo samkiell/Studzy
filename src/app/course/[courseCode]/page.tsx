@@ -211,6 +211,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
               </p>
             )}
           </div>
+          <ShareCourseButton courseCode={typedCourse.code} />
         </div>
 
         {/* Resource Stats */}
