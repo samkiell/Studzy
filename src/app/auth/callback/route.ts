@@ -24,5 +24,11 @@ export async function GET(request: Request) {
   }
 
   // URL to redirect to after sign up process completes
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  const errorUrl = new URL(`${origin}/auth/auth-code-error`);
+  const type = searchParams.get('type');
+  if (type) {
+    errorUrl.searchParams.set('type', type);
+  }
+
+  return NextResponse.redirect(errorUrl.toString());
 }

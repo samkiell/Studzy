@@ -1,7 +1,50 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 
 export default function AuthCodeErrorPage() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // If we have a session, it means the auth was actually successful 
+        // (likely via implicit flow fragment which server-side callback missed).
+        const searchParams = new URLSearchParams(window.location.search);
+        const type = searchParams.get('type');
+        
+        if (type === 'recovery' || window.location.hash.includes("type=recovery")) {
+          router.push("/dashboard/settings/password");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        setChecking(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+          <span className="text-neutral-600 dark:text-neutral-400">Verifying session...</span>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 dark:bg-neutral-950">
       <div className="w-full max-w-sm text-center">
