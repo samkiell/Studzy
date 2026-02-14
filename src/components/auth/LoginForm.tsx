@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -72,6 +73,14 @@ export function LoginForm() {
         required
         autoComplete="current-password"
       />
+      <div className="flex justify-end">
+        <Link 
+          href="/forgot-password" 
+          className="text-xs font-medium text-primary-600 hover:text-primary-500"
+        >
+          Forgot password?
+        </Link>
+      </div>
       {error && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
           {error}
