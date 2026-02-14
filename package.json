@@ -19,6 +19,7 @@
     "micromark-factory-space": "^2.0.1",
     "micromark-util-character": "^2.1.1",
     "next": "^16.1.6",
+    "nodemailer": "^8.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^9.1.0",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^22.0.0",
+    "@types/nodemailer": "^7.0.9",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.0",
