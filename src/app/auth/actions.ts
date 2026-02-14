@@ -64,6 +64,36 @@ export async function signup(formData: FormData) {
   redirect("/dashboard");
 }
 
+export async function resetPassword(email: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getURL()}auth/callback?type=recovery`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true, message: "Password reset link sent to your email" };
+}
+
+export async function resendConfirmation(email: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: `${getURL()}auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true, message: "Confirmation email resent" };
+}
+
 export async function signout() {
   const supabase = await createClient();
   await supabase.auth.signOut();

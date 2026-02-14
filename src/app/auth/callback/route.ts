@@ -10,6 +10,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (searchParams.get('type') === 'recovery') {
+        return NextResponse.redirect(`${origin}/dashboard/settings/password`);
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
