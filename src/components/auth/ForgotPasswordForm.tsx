@@ -4,76 +4,54 @@ import { useState } from "react";
 import { resetPassword } from "@/app/auth/actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Modal, useModal } from "@/components/ui/Modal";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const errorModal = useModal();
-  const successModal = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     const result = await resetPassword(email);
 
     if (result.error) {
       setError(result.error);
-      errorModal.open();
     } else {
-      successModal.open();
+      setSuccess(result.message || "Reset link sent!");
     }
     setLoading(false);
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          id="email"
-          type="email"
-          label="Email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-        />
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Sending..." : "Send Reset Link"}
-        </Button>
-      </form>
-
-      {/* Success Modal */}
-      <Modal
-        isOpen={successModal.isOpen}
-        onClose={successModal.close}
-        type="success"
-        title="Check your email"
-        description="We've sent a password reset link to your email address. It should arrive shortly."
-        footer={
-          <Button onClick={successModal.close} className="w-full">
-            Got it
-          </Button>
-        }
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        id="email"
+        type="email"
+        label="Email"
+        placeholder="you@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        autoComplete="email"
       />
-
-      {/* Error Modal */}
-      <Modal
-        isOpen={errorModal.isOpen}
-        onClose={errorModal.close}
-        type="error"
-        title="Request Failed"
-        description={error}
-        footer={
-          <Button onClick={errorModal.close} className="w-full">
-            Try Again
-          </Button>
-        }
-      />
-    </>
+      {error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20 dark:text-green-400">
+          {success}
+        </div>
+      )}
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Sending..." : "Send Reset Link"}
+      </Button>
+    </form>
   );
 }
