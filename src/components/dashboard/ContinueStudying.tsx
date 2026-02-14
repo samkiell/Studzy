@@ -8,10 +8,11 @@ import { Video, Music, FileText, ChevronRight } from "lucide-react";
 interface RecentResource {
   id: string;
   title: string;
+  slug: string;
   type: "video" | "audio" | "pdf";
   course_code: string;
   course_id: string;
-  last_accessed: string;
+  created_at: string;
 }
 
 export function ContinueStudying() {
@@ -34,10 +35,11 @@ export function ContinueStudying() {
         .from("user_activity")
         .select(`
           resource_id,
-          last_accessed,
+          created_at,
           resources (
             id,
             title,
+            slug,
             type,
             course_id,
             courses (
@@ -46,7 +48,8 @@ export function ContinueStudying() {
           )
         `)
         .eq("user_id", user.id)
-        .order("last_accessed", { ascending: false })
+        .eq("action_type", "view_resource")
+        .order("created_at", { ascending: false })
         .limit(3);
 
       if (activities) {
@@ -55,10 +58,11 @@ export function ContinueStudying() {
           .map((a: any) => ({
             id: a.resources.id,
             title: a.resources.title,
+            slug: a.resources.slug,
             type: a.resources.type,
             course_id: a.resources.course_id,
             course_code: a.resources.courses?.code || "Unknown",
-            last_accessed: a.last_accessed,
+            created_at: a.created_at,
           }));
         setResources(recent);
       }
@@ -111,7 +115,7 @@ export function ContinueStudying() {
         {resources.map((resource) => (
           <Link
             key={resource.id}
-            href={`/resource/${resource.id}`}
+            href={`/course/${resource.course_code}/resource/${resource.slug}`}
             className="group flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
           >
             <div
@@ -127,7 +131,7 @@ export function ContinueStudying() {
                 {resource.title}
               </h3>
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                {formatTimeAgo(resource.last_accessed)}
+                {formatTimeAgo(resource.created_at)}
               </p>
             </div>
             <ChevronRight className="h-5 w-5 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300" />

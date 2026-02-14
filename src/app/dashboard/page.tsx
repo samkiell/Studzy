@@ -15,13 +15,18 @@ export default async function DashboardPage() {
     .order("code", { ascending: true });
 
   // Fetch total resources count (only published)
-  const { count: totalResources } = await supabase
-    .from("resources")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "published");
+  const [
+    { count: totalResources },
+    { count: viewedResourcesCount }
+  ] = await Promise.all([
+    supabase.from("resources").select("*", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("user_activity").select("resource_id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("action_type", "view_resource")
+  ]);
 
   if (error) {
-    console.error("Error fetching courses:", error);
+    console.error("Error fetching dashboard data:", error);
   }
 
   // Get display name: prefer first name from metadata, fall back to email prefix
