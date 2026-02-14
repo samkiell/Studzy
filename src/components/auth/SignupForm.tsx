@@ -8,6 +8,7 @@ import { ResendButton } from "@/components/auth/ResendButton";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Modal, useModal } from "@/components/ui/Modal";
 
 export function SignupForm() {
   const router = useRouter();
@@ -16,7 +17,8 @@ export function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const successModal = useModal();
+  const errorModal = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +54,7 @@ export function SignupForm() {
 
       if (error) {
         setError(error.message);
+        errorModal.open();
         setLoading(false);
         return;
       }
@@ -59,13 +62,14 @@ export function SignupForm() {
       // Check if email confirmation is required
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         setError("An account with this email already exists.");
+        errorModal.open();
         setLoading(false);
         return;
       }
 
       // If email confirmation is enabled in Supabase
       if (data.session === null) {
-        setSuccess(true);
+        successModal.open();
         setLoading(false);
         return;
       }
@@ -74,78 +78,87 @@ export function SignupForm() {
       router.refresh();
     } catch {
       setError("An unexpected error occurred. Please try again.");
+      errorModal.open();
       setLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center dark:border-green-800 dark:bg-green-900/20">
-        <svg className="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <h3 className="mt-4 text-lg font-semibold text-green-900 dark:text-green-100">Check your email</h3>
-        <p className="mt-2 text-sm text-green-700 dark:text-green-300">
-          We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
-        </p>
-        <div className="mt-6">
-          <ResendButton email={email} />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        id="email"
-        type="email"
-        label="Email"
-        placeholder="exam@sorting.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        autoComplete="email"
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          id="email"
+          type="email"
+          label="Email"
+          placeholder="exam@sorting.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+        />
+        <PasswordInput
+          id="password"
+          label="Password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+        />
+        <PasswordInput
+          id="confirmPassword"
+          label="Confirm Password"
+          placeholder="••••••••"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+        />
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Creating account...
+            </span>
+          ) : (
+            "Create account"
+          )}
+        </Button>
+        <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
+          By signing up, you agree that you will not cheat on the day of the exam, if you do.. walai dem go catch you!
+        </p>
+      </form>
+
+      {/* Success Modal */}
+      <Modal
+        isOpen={successModal.isOpen}
+        onClose={successModal.close}
+        type="success"
+        title="Account Created!"
+        description={`We've sent a confirmation link to ${email}. Please check your inbox and click the link to activate your account.`}
+        footer={
+          <div className="w-full">
+            <ResendButton email={email} />
+          </div>
+        }
       />
-      <PasswordInput
-        id="password"
-        label="Password"
-        placeholder="••••••••"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        autoComplete="new-password"
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={errorModal.isOpen}
+        onClose={errorModal.close}
+        type="error"
+        title="Signup Failed"
+        description={error}
+        footer={
+          <Button onClick={errorModal.close} className="w-full">
+            Try Again
+          </Button>
+        }
       />
-      <PasswordInput
-        id="confirmPassword"
-        label="Confirm Password"
-        placeholder="••••••••"
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        required
-        autoComplete="new-password"
-      />
-      {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-          {error}
-        </div>
-      )}
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? (
-          <span className="flex items-center gap-2">
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Creating account...
-          </span>
-        ) : (
-          "Create account"
-        )}
-      </Button>
-      <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
-        By signing up, you agree that you will not cheat on the day of the exam, if you do.. walai dem go catch you!
-      </p>
-    </form>
+    </>
   );
 }
