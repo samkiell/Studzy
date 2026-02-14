@@ -57,9 +57,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from login/signup
+  // Email verification check for authenticated users on protected routes
+  if (
+    user && 
+    !user.email_confirmed_at && 
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/verify-email")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/verify-email";
+    return NextResponse.redirect(url);
+  }
+
+  // Redirect authenticated (and verified) users away from login/signup
   if (
     user &&
+    user.email_confirmed_at &&
     (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")
   ) {
     const url = request.nextUrl.clone();
