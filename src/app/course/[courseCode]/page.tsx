@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Video, Music, FileText } from "lucide-react";
 import { ResourceList } from "@/components/resources/ResourceList";
 import { CourseProgress } from "@/components/courses/CourseProgress";
+import { ShareCourseButton } from "@/components/courses/ShareCourseButton";
 import type { Course, Resource } from "@/types/database";
 import type { Metadata } from "next";
 
