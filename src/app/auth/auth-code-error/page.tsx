@@ -23,6 +23,8 @@ export default function AuthCodeErrorPage() {
         
         if (type === 'recovery' || window.location.hash.includes("type=recovery")) {
           router.push("/dashboard/settings/password");
+        } else if (type === 'signup') {
+          router.push("/auth/confirm");
         } else {
           router.push("/dashboard");
         }
