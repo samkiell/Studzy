@@ -18,6 +18,7 @@ export default async function AdminPage() {
   const supabase = await createClient();
 
   // Fetch Stats
+  const now = new Date();
   const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
 
   const [
