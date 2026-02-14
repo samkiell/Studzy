@@ -13,6 +13,12 @@ export async function GET(request: Request) {
       if (searchParams.get('type') === 'recovery') {
         return NextResponse.redirect(`${origin}/dashboard/settings/password`);
       }
+      
+      // If it's a signup confirmation, show the success page
+      if (searchParams.get('type') === 'signup' || !searchParams.has('next')) {
+        return NextResponse.redirect(`${origin}/auth/confirm`);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
