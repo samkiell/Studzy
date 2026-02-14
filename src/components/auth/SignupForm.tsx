@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getURL } from "@/lib/utils";
+import { ResendButton } from "@/components/auth/ResendButton";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -87,6 +88,9 @@ export function SignupForm() {
         <p className="mt-2 text-sm text-green-700 dark:text-green-300">
           We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
         </p>
+        <div className="mt-6">
+          <ResendButton email={email} />
+        </div>
       </div>
     );
   }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { ResendButton } from "@/components/auth/ResendButton";
 
 export default async function VerifyEmailPage() {
   const supabase = await createClient();
@@ -34,7 +35,7 @@ export default async function VerifyEmailPage() {
           <p className="text-xs text-neutral-500">
             Can&apos;t find the email? Check your spam folder or click below to resend.
           </p>
-          {/* In a real app, you'd add a Client Component button here to trigger resendConfirmation */}
+          <ResendButton email={user.email!} />
           <Link href="/login" className="block text-sm font-medium text-primary-600 hover:text-primary-500">
             Back to login
           </Link>
