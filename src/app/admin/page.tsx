@@ -18,24 +18,26 @@ export default async function AdminPage() {
   const supabase = await createClient();
 
   // Fetch Stats
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
 
   const [
     { count: coursesCount },
     { count: resourcesCount },
     { count: usersCount },
-    { count: newUsersCount },
-    { count: activeUsersCount },
-    { data: resourceStats }
+    { count: onlineUsersCount },
+    { data: resourceStats },
+    { data: onlineUsersList }
   ] = await Promise.all([
     supabase.from("courses").select("*", { count: "exact", head: true }),
     supabase.from("resources").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("last_login", thirtyDaysAgo),
-    supabase.from("resources").select("view_count, completion_count")
+    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("last_seen", fiveMinsAgo),
+    supabase.from("resources").select("view_count, completion_count"),
+    supabase.from("profiles")
+      .select("id, email, full_name, last_seen")
+      .gte("last_seen", fiveMinsAgo)
+      .order("last_seen", { ascending: false })
+      .limit(10)
   ]);
 
   const totalViews = (resourceStats || []).reduce((acc, r) => acc + (r.view_count || 0), 0);
@@ -78,8 +80,14 @@ export default async function AdminPage() {
     { label: "Total Resources", value: resourcesCount || 0, icon: FileText, color: "text-purple-600", bg: "bg-purple-100 dark:bg-purple-900/30" },
     { label: "Total Views", value: totalViews, icon: Eye, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
     { label: "Total Users", value: usersCount || 0, icon: Users, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
-    { label: "New Users (7d)", value: newUsersCount || 0, icon: Users, color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
-    { label: "Active Users (30d)", value: activeUsersCount || 0, icon: Users, color: "text-indigo-600", bg: "bg-indigo-100 dark:bg-indigo-900/30" },
+    { 
+      label: "Online Users", 
+      value: onlineUsersCount || 0, 
+      icon: Users, 
+      color: "text-emerald-600", 
+      bg: "bg-emerald-100 dark:bg-emerald-900/30",
+      isPulse: (onlineUsersCount || 0) > 0
+    },
   ];
 
   return (
@@ -97,13 +105,18 @@ export default async function AdminPage() {
         </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {stats.map((stat) => (
             <div key={stat.label} className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{stat.label}</p>
-                  <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{stat.value.toLocaleString()}</p>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value.toLocaleString()}</p>
+                    {stat.isPulse && (
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </div>
                 </div>
                 <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.bg} ${stat.color}`}>
                   <stat.icon className="h-6 w-6" />
@@ -177,27 +190,77 @@ export default async function AdminPage() {
         </section>
 
         {/* Database Shortcut */}
+        {/* Online Users List */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Currently Online</h2>
+            <div className="flex items-center gap-2 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </div>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {onlineUsersList?.map((user: any) => (
+                <div key={user.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 font-bold">
+                    {(user.full_name?.[0] || user.email[0]).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-neutral-900 dark:text-white truncate">
+                      {user.full_name || "Anonymous Student"}
+                    </h4>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                      Online now
+                    </span>
+                    <p className="text-[10px] text-neutral-400">{formatDate(user.last_seen)}</p>
+                  </div>
+                </div>
+              ))}
+              {(!onlineUsersList || onlineUsersList.length === 0) && (
+                <div className="p-10 text-center">
+                  <p className="text-sm text-neutral-500">No users currently online</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* System Status */}
         <section className="flex flex-col">
           <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">System Status</h2>
-          <div className="flex-1 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="flex h-full flex-col justify-between space-y-6">
+          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium text-neutral-900 dark:text-white">Supabase Connection Active</span>
+                  <span className="text-sm font-medium text-neutral-900 dark:text-white">Database Connected</span>
                 </div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Database and storage systems are operational. You can manage low-level data directly via the Supabase dashboard.
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                  Real-time presence tracking is active. User activities are being logged across all active sessions.
                 </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg bg-neutral-50 p-3 dark:bg-neutral-800/50">
+                  <p className="text-[10px] uppercase font-bold text-neutral-500">Server Time</p>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-white">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div className="rounded-lg bg-neutral-50 p-3 dark:bg-neutral-800/50">
+                  <p className="text-[10px] uppercase font-bold text-neutral-500">Node Environment</p>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-white capitalize">{process.env.NODE_ENV}</p>
+                </div>
               </div>
               <a
                 href="https://supabase.com/dashboard"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                className="flex items-center justify-center gap-2 w-full rounded-lg bg-neutral-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
                 <Database className="h-4 w-4" />
-                Supabase Dashboard
+                Supabase Console
               </a>
             </div>
           </div>
