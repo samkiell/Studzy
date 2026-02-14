@@ -96,6 +96,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
+        <UserPresence />
         <AIProvider>{children}</AIProvider>
       </body>
     </html>
