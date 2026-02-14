@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react";
 import type { ResourceStatus } from "@/types/database";
-import { Star, Search, Filter, Trash2, Edit3, Loader2, ChevronRight, Hash } from "lucide-react";
+import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle } from "lucide-react";
 import { EditResourceModal } from "./EditResourceModal";
+import { Modal, useModal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 
 interface AdminResource {
   id: string;
@@ -30,6 +32,8 @@ export function AdminResourceTable({
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [editingResource, setEditingResource] = useState<AdminResource | null>(null);
+  const [resourceToDelete, setResourceToDelete] = useState<AdminResource | null>(null);
+  const deleteModal = useModal();
 
   const filteredResources = useMemo(() => {
     return resources.filter((r) => {
@@ -40,6 +44,30 @@ export function AdminResourceTable({
       return matchesSearch && matchesStatus && matchesType;
     });
   }, [resources, search, filterStatus, filterType]);
+
+  const handleConfirmDelete = async () => {
+    if (!resourceToDelete) return;
+    
+    setLoadingId(resourceToDelete.id);
+    deleteModal.close();
+
+    try {
+      const response = await fetch("/api/admin/delete-resource", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceId: resourceToDelete.id }),
+      });
+
+      if (response.ok) {
+        setResources(prev => prev.filter(r => r.id !== resourceToDelete.id));
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+    } finally {
+      setLoadingId(null);
+      setResourceToDelete(null);
+    }
+  };
 
   const handleToggle = async (
     resourceId: string,
@@ -238,19 +266,9 @@ export function AdminResourceTable({
                             <Edit3 className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={async () => {
-                              if (!window.confirm(`Delete "${resource.title}"?`)) return;
-                              setLoadingId(resource.id);
-                              try {
-                                const response = await fetch("/api/admin/delete-resource", {
-                                  method: "DELETE",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ resourceId: resource.id }),
-                                });
-                                if (response.ok) setResources(prev => prev.filter(r => r.id !== resource.id));
-                              } finally {
-                                setLoadingId(null);
-                              }
+                            onClick={() => {
+                              setResourceToDelete(resource);
+                              deleteModal.open();
                             }}
                             className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             title="Delete"
@@ -277,6 +295,33 @@ export function AdminResourceTable({
           }}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.close}
+        type="error"
+        title="Delete Resource"
+        description={`Are you sure you want to delete "${resourceToDelete?.title}"? This action cannot be undone and will remove the file from storage.`}
+        footer={
+          <div className="flex w-full gap-3">
+            <Button
+              variant="outline"
+              onClick={deleteModal.close}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleConfirmDelete}
+              className="flex-1 bg-red-600 text-white hover:bg-red-700 hover:text-white border-transparent"
+            >
+              Delete
+            </Button>
+          </div>
+        }
+      />
     </div>
   );
 }
