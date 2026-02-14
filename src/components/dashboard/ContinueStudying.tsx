@@ -50,21 +50,26 @@ export function ContinueStudying() {
         .eq("user_id", user.id)
         .eq("action_type", "view_resource")
         .order("created_at", { ascending: false })
-        .limit(3);
+        .limit(10);
 
       if (activities) {
-        const recent = activities
-          .filter((a: any) => a.resources)
-          .map((a: any) => ({
-            id: a.resources.id,
-            title: a.resources.title,
-            slug: a.resources.slug,
-            type: a.resources.type,
-            course_id: a.resources.course_id,
-            course_code: a.resources.courses?.code || "Unknown",
-            created_at: a.created_at,
-          }));
-        setResources(recent);
+        const uniqueResources = new Map();
+        
+        activities.forEach((a: any) => {
+          if (a.resources && !uniqueResources.has(a.resources.id)) {
+            uniqueResources.set(a.resources.id, {
+              id: a.resources.id,
+              title: a.resources.title,
+              slug: a.resources.slug,
+              type: a.resources.type,
+              course_id: a.resources.course_id,
+              course_code: a.resources.courses?.code || "Unknown",
+              created_at: a.created_at,
+            });
+          }
+        });
+
+        setResources(Array.from(uniqueResources.values()).slice(0, 3));
       }
       setLoading(false);
     }
