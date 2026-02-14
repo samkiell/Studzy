@@ -8,6 +8,11 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    const { redirect } = await import("next/navigation");
+    redirect("/auth/login");
+  }
+
   // Fetch all courses
   const { data: courses, error } = await supabase
     .from("courses")
@@ -67,7 +72,7 @@ export default async function DashboardPage() {
         />
         <StatCard 
           title="Resources Viewed" 
-          value="0"
+          value={String(viewedResourcesCount || 0)}
           icon={
             <Eye className="h-5 w-5" />
           }
