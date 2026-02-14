@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { getURL } from "@/lib/utils";
+import { signup } from "@/app/auth/actions";
 import { ResendButton } from "@/components/auth/ResendButton";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -40,31 +39,20 @@ export function SignupForm() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("confirmPassword", confirmPassword);
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${getURL()}auth/callback`,
-        },
-      });
+      const result = await signup(formData);
 
-      if (error) {
-        setError(error.message);
+      if (result?.error) {
+        setError(result.error);
         setLoading(false);
         return;
       }
 
-      // Check if user already exists
-      if (data.user && data.user.identities && data.user.identities.length === 0) {
-        setError("An account with this email already exists.");
-        setLoading(false);
-        return;
-      }
-
-      // If email confirmation is enabled in Supabase
-      if (data.session === null) {
+      if (result?.success) {
         setSuccess(true);
         setLoading(false);
         return;
