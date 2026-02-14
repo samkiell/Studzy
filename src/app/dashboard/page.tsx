@@ -42,6 +42,21 @@ export default async function DashboardPage() {
     user?.email?.split("@")[0] ||
     "";
 
+  // Fetch all activity to calculate stats
+  const { data: activityLogs } = await supabase
+    .from("user_activity")
+    .select("resource_id, action_type")
+    .eq("user_id", user.id);
+
+  const uniqueViews = new Set(
+    activityLogs
+      ?.filter(a => a.action_type === "view_resource" && a.resource_id)
+      .map(a => a.resource_id)
+  ).size;
+
+  // Estimate hours: 30 minutes per unique resource viewed/studied
+  const estimatedHours = (uniqueViews * 0.5).toFixed(1);
+
   return (
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -59,30 +74,22 @@ export default async function DashboardPage() {
         <StatCard 
           title="Total Courses" 
           value={String(courses?.length || 0)} 
-          icon={
-            <BookOpen className="h-5 w-5" />
-          }
+          icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard 
           title="Total Resources" 
           value={String(totalResources || 0)}
-          icon={
-            <FileText className="h-5 w-5" />
-          }
+          icon={<FileText className="h-5 w-5" />}
         />
         <StatCard 
           title="Resources Viewed" 
-          value={String(viewedResourcesCount || 0)}
-          icon={
-            <Eye className="h-5 w-5" />
-          }
+          value={String(uniqueViews)}
+          icon={<Eye className="h-5 w-5" />}
         />
         <StatCard 
           title="Hours Studied" 
-          value="0"
-          icon={
-            <Zap className="h-5 w-5" />
-          }
+          value={estimatedHours}
+          icon={<Zap className="h-5 w-5" />}
         />
       </div>
 
