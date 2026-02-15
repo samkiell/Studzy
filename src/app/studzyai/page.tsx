@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLoading } from "@/components/providers/LoadingProvider";
 
 export default function StudzyAIPage() {
   const router = useRouter();
@@ -9,8 +10,11 @@ export default function StudzyAIPage() {
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState("");
   const [isDone, setIsDone] = useState(false);
 
+  const { startLoading, stopLoading } = useLoading();
+
   useEffect(() => {
     async function createAndRedirect() {
+      startLoading();
       try {
         const res = await fetch("/api/ai/sessions", {
           method: "POST",
@@ -23,18 +27,21 @@ export default function StudzyAIPage() {
           setIsDone(true);
           router.replace(`/studzyai/chat/${data.session.id}`);
         } else if (res.status === 401) {
+          stopLoading();
           router.replace("/login");
         } else {
+          stopLoading();
           const data = await res.json().catch(() => ({}));
           setError(data.error || "Failed to create session. Please try again.");
         }
       } catch {
+        stopLoading();
         setError("Network error. Please check your connection and try again.");
       }
     }
 
     createAndRedirect();
-  }, [router]);
+  }, [router, startLoading, stopLoading]);
 
   if (error) {
     return (
@@ -68,61 +75,5 @@ export default function StudzyAIPage() {
     );
   }
 
-  useEffect(() => {
-    if (isDone) return;
-
-    const messages = [
-      "Hacking into the school's databse",
-      "Asking Thessy for answers",
-      "Asking Thessy for the ‘answers’ she promised...",
-      "Thessy saying ‘it’s easy’ after studying for 9 hours...",
-      "Waiting for Dr. Gambo to approve this academically...",
-      "Dr. Gambo adjusting the grading scale spiritually...",
-      "Consulting Renowned’s emergency brain backup...",
-      "Cambridge already solved it before the question loaded...",
-      "Fatai explaining it in a way that confuses everyone more...",
-      "Abhraham dropping ‘it’s common sense’ like we all live in his head...",
-      "Pii protecting answers like it’s classified government data...",
-      "Deamon revising while we’re still panicking...",
-      "Robert zooming into Renowned’s screen with 4K vision...",
-      "Thessy pretending not to know the answer again...",
-      "Dr. Gambo increasing course units just because he can...",
-      "Cambridge correcting the lecturer politely...",
-      "Renowned calculating CGPA with calculator and prayer...",
-      "Fatai forming a study group that turns into gist session...",
-      "Abhraham unlocking hidden past questions archive...",
-      "Pii saying ‘check the material’ like that helps...",
-      "Deamon submitting before the timer even starts...",
-      "Robert whispering ‘what did you get for number 3?’...",
-      "Thessy upgrading from normal smart to exam hall monster...",
-      "Dr. Gambo sensing academic dishonesty from 200 meters...",
-    ];
-
-    const pickRandom = () => messages[Math.floor(Math.random() * messages.length)];
-    
-    // Set initial message
-    setCurrentLoadingMessage(pickRandom());
-
-    const interval = setInterval(() => {
-      setCurrentLoadingMessage(pickRandom());
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isDone]);
-
-  if (isDone && !error) return null;
-
-  return (
-    <div className="flex h-screen items-center justify-center bg-white dark:bg-neutral-950">
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative h-12 w-12 text-primary-600">
-          <div className="absolute inset-0 animate-ping rounded-full bg-primary-400/20" />
-          <div className="relative h-full w-full animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-        </div>
-        <p className="max-w-[280px] animate-pulse text-center text-sm font-medium text-neutral-600 dark:text-neutral-400">
-          {currentLoadingMessage}
-        </p>
-      </div>
-    </div>
-  );
+  return null;
 }

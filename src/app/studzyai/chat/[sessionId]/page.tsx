@@ -167,13 +167,10 @@ export default function ChatSessionPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white dark:bg-neutral-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative h-12 w-12 text-primary-600">
-            <div className="absolute inset-0 animate-ping rounded-full bg-primary-400/20" />
-            <div className="relative h-full w-full animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-          </div>
-          <p className="max-w-[280px] animate-pulse text-center text-sm font-medium text-neutral-600 dark:text-neutral-400">
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+          <p className="max-w-[280px] text-center text-sm font-medium text-neutral-600 dark:text-neutral-400">
             {currentLoadingMessage}
           </p>
         </div>

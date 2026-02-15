@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AIProvider } from "@/components/providers/AIProvider";
 import { UserPresence } from "@/components/auth/UserPresence";
+import { LoadingProvider } from "@/components/providers/LoadingProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -97,7 +98,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
         <UserPresence />
-        <AIProvider>{children}</AIProvider>
+        <LoadingProvider>
+          <AIProvider>{children}</AIProvider>
+        </LoadingProvider>
       </body>
     </html>
   );
