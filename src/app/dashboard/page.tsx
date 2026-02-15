@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
@@ -9,7 +10,6 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    const { redirect } = await import("next/navigation");
     redirect("/auth/login");
   }
 
