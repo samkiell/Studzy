@@ -122,13 +122,30 @@ export default function ChatSessionPage() {
     );
   };
 
+  const getLoadingMessage = () => {
+    const messages = [
+      "Consulting the academic gods...",
+      "Polishing your brain cells...",
+      "Calculating how much coffee you need...",
+      "Reading chapters you skipped...",
+      "Converting tears into grades...",
+      "Briefly becoming smarter...",
+      "Studzing your study habits...",
+      "Waking up the local university ghost...",
+      "Asking ChatGPT for the answers... just kidding...",
+      "Translating professor-speak into English...",
+      "Loading 4.0 GPA personality...",
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Loading your workspace...
+          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+            {getLoadingMessage()}
           </p>
         </div>
       </div>
