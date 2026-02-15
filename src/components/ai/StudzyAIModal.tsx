@@ -1,35 +1,39 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import { 
-  MessageSquare, 
-  Image as ImageIcon, 
-  Globe, 
-  Code, 
-  Trash2, 
-  X, 
-  ImageUp, 
-  Send, 
-  Loader2,
-  ExternalLink,
-  StopCircle,
-  Plus,
-  Copy,
-  Check
-} from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import NextImage from "next/image";
+import { createPortal } from "react-dom";
+import {
+  X,
+  Send,
+  Loader2,
+  Plus,
+  Trash2,
+  MessageSquare,
+  ImageIcon,
+  Globe,
+  Code,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  StopCircle,
+  Clipboard,
+  Check,
+  ImageUp,
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { useRouter } from "next/navigation";
 
 type ChatMode = "chat" | "image" | "search" | "code";
 
-interface Message {
+interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   image?: string;
-  mode: ChatMode;
+  mode?: ChatMode;
+  timestamp: Date;
 }
 
 interface StudzyAIModalProps {
@@ -38,135 +42,100 @@ interface StudzyAIModalProps {
 }
 
 const modeConfig = {
-  chat: { icon: <MessageSquare className="h-4 w-4" />, label: "Chat" },
-  image: { icon: <ImageIcon className="h-4 w-4" />, label: "Image" },
-  search: { icon: <Globe className="h-4 w-4" />, label: "Search" },
-  code: { icon: <Code className="h-4 w-4" />, label: "Code" },
+  chat: {
+    label: "Chat",
+    icon: <MessageSquare className="h-4 w-4" />,
+    description: "Conversational assistant for any topic",
+  },
+  image: {
+    label: "Image",
+    icon: <ImageIcon className="h-4 w-4" />,
+    description: "Analyze and discuss images",
+  },
+  search: {
+    label: "Search",
+    icon: <Globe className="h-4 w-4" />,
+    description: "Web-enhanced research and facts",
+  },
+  code: {
+    label: "Code",
+    icon: <Code className="h-4 w-4" />,
+    description: "Specialized in programming and debugging",
+  },
 };
 
-export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
-  const router = useRouter();
-  const [mode, setMode] = useState<ChatMode>("chat");
-  const [messages, setMessages] = useState<Message[]>([]);
+export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [openingWorkspace, setOpeningWorkspace] = useState(false);
+  const [mode, setMode] = useState<ChatMode>("chat");
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const [openingWorkspace, setOpeningWorkspace] = useState(false);
+  const [copyingId, setCopyingId] = useState<string | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Close options menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowOptionsMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-
-
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Handle paste for images
-  const handlePaste = useCallback((e: ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const result = e.target?.result as string;
-            setImage(result);
-            setMode("image");
-          };
-          reader.readAsDataURL(file);
-        }
-      }
-    }
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener("paste", handlePaste);
-      return () => document.removeEventListener("paste", handlePaste);
+      document.body.style.overflow = "hidden";
+      inputRef.current?.focus();
+    } else {
+      document.body.style.overflow = "unset";
     }
-  }, [isOpen, handlePaste]);
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setImage(result);
-        setMode("image");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
 
-  const removeImage = () => {
-    setImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsLoading(false);
     }
   };
 
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const copyToClipboard = (text: string, id: string) => {
+  const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopyingId(id);
+    setTimeout(() => setCopyingId(null), 2000);
   };
-
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if ((!input.trim() && !image) || isLoading) return;
+    if (!input.trim() && !image) return;
 
-    // Previous controller cleanup (just in case)
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+    abortControllerRef.current = new AbortController();
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
       content: input,
       image: image || undefined,
       mode,
+      timestamp: new Date(),
     };
 
-    const assistantMsgId = (Date.now() + 1).toString();
-    const assistantMessage: Message = {
-      id: assistantMsgId,
-      role: "assistant",
-      content: "",
-      mode,
-    };
-
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setImage(null);
     setIsLoading(true);
@@ -176,59 +145,78 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map((m) => ({
+          messages: messages.concat(userMessage).map((m) => ({
             role: m.role,
             content: m.content,
             image: m.image,
           })),
           mode,
-          enable_code: mode === "code",
-          image: image || undefined,
+          image: userMessage.image,
         }),
-        signal: controller.signal,
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) throw new Error("Failed to get response");
-      if (!response.body) throw new Error("No response body");
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No reader");
 
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        const chunkValue = decoder.decode(value, { stream: !done });
-        
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMsgId
-              ? { ...msg, content: msg.content + chunkValue }
-              : msg
-          )
-        );
+      const assistantId = (Date.now() + 1).toString();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+          mode,
+        },
+      ]);
+
+      let accumulatedContent = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split("\n").filter((line) => line.trim());
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content || "";
+              accumulatedContent += content;
+
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: accumulatedContent }
+                    : m
+                )
+              );
+            } catch (e) {
+              console.error("Error parsing chunk:", e);
+            }
+          }
+        }
       }
-
-      // Log activity only on success/completion
-      const actionType = mode === "image" ? "ai_image" : mode === "code" ? "ai_code" : "ai_chat";
-      fetch("/api/log-activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actionType }),
-      }).catch(console.error);
-
     } catch (error: any) {
       if (error.name === "AbortError") {
         console.log("Request aborted");
       } else {
-        console.error("Error:", error);
-        setMessages((prev) => 
-          prev.map((msg) =>
-            msg.id === assistantMsgId
-              ? { ...msg, content: msg.content + "\n\n[Error: Message generation failed. Please try again.]" }
-              : msg
-          )
-        );
+        console.error("AI Error:", error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: "Sorry, I encountered an error. Please try again.",
+            timestamp: new Date(),
+          },
+        ]);
       }
     } finally {
       setIsLoading(false);
@@ -236,131 +224,102 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     }
   };
 
-  const handleStop = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsLoading(false);
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    
-    // On Desktop: Enter sends, Ctrl+Enter or Shift+Enter adds newline
-    // On Mobile: Enter always adds newline (standard mobile textarea behavior)
-    if (e.key === "Enter") {
+    const isMobile = window.innerWidth < 768;
+
+    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
       if (isMobile) {
-        // Let it go to new line naturally
+        // Standard mobile behavior: Enter for newline is usually default,
+        // but let's keep it consistent
         return;
-      }
-      
-      if (!e.shiftKey && !e.ctrlKey) {
+      } else {
+        // Desktop behavior: Enter to send
         e.preventDefault();
         handleSubmit();
       }
-      // If Shift or Ctrl is pressed, allow newline
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const clearChat = () => {
     setMessages([]);
+    setMode("chat");
     setImage(null);
-    setInput("");
   };
 
   const openFullWorkspace = async () => {
     setOpeningWorkspace(true);
     try {
-      // Create a new session and redirect
       const res = await fetch("/api/ai/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "New Chat" }),
+        body: JSON.stringify({ title: input || "New Chat" }),
       });
-
       if (res.ok) {
         const data = await res.json();
-        onClose();
         router.push(`/studzyai/chat/${data.session.id}`);
-      } else if (res.status === 401) {
         onClose();
-        router.push("/login");
-      } else {
-        // Show error in chat instead of silently failing
-        const errorMessage: Message = {
-          id: Date.now().toString(),
-          role: "assistant",
-          content: "Failed to open workspace. The chat sessions table may not be set up yet. Please check your database migrations.",
-          mode: "chat",
-        };
-        setMessages((prev) => [...prev, errorMessage]);
       }
-    } catch {
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "Network error — couldn't open workspace. Please try again.",
-        mode: "chat",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+    } catch (err) {
+      console.error(err);
     } finally {
       setOpeningWorkspace(false);
     }
   };
 
-  // Auto-resize textarea
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement> | { target: HTMLTextAreaElement }) => {
-    const textarea = e.target;
-    setInput(textarea.value);
-    textarea.style.height = "auto";
-    textarea.style.height = Math.min(textarea.scrollHeight, 160) + "px";
+  const safeClose = () => {
+    handleStop();
+    onClose();
   };
 
-  const handleSuggestionClick = (prompt: string) => {
-    setInput(prompt);
-    if (inputRef.current) {
-      // Small timeout to allow the state update to be reflected in the DOM if needed, 
-      // but here we can just set it directly.
-      inputRef.current.value = prompt;
-      inputRef.current.style.height = "auto";
-      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 160) + "px";
-      inputRef.current.focus();
-    }
-  };
-
-  if (!mounted) return null;
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="absolute inset-0" onClick={safeClose} />
+
+      {/* Modal Container */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div ref={containerRef} className="relative flex h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-900">
-          {/* Header */}
-          <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
-              <Image src="/favicon.png" alt="Studzy" width={20} height={20} />
-              <span>STUDZY AI</span>
-            </h2>
-            <button
-              onClick={safeClose}
-              className="rounded-lg p-1 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        ref={containerRef}
+        className="relative flex h-[100dvh] w-full max-w-2xl flex-col bg-white shadow-2xl dark:bg-neutral-900 sm:h-[85vh] sm:rounded-2xl sm:overflow-hidden"
+      >
+        {/* Fixed Header */}
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 sm:relative sm:top-auto sm:left-auto sm:right-auto sm:px-6 sm:py-4">
+          <div className="flex items-center gap-3">
+            <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
+            <div>
+              <h2 className="text-lg font-bold text-neutral-900 dark:text-white sm:text-xl">
+                STUDZY AI
+              </h2>
+            </div>
           </div>
-
-          <div className="flex flex-1 flex-col overflow-y-auto pt-[56px] pb-[100px]">
+          
+          <div className="flex items-center gap-2">
             <button
               onClick={openFullWorkspace}
               disabled={openingWorkspace}
-              className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+              className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1.5 text-xs font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 sm:px-3 sm:text-sm"
               title="Open Full Workspace"
             >
               {openingWorkspace ? (
@@ -372,32 +331,117 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             </button>
             <button
               onClick={clearChat}
-              className="hidden items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 sm:flex"
-              title="New chat"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">New Chat</span>
-            </button>
-            <button
-              onClick={clearChat}
-              className="hidden rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 sm:block"
+              className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               title="Clear chat"
             >
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             <button
-              onClick={onClose}
-              className="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-              title="Close"
+              onClick={safeClose}
+              className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
+        {/* Scrollable Messages Area */}
+        <div className="flex-1 overflow-y-auto px-4 pt-[60px] pb-[120px] sm:px-6 sm:pt-4 sm:pb-4">
+          {messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 dark:bg-primary-900/20">
+                <NextImage src="/favicon.png" alt="Studzy" width={32} height={32} />
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                How can I help you today?
+              </h3>
+              <p className="mt-2 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
+                Created by Samkiel • Expert Software Engineering Assistant
+              </p>
+              <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+                {[
+                  { label: "Explain a topic", prompt: "Explain the concept of..." },
+                  { label: "Help with code", prompt: "Debug this code..." },
+                ].map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setInput(item.prompt)}
+                    className="rounded-xl border border-neutral-200 p-3 text-left text-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 py-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div className={`flex max-w-[85%] gap-3 ${message.role === "user" ? "flex-row-reverse text-right" : ""}`}>
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
+                      message.role === "assistant" 
+                        ? "bg-gradient-to-br from-primary-500 to-primary-600" 
+                        : "bg-neutral-500"
+                    }`}>
+                      {message.role === "assistant" ? "S" : "U"}
+                    </div>
+                    <div className="group relative">
+                      <div className={`rounded-2xl px-4 py-3 text-sm ${
+                        message.role === "user"
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
+                      }`}>
+                        {message.image && (
+                          <img
+                            src={message.image}
+                            alt="Uploaded"
+                            className="mb-2 max-h-48 rounded-lg object-cover"
+                          />
+                        )}
+                        <ReactMarkdown className="prose-sm dark:prose-invert">
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                      <button
+                        onClick={() => handleCopy(message.content, message.id)}
+                        className={`absolute -bottom-6 flex items-center gap-1 text-[10px] text-neutral-400 transition-opacity hover:text-neutral-600 dark:hover:text-neutral-300 ${
+                          message.role === "user" ? "right-0" : "left-0"
+                        }`}
+                      >
+                        {copyingId === message.id ? (
+                          <Check className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <Clipboard className="h-3 w-3" />
+                        )}
+                        {copyingId === message.id ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="flex gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
+                      S
+                    </div>
+                    <div className="animate-pulse py-2 text-neutral-400">...</div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
         {/* Options Menu Popover */}
         {showOptionsMenu && (
-          <div className="absolute bottom-24 left-4 z-[70] w-48 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="fixed bottom-24 left-4 z-[70] w-48 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 sm:absolute sm:bottom-20">
             <div className="space-y-1">
               <button
                 onClick={() => {
@@ -430,159 +474,19 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
-                <NextImage src="/favicon.png" alt="Studzy" width={32} height={32} />
-              </div>
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                How can I help you today?
-              </h3>
-              <p className="mt-2 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                Ask me anything about your studies. I can help with explanations, code, research, and more.
-              </p>
-              <div className="mt-6 grid grid-cols-2 gap-2">
-                {[
-                  { 
-                    label: "Explain a complex topic", 
-                    icon: "📚", 
-                    prompt: "Explain the concept of [ENTER TOPIC] in detail. Break it down into simple terms, use analogies, and provide examples for a Software Engineering student." 
-                  },
-                  { 
-                    label: "Help debug my code", 
-                    icon: "🐛", 
-                    prompt: "I need help debugging this code: [PASTE CODE]. The issue is [DESCRIBE ISSUE]. Can you find the bug and suggest a fix?" 
-                  },
-                  { 
-                    label: "Summarize my notes", 
-                    icon: "📝", 
-                    prompt: "Summarize these notes into clear, structured bullet points and highlight the most important takeaways: [PASTE NOTES HERE]" 
-                  },
-                  { 
-                    label: "Create a quiz", 
-                    icon: "❓", 
-                    prompt: "Generate a practice quiz with 5 multiple-choice questions about [ENTER TOPIC]. Include explanations for the correct answers." 
-                  },
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion.label}
-                    onClick={() => handleSuggestionClick(suggestion.prompt)}
-                    className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 p-2 sm:p-3 text-center text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                  >
-                    <span className="text-lg sm:text-xl">{suggestion.icon}</span>
-                    <span className="text-xs sm:text-sm font-medium">{suggestion.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((message) => {
-                // Don't show empty assistant message while loading (loader is shown instead)
-                if (message.role === "assistant" && !message.content && !message.image) return null;
-
-                return (
-                  <div
-                    key={message.id}
-                    className={`group relative flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[85%] min-w-0 rounded-2xl px-4 py-3 select-text relative ${
-                        message.role === "user"
-                          ? "bg-primary-600 text-white"
-                          : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
-                      }`}
-                    >
-                      {/* Copy Button */}
-                      <button
-                        onClick={() => copyToClipboard(message.content, message.id)}
-                        className={`absolute -top-2 ${message.role === 'user' ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg bg-white dark:bg-neutral-800 shadow-sm border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700`}
-                        title="Copy message"
-                      >
-                        {copiedId === message.id ? (
-                          <Check className="h-3.5 w-3.5 text-green-500" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5 text-neutral-400" />
-                        )}
-                      </button>
-
-                      {message.image && (
-                        <img
-                          src={message.image}
-                          alt="Uploaded"
-                          className="mb-2 max-h-48 rounded-lg"
-                        />
-                      )}
-                      {message.role === "assistant" ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <ReactMarkdown
-                            components={{
-                              code({ className, children, ...props }) {
-                                const match = /language-(\w+)/.exec(className || "");
-                                const isInline = !match;
-                                return isInline ? (
-                                  <code className="rounded bg-neutral-200 px-1.5 py-0.5 text-sm dark:bg-neutral-700" {...props}>
-                                    {children}
-                                  </code>
-                                ) : (
-                                  <pre className="block w-full overflow-x-auto rounded-lg bg-neutral-900 p-4 text-sm text-neutral-100 scrollbar-thin scrollbar-thumb-neutral-700">
-                                    <code className={`${className} block min-w-full`} {...props}>
-                                      {children}
-                                    </code>
-                                  </pre>
-                                );
-                              },
-                            }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
-                      ) : (
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {isLoading && messages[messages.length - 1]?.content === "" && (
-                <div className="flex justify-start">
-                  <div className="rounded-2xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.3s]" />
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.15s]" />
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500" />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
-
-        {/* Input Section */}
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-neutral-200 bg-white/80 p-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
-          {/* Image Preview */}
+        {/* Fixed Footer Input */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200 bg-white/80 p-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 sm:relative sm:bottom-auto sm:border-none sm:bg-transparent">
           {image && (
-            <div className="mb-3 flex items-start gap-2">
+            <div className="mb-2 flex items-center gap-2">
               <div className="relative">
-                <img
-                  src={image}
-                  alt="Preview"
-                  className="h-20 w-20 rounded-lg object-cover"
-                />
-                <button
-                  onClick={removeImage}
-                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
-                >
-                  <X className="h-4 w-4" />
+                <img src={image} alt="Preview" className="h-12 w-12 rounded-lg object-cover" />
+                <button onClick={removeImage} className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white">
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             </div>
           )}
-
-          {/* Text Input */}
+          
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative">
               <button
@@ -605,48 +509,38 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                   </div>
                 )}
               </button>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             </div>
+
             <textarea
               ref={inputRef}
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={
-                mode === "code"
-                  ? "Describe the code you need..."
-                  : mode === "image"
-                  ? "Ask about the image..."
-                  : mode === "search"
-                  ? "Search for information..."
-                  : "Ask STUDZY AI anything..."
-              }
-              className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 placeholder:text-xs focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-400 sm:placeholder:text-sm"
+              placeholder="Ask STUDZY AI..."
+              className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white sm:text-base"
               rows={1}
             />
+
             <button
               type={isLoading ? "button" : "submit"}
               onClick={isLoading ? handleStop : undefined}
               disabled={!isLoading && (!input.trim() && !image)}
-              className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-white transition-all ${
                 isLoading 
                   ? "bg-red-500 hover:bg-red-600" 
-                  : "bg-primary-600 hover:bg-primary-700"
+                  : "bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
               }`}
-              title={isLoading ? "Stop generating" : "Send message"}
             >
-              {isLoading ? (
-                <StopCircle className="h-5 w-5" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
+              {isLoading ? <StopCircle className="h-5 w-5" /> : <Send className="h-5 w-5" />}
             </button>
           </form>
-          <p className="mt-2 text-center text-xs text-neutral-400">
-            Press Enter to send, Shift+Enter for new line
+          <p className="mt-2 text-center text-[10px] text-neutral-400 dark:text-neutral-500">
+            Press Enter (Desktop) or Arrow (Mobile) to send
           </p>
         </div>
       </div>
     </div>,
     document.body
   );
-}
+};
