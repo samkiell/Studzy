@@ -182,7 +182,9 @@ async function callMistralAI(
   const mistralMessages: Array<{
     role: "system" | "user" | "assistant";
     content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
-  }> = [];
+  }> = [
+    { role: "system", content: SYSTEM_PROMPT }
+  ];
 
   let modeContext = "";
   switch (mode) {
