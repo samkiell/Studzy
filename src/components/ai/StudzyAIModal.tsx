@@ -343,7 +343,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
       {/* Modal */}
       <div ref={containerRef} className="relative flex h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-900">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b border-neutral-200 bg-white/80 px-6 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
           <div>
             <h2 className="flex items-center gap-2 text-xl font-bold text-neutral-900 dark:text-white">
               <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
@@ -559,7 +559,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
         </div>
 
         {/* Input Section */}
-        <div className="border-t border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="sticky bottom-0 z-30 border-t border-neutral-200 bg-white/80 p-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
           {/* Image Preview */}
           {image && (
             <div className="mb-3 flex items-start gap-2">

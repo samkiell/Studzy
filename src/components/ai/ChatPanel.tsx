@@ -278,9 +278,9 @@ export function ChatPanel({
   };
 
   return (
-    <div ref={containerRef} className="flex h-full flex-1 flex-col">
+    <div ref={containerRef} className="flex h-screen flex-1 flex-col overflow-hidden relative">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800 lg:px-6">
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:px-6">
         <button
           onClick={onToggleSidebar}
           className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 lg:hidden"
@@ -292,8 +292,7 @@ export function ChatPanel({
         <div className="flex-1">
           <h1 className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
             <NextImage src="/favicon.png" alt="Studzy" width={20} height={20} />
-            <span className="hidden xs:inline">STUDZY AI</span>
-            <span className="xs:hidden">AI</span>
+            <span>STUDZY AI</span>
           </h1>
         </div>
 
@@ -480,7 +479,7 @@ export function ChatPanel({
       </div>
 
       {/* Input Section */}
-      <div className="border-t border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-950 lg:px-8">
+      <div className="sticky bottom-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80 lg:px-8">
         <div className="mx-auto max-w-3xl">
           {/* Image Preview */}
           {image && (
@@ -526,20 +525,7 @@ export function ChatPanel({
                     <ImageUp className="h-4 w-4" />
                     <span>Upload Image</span>
                   </button>
-                  <button
-                    onClick={() => {
-                      setEnableSearch(!enableSearch);
-                      setShowOptionsMenu(false);
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                      enableSearch
-                        ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400"
-                        : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                    }`}
-                  >
-                    <Globe className="h-4 w-4" />
-                    <span>Search Mode</span>
-                  </button>
+
                   {(Object.keys(modeConfig) as (keyof typeof modeConfig)[]).map((m) => (
                     <button
                       key={m}
