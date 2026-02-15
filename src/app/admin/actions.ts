@@ -198,3 +198,107 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
     return { success: false, message: "Failed to delete resource" };
   }
 }
+
+export async function createCourse(formData: FormData): Promise<UploadResult> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    const code = (formData.get("code") as string)?.trim().toUpperCase();
+    const title = (formData.get("title") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+
+    if (!code || !title) {
+      return { success: false, message: "Code and Title are required" };
+    }
+
+    const { data: course, error } = await supabase
+      .from("courses")
+      .insert({ code, title, description })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create course error:", error);
+      return { success: false, message: `Failed to create course: ${error.message}` };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/admin/courses");
+
+    return { success: true, message: "Course created successfully!", resourceId: course.id };
+  } catch (error: any) {
+    return { success: false, message: error.message || "An unexpected error occurred" };
+  }
+}
+
+export async function updateCourse(formData: FormData): Promise<UploadResult> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    const id = formData.get("id") as string;
+    const code = (formData.get("code") as string)?.trim().toUpperCase();
+    const title = (formData.get("title") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+
+    if (!id || !code || !title) {
+      return { success: false, message: "ID, Code, and Title are required" };
+    }
+
+    const { error } = await supabase
+      .from("courses")
+      .update({ code, title, description })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Update course error:", error);
+      return { success: false, message: `Failed to update course: ${error.message}` };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/course/${code}`);
+    revalidatePath("/admin/courses");
+
+    return { success: true, message: "Course updated successfully!" };
+  } catch (error: any) {
+    return { success: false, message: error.message || "An unexpected error occurred" };
+  }
+}
+
+export async function deleteCourse(courseId: string): Promise<UploadResult> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Check if course has resources
+    const { count } = await supabase
+      .from("resources")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", courseId);
+
+    if (count && count > 0) {
+      return { 
+        success: false, 
+        message: `Cannot delete course with ${count} resources. Please delete or move resources first.` 
+      };
+    }
+
+    const { error } = await supabase
+      .from("courses")
+      .delete()
+      .eq("id", courseId);
+
+    if (error) {
+      return { success: false, message: `Failed to delete course: ${error.message}` };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/admin/courses");
+
+    return { success: true, message: "Course deleted successfully" };
+  } catch (error: any) {
+    return { success: false, message: error.message || "An unexpected error occurred" };
+  }
+}
+
