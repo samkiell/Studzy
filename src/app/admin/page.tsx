@@ -135,8 +135,8 @@ export default async function AdminPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { href: "/admin/upload", label: "Upload Resource", desc: "Add new materials", icon: CloudUpload, bg: "bg-primary-100", color: "text-primary-600" },
-            { href: "/admin/resources", label: "Manage Content", desc: "Edit or delete resources", icon: ClipboardCheck, bg: "bg-amber-100", color: "text-amber-600" },
-            { href: "/admin/analytics", label: "Engagement", desc: "View detailed stats", icon: BarChart3, bg: "bg-blue-100", color: "text-blue-600" },
+            { href: "/admin/resources", label: "Manage Content", desc: "Edit resources", icon: ClipboardCheck, bg: "bg-amber-100", color: "text-amber-600" },
+            { href: "/admin/courses", label: "Manage Courses", desc: "Edit code/title/desc", icon: BookOpen, bg: "bg-blue-100", color: "text-blue-600" },
             { href: "/dashboard", label: "Preview App", desc: "View as student", icon: LayoutDashboard, bg: "bg-green-100", color: "text-green-600" },
           ].map((action) => (
             <Link
