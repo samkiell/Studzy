@@ -1,4 +1,3 @@
-```typescript
 import { NextRequest, NextResponse } from "next/server";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
