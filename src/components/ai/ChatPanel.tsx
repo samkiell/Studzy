@@ -49,9 +49,22 @@ export function ChatPanel({
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [enableSearch, setEnableSearch] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close options menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowOptionsMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Update messages when session changes
   useEffect(() => {
@@ -265,7 +278,7 @@ export function ChatPanel({
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col">
+    <div ref={containerRef} className="flex h-full flex-1 flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800 lg:px-6">
         <button
@@ -279,69 +292,25 @@ export function ChatPanel({
         <div className="flex-1">
           <h1 className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
             <NextImage src="/favicon.png" alt="Studzy" width={20} height={20} />
-            STUDZY AI
+            <span className="hidden xs:inline">STUDZY AI</span>
+            <span className="xs:hidden">AI</span>
           </h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Created by{" "}
-            <a
-              href="https://samkiel.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-500 hover:underline"
-            >
-              Samkiel
-            </a>
-          </p>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-2">
           <button
             onClick={onNewChat}
-            className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+            className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2 py-1.5 text-xs font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 sm:px-3 sm:py-1.5 sm:text-sm"
             title="Start New Chat"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Chat</span>
           </button>
         </div>
-
-        {/* Mode Tabs */}
-        <div className="hidden gap-1 sm:flex">
-          {(Object.keys(modeConfig) as ChatMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === m
-                  ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                  : "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              }`}
-            >
-              {modeConfig[m].icon}
-              {modeConfig[m].label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Mobile Mode Tabs */}
-      <div className="flex gap-1 border-b border-neutral-200 px-4 py-2 dark:border-neutral-800 sm:hidden">
-        {(Object.keys(modeConfig) as ChatMode[]).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
-              mode === m
-                ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                : "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            {modeConfig[m].icon}
-            {modeConfig[m].label}
-          </button>
-        ))}
-      </div>
+
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
@@ -542,27 +511,70 @@ export function ChatPanel({
             </div>
           )}
 
+          {/* Options Menu Popover */}
+          <div className="relative mx-auto max-w-3xl">
+            {showOptionsMenu && (
+              <div className="absolute bottom-16 left-0 z-50 w-48 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                      setShowOptionsMenu(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                  >
+                    <ImageUp className="h-4 w-4" />
+                    <span>Upload Image</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEnableSearch(!enableSearch);
+                      setShowOptionsMenu(false);
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      enableSearch
+                        ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400"
+                        : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span>Search Mode</span>
+                  </button>
+                  {(Object.keys(modeConfig) as (keyof typeof modeConfig)[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        setMode(m);
+                        setShowOptionsMenu(false);
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        mode === m
+                          ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400"
+                          : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                      }`}
+                    >
+                      {modeConfig[m].icon}
+                      <span>{modeConfig[m].label} Mode</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Input Row */}
           <div className="flex items-end gap-2">
-            {/* Upload & Search Buttons */}
-            <div className="flex shrink-0 gap-1 pb-1">
+            <div className="relative">
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-                title="Upload image"
-              >
-                <ImageUp className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setEnableSearch(!enableSearch)}
-                className={`rounded-lg p-2 transition-colors ${
-                  enableSearch
-                    ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-                    : "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+                type="button"
+                onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                className={`flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-neutral-200 transition-colors dark:border-neutral-700 ${
+                  showOptionsMenu 
+                    ? "bg-primary-50 text-primary-600 dark:bg-primary-900/30" 
+                    : "bg-neutral-50 text-neutral-500 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
                 }`}
-                title="Toggle search"
               >
-                <Globe className="h-5 w-5" />
+                <Plus className={`h-5 w-5 transition-transform ${showOptionsMenu ? "rotate-45" : ""}`} />
               </button>
               <input
                 ref={fileInputRef}
