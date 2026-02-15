@@ -10,6 +10,7 @@ export function StudzyAIButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [moveMode, setMoveMode] = useState(false); // New state to unlock movement
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const pathname = usePathname();
@@ -65,6 +66,10 @@ export function StudzyAIButton() {
   }, [isDragging, isAuthenticated]);
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    // Only allow dragging if moveMode is ON or if it's a touch device (optional, but requested for PC specifically)
+    const isTouch = 'touches' in e;
+    if (!moveMode && !isTouch) return;
+
     setIsDragging(true);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -77,7 +82,16 @@ export function StudzyAIButton() {
       e.stopPropagation();
       return;
     }
+    // If in move mode, a single click just exits move mode instead of opening
+    if (moveMode) {
+      setMoveMode(false);
+      return;
+    }
     setIsOpen(true);
+  };
+
+  const handleDoubleClick = () => {
+    setMoveMode(true);
   };
 
   if (!isAuthenticated || pathname.startsWith("/studzyai")) return null;
@@ -89,12 +103,18 @@ export function StudzyAIButton() {
         onMouseDown={handleMouseDown}
         onTouchStart={handleMouseDown}
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         style={{
           transform: `translate(${-position.x}px, ${-position.y}px)`,
           touchAction: 'none'
         }}
-        className="fixed bottom-6 right-4 z-[60] flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 p-3 font-medium text-white shadow-lg transition-shadow hover:shadow-xl active:scale-95 sm:right-6 sm:px-5 sm:py-3 cursor-move"
+        className={`fixed bottom-6 right-4 z-[60] flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 p-3 font-medium text-white shadow-lg transition-all active:scale-95 sm:right-6 sm:px-5 sm:py-3 ${
+          moveMode 
+            ? "cursor-move ring-4 ring-primary-400/50 opacity-90 scale-105" 
+            : "cursor-pointer hover:scale-105 hover:shadow-xl"
+        }`}
         aria-label="Ask STUDZY AI"
+        title={moveMode ? "Dragging enabled. Click to lock." : "Double-click to move"}
       >
         <svg
           className="h-6 w-6 sm:h-5 sm:w-5 pointer-events-none"
@@ -109,7 +129,9 @@ export function StudzyAIButton() {
             d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
           />
         </svg>
-        <span className="hidden sm:inline pointer-events-none">Ask STUDZY AI</span>
+        <span className="hidden sm:inline pointer-events-none">
+          {moveMode ? "Moving..." : "Ask STUDZY AI"}
+        </span>
       </button>
 
       <StudzyAIModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
