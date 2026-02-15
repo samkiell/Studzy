@@ -449,7 +449,13 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
                       S
                     </div>
-                    <div className="animate-pulse py-2 text-neutral-400">...</div>
+                    <div className="rounded-2xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800">
+                      <div className="flex items-center gap-1.5 py-1">
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.3s]" />
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.15s]" />
+                        <div className="h-2 w-2 animate-bounce rounded-full bg-primary-500" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
