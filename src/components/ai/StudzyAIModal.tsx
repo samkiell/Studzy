@@ -15,7 +15,8 @@ import {
   Send, 
   Loader2,
   ExternalLink,
-  StopCircle
+  StopCircle,
+  Plus
 } from "lucide-react";
 import NextImage from "next/image";
 
@@ -313,6 +314,14 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             </button>
             <button
               onClick={clearChat}
+              className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+              title="New chat"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">New Chat</span>
+            </button>
+            <button
+              onClick={clearChat}
               className="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
               title="Clear chat"
             >
@@ -503,7 +512,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                   ? "Search for information..."
                   : "Ask STUDZY AI anything..."
               }
-              className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-400"
+              className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 placeholder:text-xs focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-400 sm:placeholder:text-sm"
               rows={1}
             />
             <button
