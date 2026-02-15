@@ -51,7 +51,7 @@ export default async function DashboardLayout({
         {children}
         
         {/* Bottom AI Access */}
-        <div className="mt-20 pb-12">
+        <div className="mt-20 pb-1">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 to-primary-800 p-8 shadow-2xl dark:from-primary-900 dark:to-neutral-900">
             {/* Background Decorations */}
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
@@ -63,7 +63,7 @@ export default async function DashboardLayout({
                   Ready to study smarter? 🚀
                 </h2>
                 <p className="mt-2 text-primary-100 dark:text-neutral-300">
-                  Ask STUDZY AI to explain concepts, generate quizzes, or summarize your notes.
+                  Ask STUDZY AI to explain concepts, generate quizzes, or summarize your notes. Studzy AI was built to beat Borokini's questions?
                 </p>
               </div>
               <Link 
@@ -85,7 +85,7 @@ export default async function DashboardLayout({
           </div>
           
           <div className="mt-12 text-center text-sm text-neutral-500 dark:text-neutral-500">
-            <p>© {new Date().getFullYear()} Studzy • Created with ⚡ by Samkiel</p>
+            <p>© {new Date().getFullYear()} Studzy • Created with ⚡beans</p>
           </div>
         </div>
       </main>
