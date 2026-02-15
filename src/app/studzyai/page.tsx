@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 export default function StudzyAIPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState("");
+  const [isDone, setIsDone] = useState(false);
 
   useEffect(() => {
     async function createAndRedirect() {
@@ -18,6 +20,7 @@ export default function StudzyAIPage() {
 
         if (res.ok) {
           const data = await res.json();
+          setIsDone(true);
           router.replace(`/studzyai/chat/${data.session.id}`);
         } else if (res.status === 401) {
           router.replace("/login");
@@ -65,11 +68,13 @@ export default function StudzyAIPage() {
     );
   }
 
-  const getLoadingMessage = () => {
+  useEffect(() => {
+    if (isDone) return;
+
     const messages = [
       "Hacking into the school's databse",
       "Asking Thessy for answers",
-      "Asking Thessy for the ‘small hint’ she promised...",
+      "Asking Thessy for the ‘answers’ she promised...",
       "Thessy saying ‘it’s easy’ after studying for 9 hours...",
       "Waiting for Dr. Gambo to approve this academically...",
       "Dr. Gambo adjusting the grading scale spiritually...",
@@ -92,15 +97,30 @@ export default function StudzyAIPage() {
       "Thessy upgrading from normal smart to exam hall monster...",
       "Dr. Gambo sensing academic dishonesty from 200 meters...",
     ];
-    return messages[Math.floor(Math.random() * messages.length)];
-  };
+
+    const pickRandom = () => messages[Math.floor(Math.random() * messages.length)];
+    
+    // Set initial message
+    setCurrentLoadingMessage(pickRandom());
+
+    const interval = setInterval(() => {
+      setCurrentLoadingMessage(pickRandom());
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isDone]);
+
+  if (isDone && !error) return null;
 
   return (
-    <div className="flex h-screen items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-          {getLoadingMessage()}
+    <div className="flex h-screen items-center justify-center bg-white dark:bg-neutral-950">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative h-12 w-12 text-primary-600">
+          <div className="absolute inset-0 animate-ping rounded-full bg-primary-400/20" />
+          <div className="relative h-full w-full animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+        </div>
+        <p className="max-w-[280px] animate-pulse text-center text-sm font-medium text-neutral-600 dark:text-neutral-400">
+          {currentLoadingMessage}
         </p>
       </div>
     </div>
