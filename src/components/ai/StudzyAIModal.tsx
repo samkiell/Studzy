@@ -92,7 +92,12 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      inputRef.current?.focus();
+      
+      // Only auto-focus on desktop to avoid triggering the mobile keyboard automatically
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile) {
+        inputRef.current?.focus();
+      }
     } else {
       document.body.style.overflow = "unset";
     }
