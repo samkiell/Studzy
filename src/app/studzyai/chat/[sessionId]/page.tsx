@@ -134,7 +134,9 @@ export default function ChatSessionPage() {
       "Waking up the local university ghost...",
       "Asking ChatGPT for the answers... just kidding...",
       "Translating professor-speak into English...",
-      "Loading 4.0 GPA personality...",
+      "Loading 5.0 GPA personality...",
+      "Asking Dr. Gambo for permission",
+      "Hacking into the school's databse",
     ];
     return messages[Math.floor(Math.random() * messages.length)];
   };
