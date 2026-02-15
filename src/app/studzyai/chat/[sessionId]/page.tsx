@@ -124,14 +124,7 @@ export default function ChatSessionPage() {
 
   const getLoadingMessage = () => {
     const messages = [
-      "Consulting the academic gods...",
-      "Polishing your brain cells...",
-      "Calculating how much coffee you need...",
-      "Reading chapters you skipped...",
-      "Converting tears into grades...",
-      "Briefly becoming smarter...",
-      "Studzing your study habits...",
-      "Waking up the local university ghost...",
+      "Asking ChatGPT for the answers... just kidding...",
       "Loading 5.0 GPA personality...",
       "Asking Dr. Gambo for permission",
       "Hacking into the school's databse",
