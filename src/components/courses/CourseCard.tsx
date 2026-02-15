@@ -1,32 +1,11 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import type { Course } from "@/types/database";
-import { Share2, Check, Copy } from "lucide-react";
-import { copyToClipboard } from "@/lib/clipboard";
-import { getURL } from "@/lib/utils";
 
 interface CourseCardProps {
   course: Course;
 }
 
 export function CourseCard({ course }: CourseCardProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleShare = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const url = `${getURL()}course/${course.code}`;
-    const success = await copyToClipboard(url);
-    
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   return (
     <div className="relative group/card">
       <Link href={`/course/${course.code}`}>
@@ -36,17 +15,6 @@ export function CourseCard({ course }: CourseCardProps) {
               {course.code}
             </span>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleShare}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 transition-all hover:bg-primary-100 hover:text-primary-600 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-primary-900/30 dark:hover:text-primary-400"
-                title="Share Course"
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </button>
               <svg
                 className="h-5 w-5 text-neutral-400 transition-transform group-hover/card:translate-x-1 group-hover/card:text-primary-500"
                 fill="none"
@@ -69,14 +37,6 @@ export function CourseCard({ course }: CourseCardProps) {
             <p className="mt-2 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
               {course.description}
             </p>
-          )}
-
-          {copied && (
-            <div className="absolute top-16 right-6 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="rounded bg-neutral-900 px-2 py-1 text-[10px] font-bold text-white shadow-xl dark:bg-white dark:text-neutral-900">
-                LINK COPIED
-              </div>
-            </div>
           )}
         </div>
       </Link>
