@@ -10,9 +10,10 @@ export function StudzyAIButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [moveMode, setMoveMode] = useState(false); // New state to unlock movement
+  const [moveMode, setMoveMode] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dragStartPos = useRef({ x: 0, y: 0 });
+  const hasMoved = useRef(false); // Track actual movement
   const pathname = usePathname();
 
   useEffect(() => {
@@ -36,6 +37,13 @@ export function StudzyAIButton() {
       const moveX = clientX - dragStartPos.current.x;
       const moveY = clientY - dragStartPos.current.y;
 
+      // Only set dragging if they moved more than a few pixels
+      if (!hasMoved.current && (Math.abs(moveX) > 5 || Math.abs(moveY) > 5)) {
+        hasMoved.current = true;
+      }
+
+      if (!hasMoved.current) return;
+
       setPosition(prev => ({
         x: prev.x - moveX,
         y: prev.y - moveY
@@ -46,7 +54,11 @@ export function StudzyAIButton() {
 
     const handleMouseUp = () => {
       if (isDragging) {
-        setTimeout(() => setIsDragging(false), 50);
+        // Delay clearing dragging so click handler can see it
+        setTimeout(() => {
+          setIsDragging(false);
+          hasMoved.current = false;
+        }, 10);
       }
     };
 
@@ -66,18 +78,20 @@ export function StudzyAIButton() {
   }, [isDragging, isAuthenticated]);
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    // Only allow dragging if moveMode is ON or if it's a touch device (optional, but requested for PC specifically)
+    // Only allow dragging if moveMode is ON or if it's a touch device
     const isTouch = 'touches' in e;
     if (!moveMode && !isTouch) return;
 
     setIsDragging(true);
+    hasMoved.current = false; // Reset on start
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     dragStartPos.current = { x: clientX, y: clientY };
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (isDragging) {
+    // If we actually dragged the button, don't open the modal
+    if (hasMoved.current) {
       e.preventDefault();
       e.stopPropagation();
       return;

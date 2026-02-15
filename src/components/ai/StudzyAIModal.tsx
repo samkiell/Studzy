@@ -434,7 +434,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                     className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                      className={`max-w-[85%] min-w-0 rounded-2xl px-4 py-3 ${
                         message.role === "user"
                           ? "bg-primary-600 text-white"
                           : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
@@ -459,8 +459,8 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                                     {children}
                                   </code>
                                 ) : (
-                                  <pre className="overflow-x-auto rounded-lg bg-neutral-900 p-4 text-sm text-neutral-100">
-                                    <code className={className} {...props}>
+                                  <pre className="block w-full overflow-x-auto rounded-lg bg-neutral-900 p-4 text-sm text-neutral-100 scrollbar-thin scrollbar-thumb-neutral-700">
+                                    <code className={`${className} block min-w-full`} {...props}>
                                       {children}
                                     </code>
                                   </pre>
