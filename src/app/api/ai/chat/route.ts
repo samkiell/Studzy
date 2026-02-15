@@ -71,31 +71,37 @@ export async function POST(request: NextRequest) {
     // If there ARE images, we MUST use a vision model (like Pixtral) because
     // most agents are configured with text-only models and will error on vision content.
     const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImages;
+    console.log(`AI Request - Mode: ${mode}, Use Agent: ${shouldUseAgent}, Has Images: ${hasImages}`);
 
     if (shouldUseAgent) {
-      // ✅ USING THE OFFICIAL SDK AGENTS ENDPOINT
-      const response = await client.agents.complete({
-        agentId: MISTRAL_AI_AGENT_ID!,
-        messages: mistralMessages,
-        stream: true,
-      });
-
-      return streamResponse(response);
+      try {
+        const response = await client.agents.complete({
+          agentId: MISTRAL_AI_AGENT_ID!,
+          messages: mistralMessages,
+          stream: true,
+        });
+        return streamResponse(response);
+      } catch (agentError: any) {
+        console.error("Mistral Agent Error:", agentError);
+        throw agentError;
+      }
     } else {
-      // FALLBACK TO BASE MODEL (Vision or default)
-      const model = hasImages ? "pixtral-large-latest" : "mistral-large-latest";
-      
-      const response = await client.chat.complete({
-        model: model,
-        messages: mistralMessages,
-        stream: true,
-        temperature: mode === "code" ? 0.3 : 0.7,
-      });
-
-      return streamResponse(response);
+      try {
+        const model = hasImages ? "pixtral-large-latest" : "mistral-large-latest";
+        const response = await client.chat.complete({
+          model: model,
+          messages: mistralMessages,
+          stream: true,
+          temperature: mode === "code" ? 0.3 : 0.7,
+        });
+        return streamResponse(response);
+      } catch (chatError: any) {
+        console.error("Mistral Chat Error:", chatError);
+        throw chatError;
+      }
     }
   } catch (error: any) {
-    console.error("Error in AI chat API:", error);
+    console.error("Total AI API Failure:", error);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 }

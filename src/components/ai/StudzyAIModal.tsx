@@ -163,7 +163,10 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) throw new Error("Failed to get response");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to get response: ${response.status}`);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No reader");
