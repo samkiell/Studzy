@@ -28,9 +28,12 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { content, mode, image, enable_search } = body;
+    const { content, mode, image, images, enable_search } = body;
+    
+    // If multiple images are provided, join them or store as JSON string
+    const finalImageUrl = images && images.length > 0 ? JSON.stringify(images) : image;
 
-    if (!content && !image) {
+    if (!content && !finalImageUrl) {
       return NextResponse.json({ error: "Message content required" }, { status: 400 });
     }
 
@@ -42,7 +45,7 @@ export async function POST(
         role: "user",
         content: content || "",
         mode: mode || "chat",
-        image_url: image || null,
+        image_url: finalImageUrl || null,
       })
       .select()
       .single();
@@ -164,12 +167,27 @@ async function callMistralAI(
 
     if (msg.role === "user") {
       if (msg.image_url) {
+        const contentArray: any[] = [
+          { type: "text", text: msg.content + (isLast ? modeContext : "") }
+        ];
+
+        // Check if image_url is a JSON string of multiple images
+        if (msg.image_url.startsWith('[')) {
+          try {
+            const parsedImages = JSON.parse(msg.image_url);
+            parsedImages.forEach((url: string) => {
+              contentArray.push({ type: "image_url", image_url: { url } });
+            });
+          } catch (e) {
+            contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
+          }
+        } else {
+          contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
+        }
+
         mistralMessages.push({
           role: "user",
-          content: [
-            { type: "text", text: msg.content + (isLast ? modeContext : "") },
-            { type: "image_url", image_url: { url: msg.image_url } },
-          ],
+          content: contentArray,
         });
       } else {
         mistralMessages.push({

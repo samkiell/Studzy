@@ -17,6 +17,7 @@ interface ChatRequest {
   enable_search: boolean;
   enable_code: boolean;
   image?: string;
+  images?: string[];
 }
 
 export async function POST(request: NextRequest) {
@@ -60,21 +61,25 @@ export async function POST(request: NextRequest) {
       const isLast = i === messages.length - 1;
 
       if (msg.role === "user") {
-        if (msg.image) {
+        if (msg.image || (msg as any).images) {
+          const contentArray: any[] = [
+            {
+              type: "text",
+              text: msg.content + (isLast ? modeContext : ""),
+            },
+          ];
+
+          const msgImages = (msg as any).images || (msg.image ? [msg.image] : []);
+          msgImages.forEach((url: string) => {
+            contentArray.push({
+              type: "image_url",
+              image_url: { url },
+            });
+          });
+
           mistralMessages.push({
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: msg.content + (isLast ? modeContext : ""),
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: msg.image,
-                },
-              },
-            ],
+            content: contentArray,
           });
         } else {
           mistralMessages.push({
@@ -98,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Use Agents API only if AGENT_ID is provided AND there's no image
     // Most agents don't support vision yet, so we fall back to standard Pixtral for images
-    const hasImage = mode === "image" || image || messages.some((m) => m.image);
+    const hasImage = mode === "image" || image || body.images?.length || messages.some((m) => m.image || (m as any).images?.length);
     const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImage;
     const apiUrl = shouldUseAgent ? MISTRAL_AGENTS_URL : MISTRAL_API_URL;
 

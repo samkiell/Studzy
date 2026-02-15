@@ -44,8 +44,8 @@ export function ChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [mode, setMode] = useState<ChatMode>("chat");
   const [input, setInput] = useState("");
-  const [image, setImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [enableSearch, setEnableSearch] = useState(false);
@@ -107,20 +107,27 @@ export function ChatPanel({
 
   const processImageFile = (file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      alert("Image must be under 10MB");
+      alert(`Image ${file.name} is over 10MB`);
       return;
     }
-    setImageFile(file);
+    setImageFiles(prev => [...prev, file]);
     setMode("image");
-    // Create preview
+    
     const reader = new FileReader();
-    reader.onload = (ev) => setImage(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setImages(prev => [...prev, result]);
+    };
     reader.readAsDataURL(file);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processImageFile(file);
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => processImageFile(file));
+    }
+    // Respect the input for same-file re-uploads if needed
+    if (e.target) e.target.value = "";
   };
 
   const uploadImageToStorage = async (file: File): Promise<string | null> => {
@@ -150,29 +157,41 @@ export function ChatPanel({
     }
   };
 
-  const removeImage = () => {
-    setImage(null);
-    setImageFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if ((!input.trim() && !image) || isLoading || isUploading) return;
+    if ((!input.trim() && images.length === 0) || isLoading || isUploading) return;
 
     const content = input.trim();
     setInput("");
     setIsLoading(true);
 
-    // Upload image to storage if present
-    let imageUrl: string | null = null;
-    if (imageFile) {
-      imageUrl = await uploadImageToStorage(imageFile);
-      if (!imageUrl && !content) {
+    // Upload images to storage if present
+    let uploadedUrls: string[] = [];
+    if (imageFiles.length > 0) {
+      setIsUploading(true);
+      try {
+        const uploadPromises = imageFiles.map(file => uploadImageToStorage(file));
+        const results = await Promise.all(uploadPromises);
+        uploadedUrls = results.filter((url): url is string => url !== null);
+      } catch (err) {
+        console.error("Multi-upload error:", err);
+      } finally {
+        setIsUploading(false);
+      }
+
+      if (uploadedUrls.length === 0 && !content) {
         setIsLoading(false);
-        return; // Image upload failed and no text
+        return;
       }
     }
+
+    // Combine local data URLs if upload failed but we want to show something, or just use uploaded ones
+    const finalImageUrls = uploadedUrls.length > 0 ? uploadedUrls : images;
 
     // Optimistic user message
     const tempUserMsg: ChatMessage = {
@@ -181,12 +200,16 @@ export function ChatPanel({
       role: "user",
       content,
       mode,
-      image_url: imageUrl || image,
+      image_url: finalImageUrls[0] || null, // Keeping for compatibility
       created_at: new Date().toISOString(),
     };
+    
+    // We'll store multiple images as a JSON string in image_url for now if needed,
+    // but the API will handle 'image' as an array if we update it.
+    
     setMessages((prev) => [...prev, tempUserMsg]);
-    setImage(null);
-    setImageFile(null);
+    setImages([]);
+    setImageFiles([]);
 
     try {
       const response = await fetch(`/api/ai/sessions/${sessionId}/messages`, {
@@ -195,7 +218,7 @@ export function ChatPanel({
         body: JSON.stringify({
           content,
           mode,
-          image: imageUrl,
+          images: uploadedUrls,
           enable_search: enableSearch || mode === "search",
         }),
       });
@@ -410,12 +433,26 @@ export function ChatPanel({
                         <Copy className="h-3.5 w-3.5 text-neutral-400" />
                       )}
                     </button>
-                    {message.image_url && (
+                    {message.image_url && !message.image_url.startsWith('[') && (
                       <img
                         src={message.image_url}
                         alt="Uploaded"
                         className="mb-2 max-h-60 rounded-lg border border-neutral-200 dark:border-neutral-700"
                       />
+                    )}
+
+                    {/* Handle multiple images if stored as JSON in image_url or similar */}
+                    {message.image_url?.startsWith('[') && (
+                      <div className="mb-2 grid grid-cols-2 gap-2">
+                        {JSON.parse(message.image_url).map((url: string, idx: number) => (
+                          <img
+                            key={idx}
+                            src={url}
+                            alt={`Uploaded image ${idx + 1}`}
+                            className="h-32 w-full rounded-lg border border-neutral-200 object-cover dark:border-neutral-700"
+                          />
+                        ))}
+                      </div>
                     )}
 
                     {message.role === "assistant" ? (
@@ -481,32 +518,32 @@ export function ChatPanel({
       {/* Input Section */}
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-8">
         <div className="mx-auto max-w-3xl">
-          {/* Image Preview */}
-          {image && (
-            <div className="mb-3 flex items-start gap-3">
-              <div className="relative">
-                <img
-                  src={image}
-                  alt="Preview"
-                  className="h-20 w-20 rounded-lg border border-neutral-200 object-cover dark:border-neutral-700"
-                />
-                {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
-                    <Loader2 className="h-5 w-5 animate-spin text-white" />
+          {/* Multiple Image Previews */}
+          {images.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-3">
+              {images.map((src, index) => (
+                <div key={index} className="relative group/preview">
+                  <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700">
+                    <img
+                      src={src}
+                      alt={`Preview ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {isUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <Loader2 className="h-5 w-5 animate-spin text-white" />
+                      </div>
+                    )}
                   </div>
-                )}
-                <button
-                  onClick={removeImage}
-                  disabled={isUploading}
-                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 disabled:opacity-50"
-                  title="Remove image"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {imageFile?.name || "Pasted image"}
-              </p>
+                  <button
+                    onClick={() => removeImage(index)}
+                    disabled={isUploading}
+                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-transform hover:scale-110 hover:bg-red-600 disabled:opacity-50"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -575,6 +612,7 @@ export function ChatPanel({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageUpload}
                 className="hidden"
               />
@@ -605,7 +643,7 @@ export function ChatPanel({
             <div className="shrink-0">
               <button
                 onClick={() => handleSubmit()}
-                disabled={(!input.trim() && !image) || isLoading || isUploading}
+                disabled={(!input.trim() && images.length === 0) || isLoading || isUploading}
                 className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-primary-600 text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading || isUploading ? (
