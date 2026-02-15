@@ -53,7 +53,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert messages to Mistral format
-    for (const msg of messages) {
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      const isLast = i === messages.length - 1;
+
       if (msg.role === "user") {
         if (msg.image) {
           mistralMessages.push({
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
             content: [
               {
                 type: "text",
-                text: msg.content + modeContext,
+                text: msg.content + (isLast ? modeContext : ""),
               },
               {
                 type: "image_url",
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
         } else {
           mistralMessages.push({
             role: "user",
-            content: msg.content + (messages.indexOf(msg) === messages.length - 1 ? modeContext : ""),
+            content: msg.content + (isLast ? modeContext : ""),
           });
         }
       } else {
