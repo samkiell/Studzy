@@ -414,10 +414,10 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                   <button
                     key={suggestion.label}
                     onClick={() => handleSuggestionClick(suggestion.prompt)}
-                    className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 p-3 text-center text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                    className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 p-2 sm:p-3 text-center text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
                   >
-                    <span className="text-xl">{suggestion.icon}</span>
-                    <span className="font-medium">{suggestion.label}</span>
+                    <span className="text-lg sm:text-xl">{suggestion.icon}</span>
+                    <span className="text-xs sm:text-sm font-medium">{suggestion.label}</span>
                   </button>
                 ))}
               </div>
@@ -519,9 +519,9 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
             >
-              <ImageUp className="h-4 w-4" />
+              <ImageUp className="h-3.5 w-3.5 sm:h-4 w-4" />
               Upload Image
             </button>
             <input
