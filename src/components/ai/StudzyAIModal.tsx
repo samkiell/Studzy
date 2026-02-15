@@ -321,6 +321,9 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
               <h2 className="text-lg font-bold text-neutral-900 dark:text-white sm:text-xl">
                 STUDZY AI
               </h2>
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                Created by <span className="text-primary-500 dark:text-primary-400 font-medium">Samkiel</span>
+              </p>
             </div>
           </div>
           
