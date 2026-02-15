@@ -61,10 +61,7 @@ export function ChatPanel({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Focus input
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, [sessionId]);
+
 
   // Handle paste for images
   const handlePaste = useCallback((e: ClipboardEvent) => {
@@ -534,7 +531,7 @@ export function ChatPanel({
                     ? "Search for information..."
                     : "Ask STUDZY AI anything..."
                 }
-                className="max-h-40 min-h-[44px] w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-400"
+                className="max-h-40 min-h-[44px] w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 placeholder:text-xs focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-400 sm:placeholder:text-sm"
                 rows={1}
               />
             </div>
