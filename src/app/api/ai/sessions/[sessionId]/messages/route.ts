@@ -112,7 +112,9 @@ export async function POST(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
 const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
+const MISTRAL_AGENTS_URL = "https://api.mistral.ai/v1/agents/completions";
 
 
 interface DBMessage {
@@ -187,14 +189,17 @@ async function callMistralAI(
   }
 
   try {
-    const response = await fetch(MISTRAL_API_URL, {
+    // Use Agents API if AGENT_ID is provided, otherwise standard Chat API
+    const apiUrl = MISTRAL_AI_AGENT_ID ? MISTRAL_AGENTS_URL : MISTRAL_API_URL;
+
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${MISTRAL_API_KEY}`,
       },
       body: JSON.stringify({
-        model,
+        ...(MISTRAL_AI_AGENT_ID ? { agent_id: MISTRAL_AI_AGENT_ID } : { model }),
         messages: mistralMessages,
         temperature: mode === "code" ? 0.3 : 0.7,
         max_tokens: mode === "code" ? 4096 : 2048,
