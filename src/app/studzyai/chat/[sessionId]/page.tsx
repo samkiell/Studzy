@@ -132,11 +132,10 @@ export default function ChatSessionPage() {
       "Briefly becoming smarter...",
       "Studzing your study habits...",
       "Waking up the local university ghost...",
-      "Asking ChatGPT for the answers... just kidding...",
-      "Translating professor-speak into English...",
       "Loading 5.0 GPA personality...",
       "Asking Dr. Gambo for permission",
       "Hacking into the school's databse",
+      "Asking Thessy for answers",
     ];
     return messages[Math.floor(Math.random() * messages.length)];
   };
