@@ -591,7 +591,16 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                     : "bg-neutral-50 text-neutral-500 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
                 }`}
               >
-                <Plus className={`h-5 w-5 transition-transform ${showOptionsMenu ? "rotate-45" : ""}`} />
+                {showOptionsMenu ? (
+                  <Plus className="h-5 w-5 rotate-45" />
+                ) : (
+                  <div className="flex items-center justify-center">
+                    {mode === "chat" && <MessageSquare className="h-5 w-5" />}
+                    {mode === "image" && <ImageIcon className="h-5 w-5" />}
+                    {mode === "search" && <Globe className="h-5 w-5" />}
+                    {mode === "code" && <Code className="h-5 w-5" />}
+                  </div>
+                )}
               </button>
             </div>
             <textarea
