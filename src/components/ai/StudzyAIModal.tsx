@@ -50,6 +50,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [openingWorkspace, setOpeningWorkspace] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -322,7 +323,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             <button
               onClick={openFullWorkspace}
               disabled={openingWorkspace}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
+              className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
               title="Open Full Workspace"
             >
               {openingWorkspace ? (
@@ -330,11 +331,11 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               ) : (
                 <ExternalLink className="h-4 w-4" />
               )}
-              <span className="hidden sm:inline">Full Workspace</span>
+              <span className="hidden md:inline">Full Workspace</span>
             </button>
             <button
               onClick={clearChat}
-              className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+              className="hidden items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 sm:flex"
               title="New chat"
             >
               <Plus className="h-4 w-4" />
@@ -342,7 +343,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             </button>
             <button
               onClick={clearChat}
-              className="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+              className="hidden rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 sm:block"
               title="Clear chat"
             >
               <Trash2 className="h-5 w-5" />
@@ -357,25 +358,41 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           </div>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="flex gap-1 border-b border-neutral-200 px-6 py-2 dark:border-neutral-800">
-          {(Object.keys(modeConfig) as ChatMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === m
-                  ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              }`}
-            >
-              <span>{modeConfig[m].icon}</span>
-              <span className="hidden sm:inline">{modeConfig[m].label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Options Menu Popover */}
+        {showOptionsMenu && (
+          <div className="absolute bottom-24 left-4 z-[70] w-48 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="space-y-1">
+              <button
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setShowOptionsMenu(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                <ImageUp className="h-4 w-4" />
+                <span>Upload Image</span>
+              </button>
+              {(Object.keys(modeConfig) as ChatMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setMode(m);
+                    setShowOptionsMenu(false);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    mode === m
+                      ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400"
+                      : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                  }`}
+                >
+                  {modeConfig[m].icon}
+                  <span>{modeConfig[m].label} Mode</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
@@ -515,26 +532,21 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             </div>
           )}
 
-          {/* Options */}
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            >
-              <ImageUp className="h-3.5 w-3.5 sm:h-4 w-4" />
-              Upload Image
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-          </div>
-
           {/* Text Input */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleSubmit} className="flex items-end gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                className={`flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-neutral-200 transition-colors dark:border-neutral-700 ${
+                  showOptionsMenu 
+                    ? "bg-primary-50 text-primary-600 dark:bg-primary-900/30" 
+                    : "bg-neutral-50 text-neutral-500 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                }`}
+              >
+                <Plus className={`h-5 w-5 transition-transform ${showOptionsMenu ? "rotate-45" : ""}`} />
+              </button>
+            </div>
             <textarea
               ref={inputRef}
               value={input}
