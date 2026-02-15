@@ -15,6 +15,9 @@ import {
   Plus,
   Copy,
   Check,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ExternalLink,
 } from "lucide-react";
 import NextImage from "next/image";
 import type { ChatMessage, ChatMode } from "@/types/database";
@@ -315,7 +318,7 @@ export function ChatPanel({
           className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
         >
-          <Menu className="h-5 w-5" />
+          {sidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
         </button>
 
         <div className="flex-1">
@@ -347,7 +350,7 @@ export function ChatPanel({
 
       {/* Messages Area */}
       <div className={`flex-1 overflow-y-auto pt-[60px] pb-[100px] transition-all duration-300 lg:pt-[110px] ${
-        sidebarOpen ? "lg:ml-0" : "lg:ml-0"
+        sidebarOpen ? "lg:ml-[280px]" : "lg:ml-0"
       }`}>
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">

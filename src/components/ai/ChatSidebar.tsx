@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   Trash2,
   ArrowLeft,
+  PanelLeftClose,
 } from "lucide-react";
 import Image from "next/image";
 import type { ChatSession } from "@/types/database";
@@ -105,10 +106,10 @@ export function ChatSidebar({
           </div>
           <button
             onClick={onToggle}
-            className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 lg:hidden"
+            className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800"
             title="Close sidebar"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <PanelLeftClose className="h-4 w-4" />
           </button>
         </div>
 
