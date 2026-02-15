@@ -4,6 +4,7 @@ import "./globals.css";
 import { AIProvider } from "@/components/providers/AIProvider";
 import { UserPresence } from "@/components/auth/UserPresence";
 import { LoadingProvider } from "@/components/providers/LoadingProvider";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
@@ -102,6 +103,7 @@ export default function RootLayout({
         <LoadingProvider>
           <AIProvider>{children}</AIProvider>
         </LoadingProvider>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
