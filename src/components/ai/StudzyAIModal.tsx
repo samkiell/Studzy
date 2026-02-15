@@ -16,7 +16,9 @@ import {
   Loader2,
   ExternalLink,
   StopCircle,
-  Plus
+  Plus,
+  Copy,
+  Check
 } from "lucide-react";
 import NextImage from "next/image";
 
@@ -112,6 +114,14 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -222,10 +232,22 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    
+    // On Desktop: Enter sends, Ctrl+Enter or Shift+Enter adds newline
+    // On Mobile: Enter always adds newline (standard mobile textarea behavior)
+    if (e.key === "Enter") {
+      if (isMobile) {
+        // Let it go to new line naturally
+        return;
+      }
+      
+      if (!e.shiftKey && !e.ctrlKey) {
+        e.preventDefault();
+        handleSubmit();
+      }
+      // If Shift or Ctrl is pressed, allow newline
     }
   };
 
@@ -448,15 +470,28 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    className={`group relative flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] min-w-0 rounded-2xl px-4 py-3 ${
+                      className={`max-w-[85%] min-w-0 rounded-2xl px-4 py-3 select-text relative ${
                         message.role === "user"
                           ? "bg-primary-600 text-white"
                           : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
                       }`}
                     >
+                      {/* Copy Button */}
+                      <button
+                        onClick={() => copyToClipboard(message.content, message.id)}
+                        className={`absolute -top-2 ${message.role === 'user' ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg bg-white dark:bg-neutral-800 shadow-sm border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700`}
+                        title="Copy message"
+                      >
+                        {copiedId === message.id ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-neutral-400" />
+                        )}
+                      </button>
+
                       {message.image && (
                         <img
                           src={message.image}
