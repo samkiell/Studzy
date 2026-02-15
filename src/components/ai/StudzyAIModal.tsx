@@ -188,7 +188,34 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        
+        if (done) {
+          // Final check: if there's anything left in buffer, process it
+          if (buffer.trim()) {
+            const finalLines = [buffer];
+            for (const line of finalLines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine.startsWith("data: ")) {
+                const data = trimmedLine.slice(6);
+                if (data !== "[DONE]") {
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content || "";
+                    if (content) accumulatedContent += content;
+                  } catch (e) {}
+                }
+              }
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: accumulatedContent }
+                  : m
+              )
+            );
+          }
+          break;
+        }
 
         const chunk = new TextDecoder().decode(value, { stream: true });
         buffer += chunk;

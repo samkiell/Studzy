@@ -117,8 +117,9 @@ async function streamResponse(response: any) {
     async start(controller) {
       try {
         for await (const chunk of response) {
-          // The SDK returns the chunk directly, not inside a .data property
-          const content = chunk.choices?.[0]?.delta?.content || "";
+          // Some SDK versions or response types might wrap the chunk in a .data property
+          const data = (chunk as any).data || chunk;
+          const content = data.choices?.[0]?.delta?.content || "";
           if (content) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content } }]
