@@ -102,8 +102,8 @@ export default async function DashboardPage() {
           Your Courses
         </h2>
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          Click on a course to view resources and materials.
-        </p>
+        Omo, Exam don near oo.Select the course wey you wan brainstorm and get access to the full resources.
+       </p>
         <div className="mt-4">
           <CourseGrid courses={(courses as Course[]) || []} />
         </div>
