@@ -58,11 +58,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen]);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
