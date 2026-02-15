@@ -81,6 +81,14 @@ export function ChatPanel({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Auto-focus on PC
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+      inputRef.current?.focus();
+    }
+  }, [sessionId]); // Re-focus when switching sessions
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, id: string) => {
@@ -306,12 +314,12 @@ export function ChatPanel({
   };
 
   return (
-    <div ref={containerRef} className="flex h-screen flex-1 flex-col overflow-hidden relative">
+    <div ref={containerRef} className={`flex h-screen flex-1 flex-col overflow-hidden transition-all duration-300 ${
+      sidebarOpen ? "lg:ml-[280px]" : "ml-0"
+    }`}>
       {/* Header */}
       <div 
-        className={`fixed top-0 right-0 z-50 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md transition-all duration-300 dark:border-neutral-800 dark:bg-neutral-900/80 ${
-          sidebarOpen ? "left-0 lg:left-[280px] lg:w-[calc(100%-280px)]" : "left-0 w-full"
-        } lg:px-6 lg:pt-8 lg:pb-6`}
+        className="sticky top-0 z-40 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:px-6 lg:pt-8 lg:pb-6"
       >
         <button
           onClick={onToggleSidebar}
@@ -349,9 +357,7 @@ export function ChatPanel({
 
 
       {/* Messages Area */}
-      <div className={`flex-1 overflow-y-auto pt-[60px] pb-[100px] transition-all duration-300 lg:pt-[110px] ${
-        sidebarOpen ? "lg:ml-[280px]" : "lg:ml-0"
-      }`}>
+      <div className="flex-1 overflow-y-auto pb-[100px]">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
@@ -532,9 +538,7 @@ export function ChatPanel({
       </div>
 
       {/* Input Section */}
-      <div className={`fixed bottom-0 right-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md transition-all duration-300 dark:border-neutral-800 dark:bg-neutral-950/80 ${
-        sidebarOpen ? "left-0 lg:left-[280px] lg:w-[calc(100%-280px)]" : "left-0 w-full"
-      } lg:px-8`}>
+      <div className="sticky bottom-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80 lg:px-8">
         <div className="mx-auto max-w-3xl">
           {/* Multiple Image Previews */}
           {images.length > 0 && (
