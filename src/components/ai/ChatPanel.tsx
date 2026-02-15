@@ -338,17 +338,17 @@ export function ChatPanel({
             <div className="mt-8 grid max-w-lg grid-cols-2 gap-3">
               {[
                 { 
-                  label: "Explain a topic", 
+                  label: "Explain a complex topic", 
                   icon: "📚", 
                   prompt: "Explain the concept of [ENTER TOPIC] in detail. Break it down into simple terms, use analogies, and provide examples for a Software Engineering student." 
                 },
                 { 
-                  label: "Help debug code", 
+                  label: "Help debug my code", 
                   icon: "🐛", 
                   prompt: "I need help debugging this code: [PASTE CODE]. The issue is [DESCRIBE ISSUE]. Can you find the bug and suggest a fix?" 
                 },
                 { 
-                  label: "Summarize notes", 
+                  label: "Summarize my notes", 
                   icon: "📝", 
                   prompt: "Summarize these notes into clear, structured bullet points and highlight the most important takeaways: [PASTE NOTES HERE]" 
                 },
@@ -363,8 +363,10 @@ export function ChatPanel({
                   onClick={() => {
                     setInput(suggestion.prompt);
                     if (inputRef.current) {
+                      inputRef.current.value = suggestion.prompt;
                       inputRef.current.style.height = 'auto';
-                      inputRef.current.style.height = '120px'; // Set a default expanded height for prompts
+                      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 160) + "px";
+                      inputRef.current.focus();
                     }
                   }}
                   className="flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-3 text-left text-sm text-neutral-700 transition-all hover:border-primary-300 hover:bg-primary-50/50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-primary-800 dark:hover:bg-primary-900/10"

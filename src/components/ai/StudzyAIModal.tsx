@@ -274,6 +274,26 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
     }
   };
 
+  // Auto-resize textarea
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement> | { target: HTMLTextAreaElement }) => {
+    const textarea = e.target;
+    setInput(textarea.value);
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, 160) + "px";
+  };
+
+  const handleSuggestionClick = (prompt: string) => {
+    setInput(prompt);
+    if (inputRef.current) {
+      // Small timeout to allow the state update to be reflected in the DOM if needed, 
+      // but here we can just set it directly.
+      inputRef.current.value = prompt;
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 160) + "px";
+      inputRef.current.focus();
+    }
+  };
+
   if (!mounted) return null;
   if (!isOpen) return null;
 
@@ -371,17 +391,17 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               <div className="mt-6 grid grid-cols-2 gap-2">
                 {[
                   { 
-                    label: "Explain a topic", 
+                    label: "Explain a complex topic", 
                     icon: "📚", 
                     prompt: "Explain the concept of [ENTER TOPIC] in detail. Break it down into simple terms, use analogies, and provide examples for a Software Engineering student." 
                   },
                   { 
-                    label: "Help debug code", 
+                    label: "Help debug my code", 
                     icon: "🐛", 
                     prompt: "I need help debugging this code: [PASTE CODE]. The issue is [DESCRIBE ISSUE]. Can you find the bug and suggest a fix?" 
                   },
                   { 
-                    label: "Summarize notes", 
+                    label: "Summarize my notes", 
                     icon: "📝", 
                     prompt: "Summarize these notes into clear, structured bullet points and highlight the most important takeaways: [PASTE NOTES HERE]" 
                   },
@@ -393,13 +413,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
                 ].map((suggestion) => (
                   <button
                     key={suggestion.label}
-                    onClick={() => {
-                      setInput(suggestion.prompt);
-                      if (inputRef.current) {
-                        inputRef.current.style.height = 'auto';
-                        inputRef.current.style.height = '120px'; // Set a default expanded height
-                      }
-                    }}
+                    onClick={() => handleSuggestionClick(suggestion.prompt)}
                     className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 p-3 text-center text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
                   >
                     <span className="text-xl">{suggestion.icon}</span>
@@ -524,7 +538,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={
                 mode === "code"
