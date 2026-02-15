@@ -124,11 +124,30 @@ export default function ChatSessionPage() {
 
   const getLoadingMessage = () => {
     const messages = [
-      "Asking ChatGPT for the answers... just kidding...",
-      "Loading 5.0 GPA personality...",
-      "Asking Dr. Gambo for permission",
       "Hacking into the school's databse",
       "Asking Thessy for answers",
+      "Asking Thessy for the ‘small hint’ she promised...",
+      "Thessy saying ‘it’s easy’ after studying for 9 hours...",
+      "Waiting for Dr. Gambo to approve this academically...",
+      "Dr. Gambo adjusting the grading scale spiritually...",
+      "Consulting Renowned’s emergency brain backup...",
+      "Cambridge already solved it before the question loaded...",
+      "Fatai explaining it in a way that confuses everyone more...",
+      "Abhraham dropping ‘it’s common sense’ like we all live in his head...",
+      "Pii protecting answers like it’s classified government data...",
+      "Deamon revising while we’re still panicking...",
+      "Robert zooming into Renowned’s screen with 4K vision...",
+      "Thessy pretending not to know the answer again...",
+      "Dr. Gambo increasing course units just because he can...",
+      "Cambridge correcting the lecturer politely...",
+      "Renowned calculating CGPA with calculator and prayer...",
+      "Fatai forming a study group that turns into gist session...",
+      "Abhraham unlocking hidden past questions archive...",
+      "Pii saying ‘check the material’ like that helps...",
+      "Deamon submitting before the timer even starts...",
+      "Robert whispering ‘what did you get for number 3?’...",
+      "Thessy upgrading from normal smart to exam hall monster...",
+      "Dr. Gambo sensing academic dishonesty from 200 meters...",
     ];
     return messages[Math.floor(Math.random() * messages.length)];
   };
