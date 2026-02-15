@@ -431,11 +431,11 @@ export function ChatPanel({
                                   {children}
                                 </code>
                               ) : (
-                                <pre className="overflow-x-auto rounded-xl bg-neutral-900 p-4 text-sm text-neutral-100">
-                                  <code className={className} {...props}>
-                                    {children}
-                                  </code>
-                                </pre>
+                                  <pre className="block w-full overflow-x-auto rounded-xl bg-neutral-900 p-4 text-sm text-neutral-100 scrollbar-thin scrollbar-thumb-neutral-700">
+                                    <code className={`${className} block min-w-full`} {...props}>
+                                      {children}
+                                    </code>
+                                  </pre>
                               );
                             },
                           }}
