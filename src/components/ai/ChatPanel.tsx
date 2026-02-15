@@ -337,18 +337,40 @@ export function ChatPanel({
             </p>
             <div className="mt-8 grid max-w-lg grid-cols-2 gap-3">
               {[
-                { text: "Explain a complex topic", icon: "📚" },
-                { text: "Help debug my code", icon: "🐛" },
-                { text: "Summarize my notes", icon: "📝" },
-                { text: "Create flashcards", icon: "🗂️" },
+                { 
+                  label: "Explain a topic", 
+                  icon: "📚", 
+                  prompt: "Explain the concept of [ENTER TOPIC] in detail. Break it down into simple terms, use analogies, and provide examples for a Software Engineering student." 
+                },
+                { 
+                  label: "Help debug code", 
+                  icon: "🐛", 
+                  prompt: "I need help debugging this code: [PASTE CODE]. The issue is [DESCRIBE ISSUE]. Can you find the bug and suggest a fix?" 
+                },
+                { 
+                  label: "Summarize notes", 
+                  icon: "📝", 
+                  prompt: "Summarize these notes into clear, structured bullet points and highlight the most important takeaways: [PASTE NOTES HERE]" 
+                },
+                { 
+                  label: "Create a quiz", 
+                  icon: "❓", 
+                  prompt: "Generate a practice quiz with 5 multiple-choice questions about [ENTER TOPIC]. Include explanations for the correct answers." 
+                },
               ].map((suggestion) => (
                 <button
-                  key={suggestion.text}
-                  onClick={() => setInput(suggestion.text)}
+                  key={suggestion.label}
+                  onClick={() => {
+                    setInput(suggestion.prompt);
+                    if (inputRef.current) {
+                      inputRef.current.style.height = 'auto';
+                      inputRef.current.style.height = '120px'; // Set a default expanded height for prompts
+                    }
+                  }}
                   className="flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-3 text-left text-sm text-neutral-700 transition-all hover:border-primary-300 hover:bg-primary-50/50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-primary-800 dark:hover:bg-primary-900/10"
                 >
                   <span className="text-lg">{suggestion.icon}</span>
-                  {suggestion.text}
+                  {suggestion.label}
                 </button>
               ))}
             </div>

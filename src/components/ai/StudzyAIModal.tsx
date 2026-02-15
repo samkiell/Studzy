@@ -370,17 +370,40 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
               </p>
               <div className="mt-6 grid grid-cols-2 gap-2">
                 {[
-                  "Explain a concept",
-                  "Help with code",
-                  "Summarize notes",
-                  "Answer questions",
+                  { 
+                    label: "Explain a topic", 
+                    icon: "📚", 
+                    prompt: "Explain the concept of [ENTER TOPIC] in detail. Break it down into simple terms, use analogies, and provide examples for a Software Engineering student." 
+                  },
+                  { 
+                    label: "Help debug code", 
+                    icon: "🐛", 
+                    prompt: "I need help debugging this code: [PASTE CODE]. The issue is [DESCRIBE ISSUE]. Can you find the bug and suggest a fix?" 
+                  },
+                  { 
+                    label: "Summarize notes", 
+                    icon: "📝", 
+                    prompt: "Summarize these notes into clear, structured bullet points and highlight the most important takeaways: [PASTE NOTES HERE]" 
+                  },
+                  { 
+                    label: "Create a quiz", 
+                    icon: "❓", 
+                    prompt: "Generate a practice quiz with 5 multiple-choice questions about [ENTER TOPIC]. Include explanations for the correct answers." 
+                  },
                 ].map((suggestion) => (
                   <button
-                    key={suggestion}
-                    onClick={() => setInput(suggestion)}
-                    className="rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                    key={suggestion.label}
+                    onClick={() => {
+                      setInput(suggestion.prompt);
+                      if (inputRef.current) {
+                        inputRef.current.style.height = 'auto';
+                        inputRef.current.style.height = '120px'; // Set a default expanded height
+                      }
+                    }}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 p-3 text-center text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
                   >
-                    {suggestion}
+                    <span className="text-xl">{suggestion.icon}</span>
+                    <span className="font-medium">{suggestion.label}</span>
                   </button>
                 ))}
               </div>
