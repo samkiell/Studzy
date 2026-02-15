@@ -25,6 +25,7 @@ interface ChatPanelProps {
   onToggleSidebar: () => void;
   onSessionUpdate: (title: string) => void;
   onNewChat: () => void;
+  sidebarOpen: boolean;
 }
 
 const modeConfig: Record<ChatMode, { icon: React.ReactNode; label: string }> = {
@@ -40,6 +41,7 @@ export function ChatPanel({
   onToggleSidebar,
   onSessionUpdate,
   onNewChat,
+  sidebarOpen,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [mode, setMode] = useState<ChatMode>("chat");
@@ -303,11 +305,15 @@ export function ChatPanel({
   return (
     <div ref={containerRef} className="flex h-screen flex-1 flex-col overflow-hidden relative">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-6 lg:pt-8 lg:pb-6">
+      <div 
+        className={`fixed top-0 right-0 z-50 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md transition-all duration-300 dark:border-neutral-800 dark:bg-neutral-900/80 ${
+          sidebarOpen ? "left-0 lg:left-[280px] lg:w-[calc(100%-280px)]" : "left-0 w-full"
+        } lg:px-6 lg:pt-8 lg:pb-6`}
+      >
         <button
           onClick={onToggleSidebar}
-          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 lg:hidden"
-          title="Toggle sidebar"
+          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -340,7 +346,9 @@ export function ChatPanel({
 
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto pt-[60px] pb-[100px] lg:pt-[110px]">
+      <div className={`flex-1 overflow-y-auto pt-[60px] pb-[100px] transition-all duration-300 lg:pt-[110px] ${
+        sidebarOpen ? "lg:ml-0" : "lg:ml-0"
+      }`}>
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
@@ -521,7 +529,9 @@ export function ChatPanel({
       </div>
 
       {/* Input Section */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-8">
+      <div className={`fixed bottom-0 right-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md transition-all duration-300 dark:border-neutral-800 dark:bg-neutral-950/80 ${
+        sidebarOpen ? "left-0 lg:left-[280px] lg:w-[calc(100%-280px)]" : "left-0 w-full"
+      } lg:px-8`}>
         <div className="mx-auto max-w-3xl">
           {/* Multiple Image Previews */}
           {images.length > 0 && (

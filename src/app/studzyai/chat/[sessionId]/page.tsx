@@ -213,6 +213,7 @@ export default function ChatSessionPage() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onSessionUpdate={handleSessionUpdate}
         onNewChat={handleNewChat}
+        sidebarOpen={sidebarOpen}
       />
     </div>
   );
