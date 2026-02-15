@@ -102,7 +102,7 @@ export default async function DashboardPage() {
           Your Courses
         </h2>
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Omo, Exam don near oo.Select the course wey you wan brainstorm and get access to the full resources.
+        Omo, Exam don near oo. Select the course wey you wan brainstorm and get access to the full resources.
        </p>
         <div className="mt-4">
           <CourseGrid courses={(courses as Course[]) || []} />
