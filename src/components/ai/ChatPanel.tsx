@@ -280,7 +280,7 @@ export function ChatPanel({
   return (
     <div ref={containerRef} className="flex h-screen flex-1 flex-col overflow-hidden relative">
       {/* Header */}
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:px-6">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-6">
         <button
           onClick={onToggleSidebar}
           className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 lg:hidden"
@@ -312,7 +312,7 @@ export function ChatPanel({
 
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pt-[60px] pb-[100px]">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
@@ -479,7 +479,7 @@ export function ChatPanel({
       </div>
 
       {/* Input Section */}
-      <div className="sticky bottom-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80 lg:px-8">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-neutral-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-8">
         <div className="mx-auto max-w-3xl">
           {/* Image Preview */}
           {image && (
@@ -549,7 +549,7 @@ export function ChatPanel({
           </div>
 
           {/* Input Row */}
-          <div className="flex items-end gap-2">
+          <div className="flex items-center gap-2">
             <div className="relative">
               <button
                 type="button"
@@ -602,7 +602,7 @@ export function ChatPanel({
             </div>
 
             {/* Send Button */}
-            <div className="shrink-0 pb-1">
+            <div className="shrink-0">
               <button
                 onClick={() => handleSubmit()}
                 disabled={(!input.trim() && !image) || isLoading || isUploading}

@@ -342,18 +342,21 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
 
       {/* Modal */}
       <div ref={containerRef} className="relative flex h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-900">
-        {/* Header */}
-        <div className="sticky top-0 z-30 flex items-center justify-between border-b border-neutral-200 bg-white/80 px-6 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
-          <div>
-            <h2 className="flex items-center gap-2 text-xl font-bold text-neutral-900 dark:text-white">
-              <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
-              STUDZY AI
+          {/* Header */}
+          <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
+              <Image src="/favicon.png" alt="Studzy" width={20} height={20} />
+              <span>STUDZY AI</span>
             </h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Created by Samkiel
-            </p>
+            <button
+              onClick={safeClose}
+              className="rounded-lg p-1 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex flex-1 flex-col overflow-y-auto pt-[56px] pb-[100px]">
             <button
               onClick={openFullWorkspace}
               disabled={openingWorkspace}
@@ -559,7 +562,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
         </div>
 
         {/* Input Section */}
-        <div className="sticky bottom-0 z-30 border-t border-neutral-200 bg-white/80 p-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-neutral-200 bg-white/80 p-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
           {/* Image Preview */}
           {image && (
             <div className="mb-3 flex items-start gap-2">
@@ -580,7 +583,7 @@ export function StudzyAIModal({ isOpen, onClose }: StudzyAIModalProps) {
           )}
 
           {/* Text Input */}
-          <form onSubmit={handleSubmit} className="flex items-end gap-2">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative">
               <button
                 type="button"
