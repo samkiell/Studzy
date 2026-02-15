@@ -303,7 +303,7 @@ export function ChatPanel({
   return (
     <div ref={containerRef} className="flex h-screen flex-1 flex-col overflow-hidden relative">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-6">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:left-auto lg:right-0 lg:w-[calc(100%-16rem)] lg:px-6 lg:pt-8 lg:pb-6">
         <button
           onClick={onToggleSidebar}
           className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 lg:hidden"
@@ -313,10 +313,15 @@ export function ChatPanel({
         </button>
 
         <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
+          <div className="flex items-center gap-2">
             <NextImage src="/favicon.png" alt="Studzy" width={20} height={20} />
-            <span>STUDZY AI</span>
-          </h1>
+            <h1 className="text-lg font-bold text-neutral-900 dark:text-white">
+              STUDZY AI
+            </h1>
+          </div>
+          <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+            Created by <span className="text-primary-500 dark:text-primary-400 font-medium">Samkiel</span>
+          </p>
         </div>
 
         {/* Header Actions */}
@@ -335,7 +340,7 @@ export function ChatPanel({
 
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto pt-[60px] pb-[100px]">
+      <div className="flex-1 overflow-y-auto pt-[60px] pb-[100px] lg:pt-[110px]">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
