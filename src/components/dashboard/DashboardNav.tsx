@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SmartLink } from "@/components/ui/SmartLink";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -34,19 +35,19 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
     <nav className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <SmartLink href="/dashboard" className="flex items-center gap-2">
             <Image src="/favicon.png" alt="Studzy" width={28} height={28} />
             <span className="text-xl font-bold text-primary-600">Studzy</span>
-          </Link>
+          </SmartLink>
           <div className="hidden items-center gap-4 md:flex">
-            <Link 
+            <SmartLink 
               href="/dashboard" 
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               Dashboard
-            </Link>
+            </SmartLink>
             {isAdmin && (
-              <Link 
+              <SmartLink 
                 href="/admin"
                 className="flex items-center gap-1.5 rounded-md bg-amber-100 px-2.5 py-1 text-sm font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
               >
@@ -54,7 +55,7 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
                 Admin
-              </Link>
+              </SmartLink>
             )}
           </div>
         </div>
@@ -85,12 +86,12 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
             </>
           ) : (
             <div className="flex items-center gap-3">
-              <Link href="/login">
+              <SmartLink href="/login">
                 <Button variant="ghost" size="sm">Log in</Button>
-              </Link>
-              <Link href="/signup">
+              </SmartLink>
+              <SmartLink href="/signup">
                 <Button size="sm">Sign up</Button>
-              </Link>
+              </SmartLink>
             </div>
           )}
         </div>

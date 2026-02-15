@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SmartLink } from "@/components/ui/SmartLink";
 import type { Course } from "@/types/database";
 
 interface CourseCardProps {
@@ -8,7 +9,7 @@ interface CourseCardProps {
 export function CourseCard({ course }: CourseCardProps) {
   return (
     <div className="relative group/card">
-      <Link href={`/course/${course.code}`}>
+      <SmartLink href={`/course/${course.code}`}>
         <div className="h-full rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700">
           <div className="flex items-start justify-between gap-4">
             <span className="inline-flex items-center rounded-lg bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
@@ -39,7 +40,7 @@ export function CourseCard({ course }: CourseCardProps) {
             </p>
           )}
         </div>
-      </Link>
+      </SmartLink>
     </div>
   );
 }

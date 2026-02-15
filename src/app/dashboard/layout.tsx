@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { SmartLink } from "@/components/ui/SmartLink";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { logActivity } from "@/lib/activity";
@@ -66,7 +67,7 @@ export default async function DashboardLayout({
                   Ask STUDZY AI to explain concepts, generate quizzes, or summarize your notes. Studzy AI was built to beat Borokini's questions?
                 </p>
               </div>
-              <Link 
+              <SmartLink 
                 href="/studzyai"
                 className="group flex items-center gap-2 rounded-2xl bg-white px-6 py-4 text-lg font-bold text-primary-600 shadow-lg transition-all hover:scale-105 hover:bg-neutral-50 active:scale-95 dark:bg-neutral-800 dark:text-primary-400 dark:hover:bg-neutral-700"
               >
@@ -80,7 +81,7 @@ export default async function DashboardLayout({
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-              </Link>
+              </SmartLink>
             </div>
           </div>
           
