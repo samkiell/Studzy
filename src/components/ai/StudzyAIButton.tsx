@@ -24,11 +24,11 @@ export function StudzyAIButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 px-5 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+        className="fixed bottom-6 right-4 z-[60] flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 p-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 sm:right-6 sm:px-5 sm:py-3"
         aria-label="Ask STUDZY AI"
       >
         <svg
-          className="h-5 w-5"
+          className="h-6 w-6 sm:h-5 sm:w-5"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
