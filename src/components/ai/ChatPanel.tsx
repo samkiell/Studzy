@@ -12,6 +12,7 @@ import {
   ImageUp,
   X,
   Menu,
+  Plus,
 } from "lucide-react";
 import NextImage from "next/image";
 import type { ChatMessage, ChatMode } from "@/types/database";
@@ -21,6 +22,7 @@ interface ChatPanelProps {
   initialMessages: ChatMessage[];
   onToggleSidebar: () => void;
   onSessionUpdate: (title: string) => void;
+  onNewChat: () => void;
 }
 
 const modeConfig: Record<ChatMode, { icon: React.ReactNode; label: string }> = {
@@ -35,6 +37,7 @@ export function ChatPanel({
   initialMessages,
   onToggleSidebar,
   onSessionUpdate,
+  onNewChat,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [mode, setMode] = useState<ChatMode>("chat");
@@ -270,6 +273,18 @@ export function ChatPanel({
               Samkiel
             </a>
           </p>
+        </div>
+
+        {/* Header Actions */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onNewChat}
+            className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+            title="Start New Chat"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Chat</span>
+          </button>
         </div>
 
         {/* Mode Tabs */}
