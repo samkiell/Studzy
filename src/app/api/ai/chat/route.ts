@@ -96,8 +96,11 @@ export async function POST(request: NextRequest) {
       model = "pixtral-large-latest"; // Vision-capable model
     }
 
-    // Use Agents API if AGENT_ID is provided, otherwise standard Chat API
-    const apiUrl = MISTRAL_AI_AGENT_ID ? MISTRAL_AGENTS_URL : MISTRAL_API_URL;
+    // Use Agents API only if AGENT_ID is provided AND there's no image
+    // Most agents don't support vision yet, so we fall back to standard Pixtral for images
+    const hasImage = mode === "image" || image || messages.some((m) => m.image);
+    const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImage;
+    const apiUrl = shouldUseAgent ? MISTRAL_AGENTS_URL : MISTRAL_API_URL;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${MISTRAL_API_KEY}`,
       },
       body: JSON.stringify({
-        ...(MISTRAL_AI_AGENT_ID ? { agent_id: MISTRAL_AI_AGENT_ID } : { model }),
+        ...(shouldUseAgent ? { agent_id: MISTRAL_AI_AGENT_ID } : { model }),
         messages: mistralMessages,
         temperature: mode === "code" ? 0.3 : 0.7,
         max_tokens: mode === "code" ? 4096 : 2048,
