@@ -677,8 +677,8 @@ export function ChatPanel({
             </div>
           </div>
 
-          <p className="mt-2 text-center text-xs text-neutral-400 dark:text-neutral-500">
-            Press Enter to send · Shift+Enter for new line
+          <p className="mt-2 text-center text-[10px] text-neutral-400 dark:text-neutral-500">
+            Studzy AI doesn&apos;t make mistakes, check that your question is correct.
           </p>
         </div>
       </div>
