@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Mistral } from "@mistralai/mistralai";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
-const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
-const MISTRAL_AGENTS_URL = "https://api.mistral.ai/v1/agents/completions";
+
+const client = new Mistral({ apiKey: MISTRAL_API_KEY });
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   image?: string;
+  images?: string[];
 }
 
 interface ChatRequest {
@@ -30,178 +32,108 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ChatRequest = await request.json();
-    const { messages, mode, enable_search, enable_code, image } = body;
+    const { messages, mode, enable_search, images } = body;
 
-    const mistralMessages: Array<{
-      role: "user" | "assistant";
-      content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
-    }> = [];
+    // Check if we have any images in the request or history
+    const hasImages = (images && images.length > 0) || 
+                      body.image || 
+                      messages.some(m => m.image || (m as any).images?.length);
 
-    // Add mode-specific context
-    let modeContext = "";
-    switch (mode) {
-      case "code":
-        modeContext = "\n\n[Code Mode Active: Focus on providing clean, well-documented code with explanations.]";
-        break;
-      case "search":
-        modeContext = "\n\n[Search Mode Active: Provide comprehensive, well-researched responses.]";
-        break;
-      case "image":
-        modeContext = "\n\n[Image Mode Active: Analyze the provided image carefully.]";
-        break;
-    }
-
-    if (enable_search && mode !== "search") {
-      modeContext += "\n[Search Enabled: Include relevant research in your response.]";
-    }
-
-    // Convert messages to Mistral format
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
+    // Convert messages to Mistral content format
+    const mistralMessages: any[] = messages.map((msg, i) => {
       const isLast = i === messages.length - 1;
-
-      if (msg.role === "user") {
-        if (msg.image || (msg as any).images) {
-          const contentArray: any[] = [
-            {
-              type: "text",
-              text: msg.content + (isLast ? modeContext : ""),
-            },
-          ];
-
-          const msgImages = (msg as any).images || (msg.image ? [msg.image] : []);
-          msgImages.forEach((url: string) => {
-            contentArray.push({
+      
+      // If message has images, we use the vision content array format
+      const msgImages = (msg as any).images || (msg.image ? [msg.image] : []);
+      
+      if (msgImages.length > 0) {
+        return {
+          role: msg.role,
+          content: [
+            { type: "text", text: msg.content },
+            ...msgImages.map((url: string) => ({
               type: "image_url",
-              image_url: { url },
-            });
-          });
-
-          mistralMessages.push({
-            role: "user",
-            content: contentArray,
-          });
-        } else {
-          mistralMessages.push({
-            role: "user",
-            content: msg.content + (isLast ? modeContext : ""),
-          });
-        }
-      } else {
-        mistralMessages.push({
-          role: "assistant",
-          content: msg.content,
-        });
+              image_url: { url }
+            }))
+          ]
+        };
       }
-    }
+      
+      // Text only
+      return {
+        role: msg.role,
+        content: msg.content
+      };
+    });
 
-    // Select the appropriate model based on capabilities needed
-    let model = "mistral-large-latest";
-    if (mode === "image" || image) {
-      model = "pixtral-large-latest"; // Vision-capable model
-    }
+    // 🚀 LOGIC FOR AGENT VS BASE MODEL
+    // We "Force" the Agent ID if it exists and there are no images.
+    // If there ARE images, we MUST use a vision model (like Pixtral) because
+    // most agents are configured with text-only models and will error on vision content.
+    const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImages;
 
-    // Use Agents API only if AGENT_ID is provided AND there's no image
-    // Most agents don't support vision yet, so we fall back to standard Pixtral for images
-    const hasImage = mode === "image" || image || body.images?.length || messages.some((m) => m.image || (m as any).images?.length);
-    const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImage;
-    const apiUrl = shouldUseAgent ? MISTRAL_AGENTS_URL : MISTRAL_API_URL;
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${MISTRAL_API_KEY}`,
-      },
-      body: JSON.stringify({
-        ...(shouldUseAgent ? { agent_id: MISTRAL_AI_AGENT_ID } : { model }),
+    if (shouldUseAgent) {
+      // ✅ USING THE OFFICIAL SDK AGENTS ENDPOINT
+      const response = await client.agents.complete({
+        agentId: MISTRAL_AI_AGENT_ID!,
         messages: mistralMessages,
+        stream: true,
+      });
+
+      return streamResponse(response);
+    } else {
+      // FALLBACK TO BASE MODEL (Vision or default)
+      const model = hasImages ? "pixtral-large-latest" : "mistral-large-latest";
+      
+      const response = await client.chat.complete({
+        model: model,
+        messages: mistralMessages,
+        stream: true,
         temperature: mode === "code" ? 0.3 : 0.7,
-        max_tokens: mode === "code" ? 4096 : 2048,
-        top_p: 0.95,
-        stream: true, // Enable streaming
-      }),
-    });
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Mistral API error:", error);
-      return NextResponse.json(
-        { error: "Failed to get AI response" },
-        { status: response.status }
-      );
+      return streamResponse(response);
     }
-
-    // Create a streaming response
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    
-    const stream = new ReadableStream({
-      async start(controller) {
-        if (!response.body) {
-          controller.close();
-          return;
-        }
-        const reader = response.body.getReader();
-        let buffer = "";
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            // Decode the chunk and add to buffer
-            const chunk = decoder.decode(value, { stream: true });
-            buffer += chunk;
-
-            // Process lines in buffer
-            const lines = buffer.split('\n');
-            // Keep the last partial line in buffer
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-              const trimmedLine = line.trim();
-              if (!trimmedLine) continue;
-              
-              if (trimmedLine === "data: [DONE]") {
-                continue;
-              }
-
-              if (trimmedLine.startsWith("data: ")) {
-                try {
-                  const jsonStr = trimmedLine.slice(6);
-                  const data = JSON.parse(jsonStr);
-                  const content = data.choices[0]?.delta?.content || "";
-                  if (content) {
-                    controller.enqueue(encoder.encode(content));
-                  }
-                } catch (e) {
-                  console.error("Error parsing JSON chunk", e);
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Stream reading error", err);
-          controller.error(err);
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new NextResponse(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-      },
-    });
-
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in AI chat API:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error.message || "Internal server error" },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Helper to convert Mistral SDK stream to Next.js NextResponse
+ */
+async function streamResponse(response: any) {
+  const encoder = new TextEncoder();
+  
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of response) {
+          const content = chunk.data.choices[0]?.delta?.content || "";
+          if (content) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              choices: [{ delta: { content } }]
+            })}\n\n`));
+          }
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      } catch (err) {
+        controller.error(err);
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new NextResponse(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
 }

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { Mistral } from "@mistralai/mistralai";
+
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
+
+const client = new Mistral({ apiKey: MISTRAL_API_KEY });
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
 export async function POST(
@@ -77,8 +83,8 @@ export async function POST(
         .eq("id", sessionId);
     }
 
-    // Call Mistral AI
-    const aiResponse = await callMistralAI(allMessages || [], mode, enable_search, image);
+    // 🚀 Call Mistral AI using the official SDK
+    const aiResponse = await callMistralAI(allMessages || [], mode, enable_search, image || (images && images.length > 0));
 
     // Save assistant message
     const { data: assistantMsg, error: assistantMsgError } = await supabase
@@ -94,7 +100,6 @@ export async function POST(
 
     if (assistantMsgError) {
       console.error("Error saving assistant message:", assistantMsgError);
-      // Still return the AI response even if saving fails
     }
 
     // Get updated session title
@@ -116,12 +121,6 @@ export async function POST(
   }
 }
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
-const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
-const MISTRAL_AGENTS_URL = "https://api.mistral.ai/v1/agents/completions";
-
-
 interface DBMessage {
   role: string;
   content: string;
@@ -132,114 +131,61 @@ async function callMistralAI(
   messages: DBMessage[],
   mode: string,
   enableSearch: boolean,
-  image?: string
+  hasImageRequest: boolean
 ): Promise<string> {
   if (!MISTRAL_API_KEY) {
     return "Sorry, the AI service is not configured. Please contact the administrator.";
   }
 
   // Build Mistral messages
-  const mistralMessages: Array<{
-    role: "user" | "assistant";
-    content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
-  }> = [];
+  const mistralMessages: any[] = messages.map((msg) => {
+    if (msg.image_url) {
+      const contentArray: any[] = [
+        { type: "text", text: msg.content }
+      ];
 
-  let modeContext = "";
-  switch (mode) {
-    case "code":
-      modeContext = "\n\n[Code Mode Active: Focus on providing clean, well-documented code with explanations.]";
-      break;
-    case "search":
-      modeContext = "\n\n[Search Mode Active: Provide comprehensive, well-researched responses.]";
-      break;
-    case "image":
-      modeContext = "\n\n[Image Mode Active: Analyze the provided image carefully.]";
-      break;
-  }
-
-  if (enableSearch && mode !== "search") {
-    modeContext += "\n[Search Enabled: Include relevant research in your response.]";
-  }
-
-  for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
-    const isLast = i === messages.length - 1;
-
-    if (msg.role === "user") {
-      if (msg.image_url) {
-        const contentArray: any[] = [
-          { type: "text", text: msg.content + (isLast ? modeContext : "") }
-        ];
-
-        // Check if image_url is a JSON string of multiple images
-        if (msg.image_url.startsWith('[')) {
-          try {
-            const parsedImages = JSON.parse(msg.image_url);
-            parsedImages.forEach((url: string) => {
-              contentArray.push({ type: "image_url", image_url: { url } });
-            });
-          } catch (e) {
-            contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
-          }
-        } else {
+      if (msg.image_url.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(msg.image_url);
+          parsed.forEach((url: string) => {
+            contentArray.push({ type: "image_url", image_url: { url } });
+          });
+        } catch (e) {
           contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
         }
-
-        mistralMessages.push({
-          role: "user",
-          content: contentArray,
-        });
       } else {
-        mistralMessages.push({
-          role: "user",
-          content: msg.content + (isLast ? modeContext : ""),
-        });
+        contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
       }
-    } else {
-      mistralMessages.push({
-        role: "assistant",
-        content: msg.content,
-      });
-    }
-  }
 
-  let model = "mistral-large-latest";
-  if (mode === "image" || image || messages.some((m) => m.image_url)) {
-    model = "pixtral-large-latest";
-  }
+      return { role: msg.role, content: contentArray };
+    }
+    return { role: msg.role, content: msg.content };
+  });
+
+  // Force Agent Logic
+  const hasVisionContent = messages.some(m => m.image_url) || hasImageRequest;
+  const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasVisionContent;
 
   try {
-    // Use Agents API only if AGENT_ID is provided AND there's no image
-    // Most agents don't support vision yet, so we fall back to standard Pixtral for images
-    const hasImage = mode === "image" || image || messages.some((m) => m.image_url);
-    const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImage;
-    const apiUrl = shouldUseAgent ? MISTRAL_AGENTS_URL : MISTRAL_API_URL;
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${MISTRAL_API_KEY}`,
-      },
-      body: JSON.stringify({
-        ...(shouldUseAgent ? { agent_id: MISTRAL_AI_AGENT_ID } : { model }),
+    if (shouldUseAgent) {
+      // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
+      const response = await client.agents.complete({
+        agentId: MISTRAL_AI_AGENT_ID!,
+        messages: mistralMessages,
+      });
+      return response.choices?.[0]?.message?.content?.toString() || "No response";
+    } else {
+      // Fallback Vision/Standard
+      const model = hasVisionContent ? "pixtral-large-latest" : "mistral-large-latest";
+      const response = await client.chat.complete({
+        model: model,
         messages: mistralMessages,
         temperature: mode === "code" ? 0.3 : 0.7,
-        max_tokens: mode === "code" ? 4096 : 2048,
-        top_p: 0.95,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Mistral API error:", error);
-      return "Sorry, I encountered an error processing your request. Please try again.";
+      });
+      return response.choices?.[0]?.message?.content?.toString() || "No response";
     }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Mistral API call error:", error);
-    return "Sorry, I encountered an error. Please try again.";
+    return `Sorry, I encountered an error: ${error.message}`;
   }
 }
