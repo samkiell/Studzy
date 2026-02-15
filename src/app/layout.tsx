@@ -4,6 +4,7 @@ import "./globals.css";
 import { AIProvider } from "@/components/providers/AIProvider";
 import { UserPresence } from "@/components/auth/UserPresence";
 import { LoadingProvider } from "@/components/providers/LoadingProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -101,6 +102,7 @@ export default function RootLayout({
         <LoadingProvider>
           <AIProvider>{children}</AIProvider>
         </LoadingProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
