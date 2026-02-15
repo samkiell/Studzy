@@ -567,7 +567,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
             </button>
           </form>
           <p className="mt-2 text-center text-[10px] text-neutral-400 dark:text-neutral-500">
-            Press Enter (Desktop) or Arrow (Mobile) to send
+            Studzy AI doesn&apos;t make mistakes, check that your question is correct.
           </p>
         </div>
       </div>
