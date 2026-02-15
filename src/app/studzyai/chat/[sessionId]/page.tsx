@@ -126,7 +126,7 @@ export default function ChatSessionPage() {
     const messages = [
       "Hacking into the school's databse",
       "Asking Thessy for answers",
-      "Asking Thessy for the ‘small hint’ she promised...",
+      "Asking Thessy for the ‘answers’ she promised...",
       "Thessy saying ‘it’s easy’ after studying for 9 hours...",
       "Waiting for Dr. Gambo to approve this academically...",
       "Dr. Gambo adjusting the grading scale spiritually...",
