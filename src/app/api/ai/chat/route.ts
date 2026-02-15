@@ -75,10 +75,9 @@ export async function POST(request: NextRequest) {
 
     if (shouldUseAgent) {
       try {
-        const response = await client.agents.complete({
+        const response = await client.agents.stream({
           agentId: MISTRAL_AI_AGENT_ID!,
           messages: mistralMessages,
-          stream: true,
         });
         return streamResponse(response);
       } catch (agentError: any) {
@@ -88,10 +87,9 @@ export async function POST(request: NextRequest) {
     } else {
       try {
         const model = hasImages ? "pixtral-large-latest" : "mistral-large-latest";
-        const response = await client.chat.complete({
+        const response = await client.chat.stream({
           model: model,
           messages: mistralMessages,
-          stream: true,
           temperature: mode === "code" ? 0.3 : 0.7,
         });
         return streamResponse(response);

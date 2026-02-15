@@ -368,7 +368,9 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                 How can I help you today?
               </h3>
               <p className="mt-2 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                Created by Samkiel • Expert Software Engineering Assistant
+                Created by <span 
+                href="https://samkiel.dev"
+                className="text-primary-500 dark:text-primary-400 font-medium">Samkiel</span> • Expert Software Engineering Assistant
               </p>
               <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
                 {[
