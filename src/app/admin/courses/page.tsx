@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AdminCourseTable } from "@/components/admin/AdminCourseTable";
-import { BookCopy } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 export const metadata = {
   title: "Manage Courses | Admin",
@@ -25,7 +25,7 @@ export default async function AdminCoursesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-            <BookCopy className="h-6 w-6" />
+            <BookOpen className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white md:text-3xl">

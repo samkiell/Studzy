@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { Course } from "@/types/database";
-import { Search, Trash2, Edit3, Loader2, BookCopy, Plus } from "lucide-react";
+import { Search, Trash2, Edit3, Loader2, BookOpen, Plus } from "lucide-react";
 import { EditCourseModal } from "./EditCourseModal";
 import { Modal, useModal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -112,7 +112,7 @@ export function AdminCourseTable({
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400">
-                            <BookCopy className="h-5 w-5" />
+                            <BookOpen className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
                             <p className="font-bold text-neutral-900 dark:text-white">
