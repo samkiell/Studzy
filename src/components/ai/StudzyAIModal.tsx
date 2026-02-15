@@ -184,22 +184,34 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
       ]);
 
       let accumulatedContent = "";
+      let buffer = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split("\n").filter((line) => line.trim());
+        const chunk = new TextDecoder().decode(value, { stream: true });
+        buffer += chunk;
+
+        const lines = buffer.split("\n");
+        // Keep the last partial line in the buffer
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") break;
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content || "";
-              accumulatedContent += content;
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
 
+          const data = trimmedLine.slice(6);
+          if (data === "[DONE]") {
+            setIsLoading(false);
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content || "";
+            if (content) {
+              accumulatedContent += content;
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId
@@ -207,9 +219,9 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                     : m
                 )
               );
-            } catch (e) {
-              console.error("Error parsing chunk:", e);
             }
+          } catch (e) {
+            console.error("Error parsing buffered line:", e, trimmedLine);
           }
         }
       }
