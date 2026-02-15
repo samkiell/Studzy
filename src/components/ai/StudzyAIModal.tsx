@@ -32,6 +32,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   image?: string;
+  images?: string[];
   mode?: ChatMode;
   timestamp: Date;
 }
@@ -73,7 +74,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ChatMode>("chat");
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
-  const [image, setImage] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [openingWorkspace, setOpeningWorkspace] = useState(false);
   const [copyingId, setCopyingId] = useState<string | null>(null);
 
@@ -119,7 +120,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() && !image) return;
+    if (!input.trim() && images.length === 0) return;
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -130,14 +131,14 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
       id: Date.now().toString(),
       role: "user",
       content: input,
-      image: image || undefined,
+      images: images,
       mode,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setImage(null);
+    setImages([]);
     setIsLoading(true);
 
     try {
@@ -149,9 +150,10 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
             role: m.role,
             content: m.content,
             image: m.image,
+            images: m.images,
           })),
           mode,
-          image: userMessage.image,
+          images: userMessage.images,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -231,15 +233,12 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const isMobile = window.innerWidth < 768;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
       if (isMobile) {
-        // Standard mobile behavior: Enter for newline is usually default,
-        // but let's keep it consistent
         return;
       } else {
-        // Desktop behavior: Enter to send
         e.preventDefault();
         handleSubmit();
       }
@@ -247,25 +246,27 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImages(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+      setMode("image");
     }
   };
 
-  const removeImage = () => {
-    setImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const clearChat = () => {
     setMessages([]);
     setMode("chat");
-    setImage(null);
+    setImages([]);
   };
 
   const openFullWorkspace = async () => {
@@ -396,12 +397,17 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                           ? "bg-primary-600 text-white"
                           : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
                       }`}>
-                        {message.image && (
-                          <img
-                            src={message.image}
-                            alt="Uploaded"
-                            className="mb-2 max-h-48 rounded-lg object-cover"
-                          />
+                        {message.images && message.images.length > 0 && (
+                          <div className="mb-2 grid grid-cols-2 gap-2">
+                            {message.images.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={img}
+                                alt={`Uploaded ${idx + 1}`}
+                                className="h-24 w-full rounded-lg object-cover"
+                              />
+                            ))}
+                          </div>
                         )}
                         <ReactMarkdown className="prose-sm dark:prose-invert">
                           {message.content}
@@ -451,7 +457,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800"
               >
                 <ImageUp className="h-4 w-4" />
-                <span>Upload Image</span>
+                <span>Upload Images</span>
               </button>
               {(Object.keys(modeConfig) as ChatMode[]).map((m) => (
                 <button
@@ -476,14 +482,19 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
 
         {/* Fixed Footer Input */}
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200 bg-white/80 p-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 sm:relative sm:bottom-auto sm:border-none sm:bg-transparent">
-          {image && (
-            <div className="mb-2 flex items-center gap-2">
-              <div className="relative">
-                <img src={image} alt="Preview" className="h-12 w-12 rounded-lg object-cover" />
-                <button onClick={removeImage} className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white">
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
+          {images.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {images.map((img, index) => (
+                <div key={index} className="relative">
+                  <img src={img} alt="Preview" className="h-12 w-12 rounded-lg object-cover" />
+                  <button 
+                    onClick={() => removeImage(index)} 
+                    className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
           
@@ -509,7 +520,14 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                   </div>
                 )}
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <input 
+                ref={fileInputRef} 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                onChange={handleImageUpload} 
+                className="hidden" 
+              />
             </div>
 
             <textarea
@@ -525,7 +543,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
             <button
               type={isLoading ? "button" : "submit"}
               onClick={isLoading ? handleStop : undefined}
-              disabled={!isLoading && (!input.trim() && !image)}
+              disabled={!isLoading && (!input.trim() && images.length === 0)}
               className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-white transition-all ${
                 isLoading 
                   ? "bg-red-500 hover:bg-red-600" 
