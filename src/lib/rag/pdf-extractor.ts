@@ -44,9 +44,9 @@ export async function extractPDFFromStorage(
     throw new Error(`Downloaded file is empty: ${filePath}`);
   }
 
-  // Dynamically import pdf-parse (it's a CommonJS module)
-  const pdfParseModule = await import("pdf-parse");
-  const pdfParse = pdfParseModule.default || pdfParseModule;
+  // Dynamically import pdf-parse
+  const { PDFParse } = await import("pdf-parse");
+  const pdfParse = PDFParse;
 
   const pdfData = await pdfParse(buffer, {
     // Limit page rendering to prevent memory issues with huge PDFs
