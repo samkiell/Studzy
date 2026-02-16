@@ -15,6 +15,7 @@ export default async function AdminResourcesPage() {
       type,
       status,
       featured,
+      file_url,
       view_count,
       created_at,
       courses (
@@ -36,6 +37,7 @@ export default async function AdminResourcesPage() {
         view_count: (r.view_count as number) || 0,
         course_code: course?.code || "N/A",
         created_at: r.created_at as string,
+        file_url: r.file_url as string,
       };
     }
   );

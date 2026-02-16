@@ -16,6 +16,7 @@ interface AdminResource {
   view_count: number;
   course_code: string;
   created_at: string;
+  file_url: string;
   description?: string;
 }
 
