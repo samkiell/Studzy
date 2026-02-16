@@ -63,7 +63,8 @@ export function StudentIDCard({
       if (wasFlipped) await new Promise(r => setTimeout(r, 600));
 
       const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
+      const jspdfModule = await import("jspdf");
+      const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
 
       const canvas = await html2canvas(element, {
         scale: 3, // High res
