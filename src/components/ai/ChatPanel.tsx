@@ -253,36 +253,48 @@ export function ChatPanel({
       });
 
       if (!response.ok) throw new Error("Failed to get response");
+      if (!response.body) throw new Error("No response body");
 
-      const data = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      
+      // Create a stable assistant message structure
+      const assistantMsgId = `assistant-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          session_id: sessionId,
+          role: "assistant",
+          content: "",
+          mode,
+          image_url: null,
+          created_at: new Date().toISOString(),
+        },
+      ]);
 
-      // Replace temp user message and add assistant message
-      setMessages((prev) => {
-        const withoutTemp = prev.filter((m) => m.id !== tempUserMsg.id);
-        const newMessages = [...withoutTemp];
-        if (data.userMessage) newMessages.push(data.userMessage);
-        else newMessages.push(tempUserMsg);
-        if (data.assistantMessage) {
-          newMessages.push(data.assistantMessage);
-        } else {
-          // Fallback if DB save failed but we got AI response
-          newMessages.push({
-            id: `assistant-${Date.now()}`,
-            session_id: sessionId,
-            role: "assistant",
-            content: data.content,
-            mode,
-            image_url: null,
-            created_at: new Date().toISOString(),
-          });
-        }
-        return newMessages;
-      });
+      setIsLoading(false); // We can show the message bubble now
 
-      // Update session title in sidebar
-      if (data.sessionTitle) {
-        onSessionUpdate(data.sessionTitle);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantContent += chunk;
+
+        setMessages((prev) => {
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg.id === assistantMsgId) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMsg, content: assistantContent }
+            ];
+          }
+          return prev;
+        });
       }
+
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
@@ -373,7 +385,11 @@ export function ChatPanel({
 
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto pb-[100px]">
+      <div 
+        ref={scrollAreaRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto pb-[100px] scroll-smooth"
+      >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
@@ -571,7 +587,8 @@ export function ChatPanel({
               </div>
             )}
 
-            <div ref={messagesEndRef} />
+            {/* Invisible anchor for scrolling if needed, but we use scrollAreaRef mostly */}
+            <div ref={messagesEndRef} className="h-4" />
           </div>
         )}
       </div>
