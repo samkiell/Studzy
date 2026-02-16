@@ -34,8 +34,9 @@ export default async function DashboardPage() {
     console.error("Error fetching dashboard data:", error);
   }
 
-  // Get display name: prefer first name from metadata, fall back to email prefix
+  // Get display name: prefer username from metadata, then first name, fall back to email prefix
   const displayName =
+    user?.user_metadata?.username ||
     user?.user_metadata?.full_name?.split(" ")[0] ||
     user?.user_metadata?.name?.split(" ")[0] ||
     user?.user_metadata?.first_name ||

@@ -97,6 +97,16 @@ export function SignupForm() {
         required
         autoComplete="email"
       />
+      <Input
+        id="username"
+        type="text"
+        label="Username"
+        placeholder="e.g. Brainiac23"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        required
+        autoComplete="username"
+      />
       <PasswordInput
         id="password"
         label="Password"
