@@ -170,10 +170,10 @@ export function AdminResourceTable({
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Resource</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Course</th>
-                <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Stats</th>
+                <th className="hidden sm:table-cell px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Stats</th>
                 <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
-                <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Featured</th>
-                <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Updated</th>
+                <th className="hidden md:table-cell px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Featured</th>
+                <th className="hidden lg:table-cell px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Updated</th>
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
               </tr>
             </thead>
@@ -209,7 +209,7 @@ export function AdminResourceTable({
                           {resource.course_code}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="hidden sm:table-cell px-6 py-4 text-right">
                         <div className="flex flex-col items-end">
                           <span className="font-mono font-bold text-neutral-900 dark:text-white">{resource.view_count.toLocaleString()}</span>
                           <span className="text-[10px] text-neutral-500 uppercase">Views</span>
@@ -233,7 +233,7 @@ export function AdminResourceTable({
                       </td>
 
                       {/* Featured */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="hidden md:table-cell px-6 py-4 text-center">
                         <button
                           onClick={() => handleToggle(resource.id, "featured", resource.featured)}
                           disabled={isLoading}
@@ -246,9 +246,9 @@ export function AdminResourceTable({
                           <Star className={`h-5 w-5 ${resource.featured ? "fill-current" : ""}`} />
                         </button>
                       </td>
-
+ 
                       {/* Updated */}
-                      <td className="px-6 py-4 text-right text-xs font-medium text-neutral-500 whitespace-nowrap">
+                      <td className="hidden lg:table-cell px-6 py-4 text-right text-xs font-medium text-neutral-500 whitespace-nowrap">
                         {new Date(resource.created_at).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -257,7 +257,7 @@ export function AdminResourceTable({
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setEditingResource(resource)}
                             className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"

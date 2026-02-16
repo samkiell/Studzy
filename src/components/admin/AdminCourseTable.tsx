@@ -87,7 +87,7 @@ export function AdminCourseTable({
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Course Details</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Description</th>
+                <th className="hidden sm:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Description</th>
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
               </tr>
             </thead>
@@ -124,7 +124,7 @@ export function AdminCourseTable({
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="hidden sm:table-cell px-6 py-4">
                         <p className="line-clamp-2 text-xs text-neutral-600 dark:text-neutral-400 max-w-md">
                           {course.description || "No description provided"}
                         </p>
@@ -132,7 +132,7 @@ export function AdminCourseTable({
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setEditingCourse(course)}
                             className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
