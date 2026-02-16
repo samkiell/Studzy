@@ -195,17 +195,18 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">User</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Status</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Verification</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Role</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Courses</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Joined</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Last Login</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Status</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-neutral-500">
                     No users found
                   </td>
                 </tr>
@@ -238,27 +239,6 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                          user.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          user.status === 'suspended' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
-                        }`}>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                            user.is_verified
-                              ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
-                              : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
-                          }`}>
-                            {user.is_verified ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                            {user.is_verified ? 'Verified' : 'Unverified'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                           user.role === 'admin'
                             ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
@@ -269,14 +249,48 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </span>
                       </td>
                       <td className="px-6 py-4">
+                        <span className="text-xs font-bold text-neutral-900 dark:text-white">
+                          {user.courses_enrolled}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="text-xs font-medium text-neutral-900 dark:text-white">
-                            {formatDateTime(user.created_at).date}
-                          </span>
-                          <span className="text-[10px] text-neutral-500">
-                            {formatDateTime(user.created_at).time}
+                            {(() => {
+                              const dt = formatDateTime(user.created_at);
+                              return typeof dt === 'string' ? dt : dt.date;
+                            })()}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          {(() => {
+                            const dt = formatDateTime(user.last_login);
+                            if (typeof dt === 'string') {
+                              return <span className="text-xs font-medium text-neutral-500">{dt}</span>;
+                            }
+                            return (
+                              <>
+                                <span className="text-xs font-medium text-neutral-900 dark:text-white">
+                                  {dt.date}
+                                </span>
+                                <span className="text-[10px] text-neutral-500">
+                                  {dt.time}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                          user.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                          user.status === 'suspended' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
+                        }`}>
+                          {user.status}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
