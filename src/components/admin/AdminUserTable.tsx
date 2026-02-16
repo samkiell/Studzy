@@ -102,6 +102,25 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     }
   };
 
+  const handleSetDepartment = async (userId: string, department: string) => {
+    setLoadingId(userId);
+    try {
+      const response = await fetch("/api/admin/update-user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, department }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, department } : u));
+      } else {
+        alert(result.error || "Failed to set department");
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   const handleUpdateVerification = async (userId: string, isVerified: boolean) => {
     const user = users.find(u => u.id === userId);
     if (isVerified && user?.department !== "Software Engineering") {
@@ -320,6 +339,24 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                     disabled={user.department !== "Software Engineering"}
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5" /> Verify Student
+                                  </button>
+                                )}
+
+                                <div className="h-px bg-neutral-100 dark:bg-neutral-800 my-1" />
+
+                                {user.department !== "Software Engineering" ? (
+                                  <button 
+                                    onClick={() => handleSetDepartment(user.id, "Software Engineering")}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
+                                  >
+                                    <Building2 className="h-3.5 w-3.5" /> Set to Software Eng.
+                                  </button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleSetDepartment(user.id, "")}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
+                                  >
+                                    <Building2 className="h-3.5 w-3.5" /> Clear Department
                                   </button>
                                 )}
 
