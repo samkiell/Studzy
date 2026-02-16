@@ -153,10 +153,13 @@ export async function POST(
         let fullContent = "";
         try {
           for await (const chunk of stream) {
-            const delta = chunk.data.choices[0]?.delta?.content;
-            if (typeof delta === "string") {
-              fullContent += delta;
-              controller.enqueue(encoder.encode(delta));
+            const data = (chunk as any).data || chunk;
+            const choice = data.choices?.[0];
+            const content = choice?.delta?.content || "";
+            
+            if (content) {
+              fullContent += content;
+              controller.enqueue(encoder.encode(content));
             }
           }
 
