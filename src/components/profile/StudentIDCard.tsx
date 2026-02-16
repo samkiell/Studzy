@@ -264,7 +264,7 @@ export function StudentIDCard({
           </div>
 
           <div className="space-y-1 flex flex-col items-center">
-            <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm uppercase leading-none">@{username}</h2>
+            <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm uppercase leading-none">{username}</h2>
             <div className="relative">
               <button 
                 onClick={(e) => {
@@ -279,7 +279,7 @@ export function StudentIDCard({
               </button>
               
               {showStackMenu && !isViewOnly && (
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 bg-[#0f0f0f] border border-white/10 rounded-xl py-2 shadow-2xl z-50 backdrop-blur-xl ring-1 ring-white/5">
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-50 bg-[#0f0f0f] border border-white/10 rounded-xl py-2 shadow-2xl z-50 backdrop-blur-xl ring-1 ring-white/5 pl-2">
                   {stackOptions.map((opt) => (
                     <button
                       key={opt}
@@ -305,7 +305,7 @@ export function StudentIDCard({
               <span className="text-[11px] font-bold text-white/90">Software Engineering</span>
             </div>
             <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
-              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Edition</span>
+              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">ClassName</span>
               <span className="text-[11px] font-bold text-white/90 truncate max-w-[110px]">DevCore&apos;23</span>
             </div>
           </div>
@@ -313,7 +313,7 @@ export function StudentIDCard({
 
         <div className="mt-auto pt-6 flex justify-between items-end border-t border-white/5">
            <div className="text-[9px] text-neutral-500 font-bold opacity-80 italic tracking-tighter">
-              &quot;Study smarter. Stress less.&quot;
+              &quot;Study smarter. bag 5.0.&quot;
            </div>
            <div className="bg-white p-1 rounded-lg shadow-xl ring-1 ring-black/10">
               <QRCode value={`https://studzy.me/id/${username}`} size={40} />
