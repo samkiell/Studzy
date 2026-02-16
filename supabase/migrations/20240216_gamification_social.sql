@@ -43,20 +43,29 @@ ALTER TABLE public.discussions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.study_presence ENABLE ROW LEVEL SECURITY;
 
 -- Bookmarks: Users can only see and manage their own
+DROP POLICY IF EXISTS "Users can manage their own bookmarks" ON public.bookmarks;
 CREATE POLICY "Users can manage their own bookmarks" ON public.bookmarks
   FOR ALL USING (auth.uid() = user_id);
 
 -- Discussions: Everyone can read, users can only edit/delete their own
+DROP POLICY IF EXISTS "Discussions are readable by everyone" ON public.discussions;
 CREATE POLICY "Discussions are readable by everyone" ON public.discussions
   FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can create discussions" ON public.discussions;
 CREATE POLICY "Users can create discussions" ON public.discussions
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own discussions" ON public.discussions;
 CREATE POLICY "Users can update their own discussions" ON public.discussions
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Study Presence: Simplified for pulse system
+DROP POLICY IF EXISTS "Users can manage their own presence" ON public.study_presence;
 CREATE POLICY "Users can manage their own presence" ON public.study_presence
   FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Presence is readable by everyone" ON public.study_presence;
 CREATE POLICY "Presence is readable by everyone" ON public.study_presence
   FOR SELECT USING (true);
 
