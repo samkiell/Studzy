@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Delete file from storage
     const { error: deleteError } = await supabase.storage
-      .from("studzy-materials")
+      .from("RAG")
       .remove([path]);
 
     if (deleteError) {

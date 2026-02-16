@@ -75,7 +75,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("studzy-materials")
+      .from("RAG")
       .upload(fileName, file, {
         cacheControl: "3600",
         upsert: false,
@@ -91,7 +91,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from("studzy-materials")
+      .from("RAG")
       .getPublicUrl(uploadData.path);
 
     const fileUrl = urlData.publicUrl;
@@ -111,7 +111,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     if (insertError) {
       // Try to clean up the uploaded file
-      await supabase.storage.from("studzy-materials").remove([uploadData.path]);
+      await supabase.storage.from("RAG").remove([uploadData.path]);
 
       console.error("Database insert error:", insertError);
       return {
@@ -165,13 +165,13 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
 
     // Extract file path from URL
     const url = new URL(resource.file_url);
-    const pathParts = url.pathname.split("/storage/v1/object/public/studzy-materials/");
+    const pathParts = url.pathname.split("/storage/v1/object/public/RAG/");
     const filePath = pathParts[1];
 
     if (filePath) {
       // Delete from storage
       const { error: storageError } = await supabase.storage
-        .from("studzy-materials")
+        .from("RAG")
         .remove([filePath]);
 
       if (storageError) {
