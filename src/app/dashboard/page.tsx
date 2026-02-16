@@ -54,8 +54,34 @@ export default async function DashboardPage() {
       .map(a => a.resource_id)
   ).size;
 
-  // Estimate hours: 30 minutes per unique resource viewed/studied
-  const estimatedHours = (uniqueViews * 0.5).toFixed(1);
+  // Fetch profile for study time
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("total_study_seconds")
+    .eq("id", user.id)
+    .single();
+
+  const totalSeconds = profile?.total_study_seconds || 0;
+
+  // Format time: only show non-zero units
+  const formatStudyTime = (totalSecs: number) => {
+    if (totalSecs <= 0) return "0s";
+    
+    const d = Math.floor(totalSecs / (3600 * 24));
+    const h = Math.floor((totalSecs % (3600 * 24)) / 3600);
+    const m = Math.floor((totalSecs % 3600) / 60);
+    const s = totalSecs % 60;
+
+    const parts = [];
+    if (d > 0) parts.push(`${d}d`);
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+
+    return parts.join(" ");
+  };
+
+  const formattedTime = formatStudyTime(totalSeconds);
 
   return (
     <div>
@@ -87,8 +113,8 @@ export default async function DashboardPage() {
           icon={<Eye className="h-5 w-5" />}
         />
         <StatCard 
-          title="Hours Studied" 
-          value={estimatedHours}
+          title="Time Studied" 
+          value={formattedTime}
           icon={<Zap className="h-5 w-5" />}
         />
       </div>
