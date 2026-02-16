@@ -44,9 +44,10 @@ export function ImageViewer({ src, title }: ImageViewerProps) {
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-4 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-              Studzy Watermark
-            </p>
+        {/* Studzy Watermark */}
+        <div className="pointer-events-none absolute bottom-4 left-4 select-none">
+          <span className="text-lg font-bold text-blue-400/50 drop-shadow-md">Studzy</span>
+        </div>
           </div>
           <a
             href={src}
