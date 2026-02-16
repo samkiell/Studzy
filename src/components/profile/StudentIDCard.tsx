@@ -21,10 +21,9 @@ import { toast } from "react-hot-toast";
 interface StudentIDCardProps {
   displayName: string;
   username: string;
-  bio: string | null;
-  learningGoal: string | null;
   avatarUrl: string | null;
   role?: string;
+  isViewOnly?: boolean;
   stats?: {
     streak: number;
     hours: number;
@@ -38,6 +37,7 @@ export function StudentIDCard({
   username, 
   avatarUrl,
   role = "Student",
+  isViewOnly = false,
   stats = { streak: 0, hours: 0, rank: 0, bookmarks: 0 }
 }: StudentIDCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -57,7 +57,7 @@ export function StudentIDCard({
   // --- Avatar Upload Logic ---
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Don't flip the card when clicking avatar
-    if (!isUploading) {
+    if (!isUploading && !isViewOnly) {
       fileInputRef.current?.click();
     }
   };
@@ -66,7 +66,6 @@ export function StudentIDCard({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Basic validation
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
@@ -90,10 +89,8 @@ export function StudentIDCard({
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
-      // Immediate UI update
       setCurrentAvatarUrl(data.url);
       toast.success("Avatar updated!", { id: uploadToast });
     } catch (err: any) {
@@ -101,7 +98,6 @@ export function StudentIDCard({
       toast.error(err.message || "Failed to upload avatar", { id: uploadToast });
     } finally {
       setIsUploading(false);
-      // Reset input
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -110,24 +106,43 @@ export function StudentIDCard({
   const captureSide = async (ref: React.RefObject<HTMLDivElement>) => {
     if (!ref.current) return null;
     const html2canvas = (await import("html2canvas")).default;
+    
+    // Create a configuration that fixes "bending" and "truncation"
     return await html2canvas(ref.current, {
       scale: 3,
       useCORS: true,
       backgroundColor: "#0a0a0a",
       logging: false,
+      allowTaint: true,
       onclone: (doc) => {
         const clonedEl = doc.getElementById(ref.current!.id);
         if (clonedEl instanceof HTMLElement) {
+          // 1. Remove ANY transformation or perspective that causes "bending"
           clonedEl.style.transform = "none";
           clonedEl.style.transition = "none";
+          clonedEl.style.perspective = "none";
+          clonedEl.style.position = "relative";
+          clonedEl.style.top = "0";
+          clonedEl.style.left = "0";
+          
+          // 2. Fix truncation by ensuring explicit dimensions and visible overflow
+          clonedEl.style.width = "300px";
+          clonedEl.style.height = "450px";
+          clonedEl.style.overflow = "visible";
+          
+          // 3. Force children to be flat and clean
+          const children = clonedEl.querySelectorAll("*");
+          children.forEach((child) => {
+            if (child instanceof HTMLElement) {
+              child.style.transform = "none";
+              child.style.transition = "none";
+              child.style.perspective = "none";
+              child.style.backfaceVisibility = "visible";
+              child.style.backdropFilter = "none"; // Backdrop blur can cause rendering artifacts in canvas
+              child.style.animation = "none"; // Prevent animations from being in a partial state
+            }
+          });
         }
-        const elementsWithRotation = doc.querySelectorAll(".rotate-y-180, .preserve-3d");
-        elementsWithRotation.forEach((el) => {
-          if (el instanceof HTMLElement) {
-            el.style.transform = "none";
-            el.style.perspective = "none";
-          }
-        });
       }
     });
   };
@@ -136,8 +151,20 @@ export function StudentIDCard({
   const handleExport = async (format: "png" | "pdf") => {
     setIsExporting(true);
     try {
+      // Temporarily set flip to false to ensure capturing references is clean
+      const wasFlipped = isFlipped;
+      setIsFlipped(false);
+      await new Promise(r => setTimeout(r, 100)); // Wait for flip transition
+
       const frontCanvas = await captureSide(frontRef);
+      
+      // Capture back side
+      setIsFlipped(true);
+      await new Promise(r => setTimeout(r, 800)); // Wait for full flip duration
       const backCanvas = await captureSide(backRef);
+
+      // Restore flip state
+      setIsFlipped(wasFlipped);
 
       if (!frontCanvas || !backCanvas) throw new Error("Capture failed");
 
@@ -146,7 +173,9 @@ export function StudentIDCard({
         frontLink.download = `studzy-id-${username}-front.png`;
         frontLink.href = frontCanvas.toDataURL("image/png");
         frontLink.click();
+        
         await new Promise(r => setTimeout(r, 500));
+        
         const backLink = document.createElement("a");
         backLink.download = `studzy-id-${username}-back.png`;
         backLink.href = backCanvas.toDataURL("image/png");
@@ -194,16 +223,15 @@ export function StudentIDCard({
         </div>
 
         <div className="text-center space-y-5">
-          {/* Avatar with Click-to-Upload */}
+          {/* Avatar Area */}
           <div 
-            className="relative mx-auto w-32 h-32 group/avatar"
-            onClick={(e) => e.stopPropagation()} // Strictly prevent flip when clicking the avatar area
+            className={`relative mx-auto w-32 h-32 group/avatar ${isViewOnly ? '' : 'cursor-pointer'}`}
+            onClick={handleAvatarClick}
           >
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
              <div className="absolute inset-2 rounded-full border border-white/10" />
              <div 
-               className={`absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10 transition-transform duration-300 ${!isUploading ? 'cursor-pointer hover:scale-[1.02] active:scale-95' : ''}`}
-               onClick={handleAvatarClick}
+               className={`absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10 transition-transform duration-300 ${!isUploading && !isViewOnly ? 'hover:scale-[1.02] active:scale-95' : ''}`}
              >
                 {currentAvatarUrl ? (
                   <Image 
@@ -219,8 +247,8 @@ export function StudentIDCard({
                   </div>
                 )}
                 
-                {/* Hover Overlay */}
-                {!isUploading && (
+                {/* Hover Overlay - Only in Edit Mode */}
+                {!isUploading && !isViewOnly && (
                   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                     <Camera className="w-6 h-6 text-white/80 mb-1" />
                     <span className="text-[8px] font-bold uppercase tracking-widest text-white/80">Change Photo</span>
@@ -257,7 +285,7 @@ export function StudentIDCard({
               &quot;Study smarter. Stress less.&quot;
            </div>
            <div className="bg-white p-1 rounded-lg shadow-xl ring-1 ring-black/10">
-              <QRCode value={`https://studzy.me/u/${username}`} size={40} />
+              <QRCode value={`https://studzy.me/id/${username}`} size={40} />
            </div>
         </div>
       </div>
@@ -312,18 +340,19 @@ export function StudentIDCard({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {/* Hidden File Input */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
-        accept="image/*" 
-        onChange={handleFileChange}
-      />
+      {!isViewOnly && (
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/*" 
+          onChange={handleFileChange}
+        />
+      )}
 
       <div>
         <div 
-          className="group relative h-[450px] w-[300px] cursor-pointer perspective-1000"
+          className={`group relative h-[450px] w-[300px] cursor-pointer perspective-1000 ${isExporting ? 'pointer-events-none' : ''}`}
           onClick={() => !isExporting && !isUploading && setIsFlipped(!isFlipped)}
         >
           <div className={`relative h-full w-full transition-all duration-700 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
@@ -348,21 +377,23 @@ export function StudentIDCard({
 
       <div className="flex flex-col gap-2 w-full max-w-[300px]">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsFlipped(!isFlipped)} className="flex-1" disabled={isUploading}>
+          <Button variant="outline" size="sm" onClick={() => setIsFlipped(!isFlipped)} className="flex-1" disabled={isUploading || isExporting}>
             <RotateCcw className="w-3 h-3 mr-2" /> Flip Card
           </Button>
         </div>
         
-        <div className="flex gap-2">
-          <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
-            {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
-            Download PNG
-          </Button>
-          <Button onClick={() => handleExport("pdf")} disabled={isExporting || isUploading} className="flex-1 bg-primary-600 text-white">
-            {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3 mr-2" />}
-            Download PDF
-          </Button>
-        </div>
+        {!isViewOnly && (
+          <div className="flex gap-2">
+            <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
+              {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
+              Download PNG
+            </Button>
+            <Button onClick={() => handleExport("pdf")} disabled={isExporting || isUploading} className="flex-1 bg-primary-600 text-white">
+              {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3 mr-2" />}
+              Download PDF
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

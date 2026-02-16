@@ -167,14 +167,9 @@ export default async function DashboardPage() {
             stats={{
               streak: currentStreak,
               hours: Math.floor(totalSeconds / 3600),
-              rank: 0, // Placeholder for rank if no leaderboard logic yet
+              rank: 0, 
               bookmarks: bookmarksCount || 0
             }}
-          />
-
-          <ProfileEditor 
-            initialBio={bio}
-            initialGoal={learningGoal}
           />
 
           <LeaderboardWidget />
