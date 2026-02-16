@@ -11,6 +11,7 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
   audio: ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp3", "audio/m4a"],
   video: ["video/mp4", "video/webm", "video/ogg", "video/quicktime"],
   pdf: ["application/pdf"],
+  image: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"],
 };
 
 interface UploadResult {
@@ -42,7 +43,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
       return { success: false, message: "Please enter a title" };
     }
 
-    if (!type || !["audio", "video", "pdf"].includes(type)) {
+    if (!type || !["audio", "video", "pdf", "image"].includes(type)) {
       return { success: false, message: "Please select a valid resource type" };
     }
 

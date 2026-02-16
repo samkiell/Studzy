@@ -49,7 +49,7 @@ export default async function AdminUploadPage() {
               <p className="font-medium">Upload Guidelines</p>
               <ul className="mt-1 list-inside list-disc text-blue-600 dark:text-blue-400">
                 <li>Maximum file size: 100MB</li>
-                <li>Supported formats: MP4, WebM, MP3, WAV, PDF</li>
+                <li>Supported formats: MP4, WebM, MP3, WAV, PDF, Images</li>
                 <li>Files are stored securely in Supabase Storage</li>
               </ul>
             </div>
@@ -78,7 +78,7 @@ export default async function AdminUploadPage() {
           </div>
           <div className="rounded-lg border border-neutral-200 bg-white p-4 text-center dark:border-neutral-800 dark:bg-neutral-900">
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              3
+              4
             </p>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               File Types
