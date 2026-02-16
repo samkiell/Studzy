@@ -87,9 +87,14 @@ export default async function DashboardPage() {
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white md:text-3xl">
-            Welcome back{displayName ? `, ${displayName}` : ""}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white md:text-3xl">
+              Welcome back{displayName ? `, ${displayName}` : ""}
+            </h1>
+            <span className="hidden rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400 md:block">
+              DevCore&apos;23
+            </span>
+          </div>
           <p className="mt-1 text-neutral-600 dark:text-neutral-400">
             Select a course to access study materials.
           </p>
