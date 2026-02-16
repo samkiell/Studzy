@@ -192,21 +192,21 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
   return (
     <div 
       ref={containerRef}
-      className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-4 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30 sm:p-6 outline-none focus:ring-2 focus:ring-purple-500"
+      className="relative rounded-xl border border-neutral-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-3 sm:p-6 dark:border-neutral-800 dark:from-purple-950/30 dark:to-indigo-950/30 outline-none focus:ring-2 focus:ring-purple-500"
       tabIndex={0}
     >
       {/* Studzy Watermark */}
       <div className="pointer-events-none absolute bottom-3 left-3 select-none sm:left-4">
-        <span className="text-xs font-bold text-purple-300/60 dark:text-purple-700/60 sm:text-sm">Studzy</span>
+        <span className="text-[10px] font-bold text-purple-300/60 dark:text-purple-700/60 sm:text-sm">Studzy</span>
       </div>
 
       <audio ref={audioRef} src={src} preload="metadata" />
 
       {/* Title */}
-      <div className="mb-4 flex items-center gap-3 sm:mb-6 sm:gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30 sm:h-16 sm:w-16">
+      <div className="mb-3 flex items-center gap-3 sm:mb-6 sm:gap-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30 sm:h-16 sm:w-16">
           <svg
-            className="h-6 w-6 text-purple-600 dark:text-purple-400 sm:h-8 sm:w-8"
+            className="h-5 w-5 text-purple-600 dark:text-purple-400 sm:h-8 sm:w-8"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -256,7 +256,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Skip Backward */}
         <button
           onClick={skipBackward}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-purple-500 sm:h-10 sm:w-10"
           title="Skip back 10s (Left Arrow)"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,7 +267,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Play/Pause */}
         <button
           onClick={togglePlay}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:h-14 sm:w-14"
           title={isPlaying ? "Pause (Space)" : "Play (Space)"}
         >
           {isPlaying ? (
@@ -284,7 +284,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         {/* Skip Forward */}
         <button
           onClick={skipForward}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-purple-500 sm:h-10 sm:w-10"
           title="Skip forward 10s (Right Arrow)"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

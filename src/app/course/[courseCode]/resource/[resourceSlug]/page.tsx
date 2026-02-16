@@ -6,7 +6,6 @@ import { VideoPlayer, AudioPlayer, PDFViewer, ImageViewer, LockedResourcePreview
 import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 import { DiscussionPanel } from "@/components/resources/DiscussionPanel";
 import { StarButton } from "@/components/resources/StarButton";
-import { ShareCourseButton } from "@/components/courses/ShareCourseButton";
 
 interface ResourcePageProps {
   params: Promise<{
@@ -285,31 +284,31 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <nav className="mb-4 flex items-center gap-2 text-sm">
+          <nav className="mb-2 flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 sm:mb-4 sm:gap-2 sm:text-sm">
             <Link
               href="/dashboard"
-              className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+              className="hover:text-neutral-700 dark:hover:text-neutral-200"
             >
               Courses
             </Link>
             <span className="text-neutral-300 dark:text-neutral-700">/</span>
             <Link
               href={`/course/${course.code}`}
-              className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+              className="hover:text-neutral-700 dark:hover:text-neutral-200"
             >
               {course?.code || "Course"}
             </Link>
             <span className="text-neutral-300 dark:text-neutral-700">/</span>
-            <span className="text-neutral-900 dark:text-white">
-              {resource.title.length > 30 ? resource.title.slice(0, 30) + "..." : resource.title}
+            <span className="truncate font-medium text-neutral-900 dark:text-white max-w-[150px] sm:max-w-none">
+              {resource.title}
             </span>
           </nav>
 
           {/* Title & Meta */}
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3 sm:gap-4">
             {/* Type Icon */}
             <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 sm:rounded-xl ${
                 resource.type === "video"
                   ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
                   : resource.type === "audio"
@@ -379,7 +378,6 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             </div>
             <div className="flex items-center gap-2">
               <StarButton resourceId={resource.id} />
-              <ShareCourseButton courseCode={course.code} />
             </div>
           </div>
         </div>
