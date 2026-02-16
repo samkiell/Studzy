@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   MessageSquare,
   Image as ImageIcon,
@@ -480,7 +481,26 @@ export function ChatPanel({
                     {message.role === "assistant" ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           components={{
+                            table({ children }) {
+                              return (
+                                <div className="my-2 overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
+                                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700 text-sm">
+                                    {children}
+                                  </table>
+                                </div>
+                              );
+                            },
+                            thead({ children }) {
+                              return <thead className="bg-neutral-50 dark:bg-neutral-800">{children}</thead>;
+                            },
+                            th({ children }) {
+                              return <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">{children}</th>;
+                            },
+                            td({ children }) {
+                              return <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400 border-t border-neutral-100 dark:border-neutral-800">{children}</td>;
+                            },
                             code({ className, children, ...props }) {
                               const match = /language-(\w+)/.exec(className || "");
                               const isInline = !match;
