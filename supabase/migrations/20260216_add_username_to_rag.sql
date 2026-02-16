@@ -2,6 +2,9 @@
 ALTER TABLE public.study_material_embeddings 
 ADD COLUMN IF NOT EXISTS username TEXT;
 
+-- Drop the old function signature first because we are changing the return type (adding a column)
+DROP FUNCTION IF EXISTS match_embeddings(vector(1024), float, int, text, text);
+
 -- Update the match_embeddings function to include username
 CREATE OR REPLACE FUNCTION match_embeddings(
     query_embedding vector(1024),
