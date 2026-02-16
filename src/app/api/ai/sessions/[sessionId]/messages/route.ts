@@ -20,6 +20,7 @@ async function getRAGContext(
   level?: string
 ): Promise<string | null> {
   try {
+    console.log(`[RAG] 🔍 Querying embeddings for: "${question.substring(0, 100)}..."`);
     const queryEmbedding = await embedText(question);
     const supabase = createAdminClient();
 
@@ -31,9 +32,20 @@ async function getRAGContext(
       filter_level: level || null,
     });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.error("[RAG] ❌ RPC Error:", error);
       return null;
     }
+
+    if (!data || data.length === 0) {
+      console.log("[RAG] ⚠️ No matching study materials found for this query.");
+      return null;
+    }
+
+    console.log(`[RAG] ✅ Found ${data.length} relevant chunks:`);
+    data.forEach((chunk: any, i: number) => {
+      console.log(`   Source ${i + 1}: ${chunk.file_path} (similarity: ${(chunk.similarity * 100).toFixed(1)}%)`);
+    });
 
     const contextBlocks = data
       .map(
@@ -51,7 +63,7 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 - If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
 - Format responses with markdown for readability.`;
   } catch (err) {
-    console.warn("[RAG] Context retrieval failed (continuing without):", err);
+    console.error("[RAG] ❌ Context retrieval failed:", err);
     return null;
   }
 }
@@ -213,21 +225,15 @@ async function callMistralAI(
   });
 
   // 🎓 RAG: Search study materials for relevant context
-  const hasVisionContent = messages.some(m => m.image_url) || hasImageRequest;
-  
-  if (!hasVisionContent && latestUserContent) {
+  if (latestUserContent) {
     try {
-      console.log(`[RAG] Searching study materials for: "${latestUserContent.substring(0, 60)}..."`);
       const ragContext = await getRAGContext(latestUserContent);
 
       if (ragContext) {
-        console.log("[RAG] ✅ Found relevant study material context");
         mistralMessages.unshift({
           role: "system",
           content: ragContext,
         });
-      } else {
-        console.log("[RAG] No relevant study materials found");
       }
     } catch (err) {
       console.warn("[RAG] Context search failed (continuing without):", err);

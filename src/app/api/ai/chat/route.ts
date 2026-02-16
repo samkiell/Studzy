@@ -37,6 +37,7 @@ async function getRAGContext(
   level?: string
 ): Promise<string | null> {
   try {
+    console.log(`[RAG] 🔍 Querying embeddings for: "${question.substring(0, 100)}..."`);
     const queryEmbedding = await embedText(question);
     const supabase = createAdminClient();
 
@@ -48,9 +49,20 @@ async function getRAGContext(
       filter_level: level || null,
     });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.error("[RAG] ❌ RPC Error:", error);
       return null;
     }
+
+    if (!data || data.length === 0) {
+      console.log("[RAG] ⚠️ No matching study materials found for this query.");
+      return null;
+    }
+
+    console.log(`[RAG] ✅ Found ${data.length} relevant chunks:`);
+    data.forEach((chunk: any, i: number) => {
+      console.log(`   Source ${i + 1}: ${chunk.file_path} (similarity: ${(chunk.similarity * 100).toFixed(1)}%)`);
+    });
 
     const contextBlocks = data
       .map(
@@ -68,7 +80,7 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 - If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
 - Format responses with markdown for readability.`;
   } catch (err) {
-    console.warn("[RAG] Context retrieval failed (continuing without):", err);
+    console.error("[RAG] ❌ Context retrieval failed:", err);
     return null;
   }
 }
@@ -116,11 +128,9 @@ export async function POST(request: NextRequest) {
     });
 
     // 🎓 RAG: Search study material embeddings for context relevant to the user's question.
-    // Only do this for text-only messages (not image analysis)
-    if (!hasImages && messages.length > 0) {
+    if (messages.length > 0) {
       const lastUserMessage = messages.filter(m => m.role === "user").pop();
       if (lastUserMessage) {
-        console.log(`[RAG] Searching study materials for: "${lastUserMessage.content.substring(0, 60)}..."`);
         const ragContext = await getRAGContext(
           lastUserMessage.content,
           course_code,
@@ -128,14 +138,11 @@ export async function POST(request: NextRequest) {
         );
 
         if (ragContext) {
-          console.log("[RAG] ✅ Found relevant study material context");
           // Prepend as system message so the AI has study material context
           mistralMessages.unshift({
             role: "system",
             content: ragContext,
           });
-        } else {
-          console.log("[RAG] No relevant study materials found");
         }
       }
     }

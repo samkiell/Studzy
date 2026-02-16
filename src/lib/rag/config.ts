@@ -21,7 +21,7 @@ export const EMBEDDING_BATCH_SIZE = 10;
 export const TOP_K = 5;
 
 /** Minimum similarity threshold for relevant results */
-export const SIMILARITY_THRESHOLD = 0.5;
+export const SIMILARITY_THRESHOLD = 0.3;
 
 /** Supabase Storage bucket name */
 export const STORAGE_BUCKET = "RAG";

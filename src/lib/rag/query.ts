@@ -135,9 +135,14 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
     threshold
   );
 
-  console.log(
-    `[RAG Query] Found ${chunks.length} relevant chunks (threshold: ${threshold})`
-  );
+  if (chunks.length === 0) {
+    console.log("[RAG Query] ⚠️ No matching study materials found.");
+  } else {
+    console.log(`[RAG Query] ✅ Found ${chunks.length} relevant chunks:`);
+    chunks.forEach((c, i) => {
+      console.log(`   Source ${i + 1}: ${c.filePath} (similarity: ${(c.similarity * 100).toFixed(1)}%)`);
+    });
+  }
 
   // Step 3: Build system prompt
   const systemPrompt = buildSystemPrompt(chunks);
@@ -207,9 +212,14 @@ export async function queryRAGStream(
     threshold
   );
 
-  console.log(
-    `[RAG Query Stream] Found ${chunks.length} relevant chunks`
-  );
+  if (chunks.length === 0) {
+    console.log("[RAG Query Stream] ⚠️ No matching study materials found.");
+  } else {
+    console.log(`[RAG Query Stream] ✅ Found ${chunks.length} relevant chunks:`);
+    chunks.forEach((c, i) => {
+      console.log(`   Source ${i + 1}: ${c.filePath} (similarity: ${(c.similarity * 100).toFixed(1)}%)`);
+    });
+  }
 
   // Step 3: Build system prompt
   const systemPrompt = buildSystemPrompt(chunks);
