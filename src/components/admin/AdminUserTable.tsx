@@ -92,22 +92,6 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     }
   };
 
-  const handleUpdateRole = async (userId: string, newRole: UserRole) => {
-    setLoadingId(userId);
-    try {
-      const response = await fetch("/api/admin/update-user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, role: newRole }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-      }
-    } finally {
-      setLoadingId(null);
-    }
-  };
 
   const handleConfirmAction = async () => {
     const { type, userId } = modalState;
@@ -297,24 +281,6 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5" /> Verify Student
-                                  </button>
-                                )}
-
-                                <div className="h-px bg-neutral-100 dark:bg-neutral-800 my-1" />
-
-                                {user.role === 'student' ? (
-                                  <button 
-                                    onClick={() => handleUpdateRole(user.id, 'admin')}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg"
-                                  >
-                                    <Shield className="h-3.5 w-3.5" /> Make Admin
-                                  </button>
-                                ) : (
-                                  <button 
-                                    onClick={() => handleUpdateRole(user.id, 'student')}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
-                                  >
-                                    <UserIcon className="h-3.5 w-3.5" /> Demote to Student
                                   </button>
                                 )}
                                 
