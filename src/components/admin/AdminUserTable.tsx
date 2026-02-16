@@ -5,24 +5,20 @@ import type { Profile, UserRole, UserStatus } from "@/types/database";
 import { 
   Search, 
   Filter, 
-  MoreVertical, 
+  MoreHorizontal, 
   Shield, 
   User as UserIcon, 
   UserX, 
   Trash2, 
-  Eye,
-  ShieldAlert,
-  ShieldCheck,
-  MoreHorizontal,
-  Clock,
-  Mail,
-  Calendar,
   CheckCircle2,
   XCircle,
-  Building2,
-  AlertTriangle
+  Download,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 
 interface UserWithProgress extends Profile {
   courses_enrolled: number;
@@ -38,6 +34,23 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: "verify" | "demote" | "delete" | null;
+    userId: string | null;
+  }>({
+    isOpen: false,
+    type: null,
+    userId: null
+  });
+
+  const openModal = (type: "verify" | "demote" | "delete", userId: string) => {
+    setModalState({ isOpen: true, type, userId });
+  };
+
+  const closeModal = () => {
+    setModalState({ isOpen: false, type: null, userId: null });
+  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -61,8 +74,6 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   );
 
   const handleUpdateStatus = async (userId: string, newStatus: UserStatus) => {
-    if (newStatus === 'deleted' && !window.confirm("Are you sure you want to delete this user? This will mark them as deleted.")) return;
-    
     setLoadingId(userId);
     try {
       const response = await fetch("/api/admin/update-user", {
@@ -81,77 +92,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm("Are you sure you want to PERMANENTLY delete this user? This action cannot be undone.")) return;
-    
-    setLoadingId(userId);
-    try {
-      const response = await fetch("/api/admin/delete-user", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setUsers(prev => prev.filter(u => u.id !== userId));
-      } else {
-        alert(result.error || "Failed to delete user");
-      }
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
-  const handleSetDepartment = async (userId: string, department: string) => {
-    setLoadingId(userId);
-    try {
-      const response = await fetch("/api/admin/update-user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, department }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, department } : u));
-      } else {
-        alert(result.error || "Failed to set department");
-      }
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
-  const handleUpdateVerification = async (userId: string, isVerified: boolean) => {
-    const user = users.find(u => u.id === userId);
-    if (isVerified && user?.department !== "Software Engineering") {
-      alert("Only Software Engineering students can be verified for ID card generation.");
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to ${isVerified ? 'VERIFY' : 'DEMOTE'} this user?`)) return;
-
-    setLoadingId(userId);
-    try {
-      const endpoint = isVerified ? "/api/admin/verify-user" : "/api/admin/demote-user";
-      const response = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: isVerified } : u));
-      } else {
-        alert(result.error || "Failed to update verification status");
-      }
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
   const handleUpdateRole = async (userId: string, newRole: UserRole) => {
-    if (!window.confirm(`Change user role to ${newRole.toUpperCase()}?`)) return;
-
     setLoadingId(userId);
     try {
       const response = await fetch("/api/admin/update-user", {
@@ -162,6 +103,45 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
       const result = await response.json();
       if (result.success) {
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    const { type, userId } = modalState;
+    if (!type || !userId) return;
+
+    setLoadingId(userId);
+    closeModal();
+
+    try {
+      let response;
+      if (type === "delete") {
+        response = await fetch("/api/admin/delete-user", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
+      } else {
+        const endpoint = type === "verify" ? "/api/admin/verify-user" : "/api/admin/demote-user";
+        response = await fetch(endpoint, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        if (type === "delete") {
+          setUsers(prev => prev.filter(u => u.id !== userId));
+        } else {
+          setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: type === "verify" } : u));
+        }
+      } else {
+        alert(result.error || `Failed to ${type} user`);
       }
     } finally {
       setLoadingId(null);
@@ -223,19 +203,17 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">User</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Verification</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Role & Dept</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Courses</th>
-                <th className="hidden lg:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Joined</th>
-                <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
-                <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">User</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Status</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Verification</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Role</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">
                     No users found
                   </td>
                 </tr>
@@ -268,6 +246,15 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                          user.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                          user.status === 'suspended' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
+                        }`}>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                             user.is_verified
@@ -280,45 +267,17 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                            user.role === 'admin' 
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
-                              : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
-                          }`}>
-                            {user.role === 'admin' ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
-                            {user.role}
-                          </span>
-                          <span className="flex items-center gap-1 text-[10px] text-neutral-500 font-medium">
-                            <Building2 className="h-2.5 w-2.5" />
-                            {user.department || "No Dept"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center font-medium tabular-nums">
-                        {user.courses_enrolled}
-                      </td>
-                      <td className="hidden lg:table-cell px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
-                        {formatDate(user.created_at)}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                          user.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          user.status === 'suspended' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
+                        <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                          user.role === 'admin'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
+                            : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
                         }`}>
-                          {user.status}
+                          {user.role === 'admin' ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
+                          {user.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                          <Link
-                            href={`/admin/users/${user.id}`}
-                            className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Link>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                           <div className="relative group/actions">
                             <button className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
                               <MoreHorizontal className="h-4 w-4" />
@@ -326,37 +285,18 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                             <div className="absolute right-0 bottom-full mb-2 w-48 invisible group-hover/actions:visible bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 overflow-hidden">
                               <div className="p-1">
                                 {user.is_verified ? (
-                                  <button 
-                                    onClick={() => handleUpdateVerification(user.id, false)}
+                                  <button
+                                    onClick={() => openModal("demote", user.id)}
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                                   >
                                     <XCircle className="h-3.5 w-3.5" /> Demote Verification
                                   </button>
                                 ) : (
-                                  <button 
-                                    onClick={() => handleUpdateVerification(user.id, true)}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={user.department !== "Software Engineering"}
+                                  <button
+                                    onClick={() => openModal("verify", user.id)}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5" /> Verify Student
-                                  </button>
-                                )}
-
-                                <div className="h-px bg-neutral-100 dark:bg-neutral-800 my-1" />
-
-                                {user.department !== "Software Engineering" ? (
-                                  <button 
-                                    onClick={() => handleSetDepartment(user.id, "Software Engineering")}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
-                                  >
-                                    <Building2 className="h-3.5 w-3.5" /> Set to Software Eng.
-                                  </button>
-                                ) : (
-                                  <button 
-                                    onClick={() => handleSetDepartment(user.id, "")}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
-                                  >
-                                    <Building2 className="h-3.5 w-3.5" /> Clear Department
                                   </button>
                                 )}
 
@@ -367,14 +307,14 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                     onClick={() => handleUpdateRole(user.id, 'admin')}
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg"
                                   >
-                                    <ShieldCheck className="h-3.5 w-3.5" /> Promote to Admin
+                                    <Shield className="h-3.5 w-3.5" /> Make Admin
                                   </button>
                                 ) : (
                                   <button 
                                     onClick={() => handleUpdateRole(user.id, 'student')}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
                                   >
-                                    <ShieldAlert className="h-3.5 w-3.5" /> Demote to Student
+                                    <UserIcon className="h-3.5 w-3.5" /> Demote to Student
                                   </button>
                                 )}
                                 
@@ -392,7 +332,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                     onClick={() => handleUpdateStatus(user.id, 'active')}
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
                                   >
-                                    <ShieldCheck className="h-3.5 w-3.5" /> Activate User
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> Activate User
                                   </button>
                                 )}
                                 
@@ -440,6 +380,35 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type === "delete" ? "error" : modalState.type === "verify" ? "success" : "warning"}
+        title={
+          modalState.type === "delete" ? "Delete User" :
+          modalState.type === "verify" ? "Verify Student" : "Demote Verification"
+        }
+        description={
+          modalState.type === "delete" ? "Are you sure you want to PERMANENTLY delete this user? This action cannot be undone." :
+          modalState.type === "verify" ? "Are you sure you want to verify this student for ID card generation?" :
+          "Are you sure you want to demote this user's verification status? They will lose access to ID card generation."
+        }
+        footer={
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={closeModal} disabled={!!loadingId}>
+              Cancel
+            </Button>
+            <Button 
+              variant={modalState.type === "delete" ? "danger" : "primary"}
+              onClick={handleConfirmAction}
+              disabled={!!loadingId}
+            >
+              {loadingId ? "Processing..." : "Confirm Action"}
+            </Button>
+          </div>
+        }
+      />
     </div>
   );
 }

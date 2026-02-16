@@ -13,8 +13,7 @@ import {
   Eye,
   ShieldCheck,
   CheckCircle2,
-  XCircle,
-  Building2
+  XCircle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -133,10 +132,6 @@ export default async function UserDetailsPage({
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Mail className="h-4 w-4 shrink-0" />
                 <span className="truncate">{profile.email}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
-                <Building2 className="h-4 w-4 shrink-0" />
-                <span>{profile.department || "No Department assigned"}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Calendar className="h-4 w-4 shrink-0" />
