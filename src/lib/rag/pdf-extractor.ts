@@ -44,9 +44,9 @@ export async function extractPDFFromStorage(
     throw new Error(`Downloaded file is empty: ${filePath}`);
   }
 
-  // pdf-parse v1: simple function(buffer) => Promise<{text, numpages}>
+  // pdf-parse v1: require from lib to bypass test-file-on-load bug in index.js
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse");
+  const pdfParse = require("pdf-parse/lib/pdf-parse.js");
 
   const pdfData = await pdfParse(buffer);
 
