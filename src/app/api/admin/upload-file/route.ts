@@ -91,12 +91,11 @@ export async function POST(request: NextRequest) {
         const { ingestFile } = await import("@/lib/rag/ingestion");
         console.log(`[RAG Upload] Triggering auto-ingestion for: ${uploadData.path}`);
         
-        // This runs asynchronously in the background (we don't await it to avoid blocking response)
-        // But for reliability, we'll wait for it or at least log failure
+        // This runs asynchronously in the background
         ingestFile({
           filePath: uploadData.path,
           force: true,
-          // We can't pass courseCode/level as it's a generic dump
+          username: profile?.username || user.email || "admin", // Tag with username
         }).catch(err => {
           console.error(`[RAG Upload] Ingestion failed for ${uploadData.path}:`, err);
         });

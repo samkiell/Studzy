@@ -12,6 +12,7 @@ export interface IngestionOptions {
   filePath: string;
   courseCode?: string;
   level?: string;
+  username?: string;
   /** If true, re-process even if file was already ingested */
   force?: boolean;
 }
@@ -66,6 +67,7 @@ async function storeChunksWithEmbeddings(
     embedding: JSON.stringify(embeddings[i]),
     course_code: courseCode || null,
     level: level || null,
+    username: username || null,
   }));
 
   // Insert in batches of 50 to avoid payload size limits
@@ -109,7 +111,7 @@ export async function ingestFile(
   options: IngestionOptions
 ): Promise<IngestionResult> {
   const startTime = Date.now();
-  const { filePath, courseCode, level, force } = options;
+  const { filePath, courseCode, level, username, force } = options;
 
   console.log(`[RAG] Starting ingestion for: ${filePath}`);
 
@@ -201,7 +203,8 @@ export async function ingestFile(
       embeddings,
       filePath,
       courseCode,
-      level
+      level,
+      username
     );
 
     const durationMs = Date.now() - startTime;
