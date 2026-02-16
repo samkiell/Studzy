@@ -97,7 +97,7 @@ export function UploadForm({ courses }: UploadFormProps) {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFilesSelect(Array.from(e.dataTransfer.files));
     }
-  }, [selectedCourseId]);
+  }, [selectedCourseId, isRAG]);
 
   // Upload file to storage immediately
   const uploadFileToStorage = useCallback((fileUpload: FileUpload): Promise<{ fileUrl: string; storagePath: string } | null> => {
