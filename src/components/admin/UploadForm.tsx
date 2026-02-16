@@ -10,7 +10,8 @@ import {
   AlertCircle, 
   FileStack,
   Trash2,
-  Loader2
+  Loader2,
+  Image as ImageIcon
 } from "lucide-react";
 import type { Course, ResourceType, ResourceStatus } from "@/types/database";
 
@@ -38,6 +39,7 @@ const FILE_TYPES: Record<ResourceType, { accept: string; label: string }> = {
   audio: { accept: "audio/*,.mp3,.wav,.ogg,.m4a", label: "Audio files (MP3, WAV, OGG, M4A)" },
   video: { accept: "video/*,.mp4,.webm,.mov", label: "Video files (MP4, WebM, MOV)" },
   pdf: { accept: ".pdf,application/pdf", label: "PDF documents" },
+  image: { accept: "image/*,.jpg,.jpeg,.png,.webp,.svg,.gif", label: "Image files (JPG, PNG, WebP, SVG)" },
 };
 
 // Auto-detect resource type from MIME type
@@ -46,12 +48,14 @@ const detectResourceType = (file: File): ResourceType | null => {
   if (mimeType.startsWith("video/")) return "video";
   if (mimeType.startsWith("audio/")) return "audio";
   if (mimeType === "application/pdf") return "pdf";
+  if (mimeType.startsWith("image/")) return "image";
   
   // Fallback: check file extension
   const ext = file.name.split(".").pop()?.toLowerCase();
   if (["mp4", "webm", "mov", "avi"].includes(ext || "")) return "video";
   if (["mp3", "wav", "ogg", "m4a", "flac"].includes(ext || "")) return "audio";
   if (ext === "pdf") return "pdf";
+  if (["jpg", "jpeg", "png", "webp", "svg", "gif"].includes(ext || "")) return "image";
   
   return null;
 };
@@ -461,7 +465,7 @@ export function UploadForm({ courses }: UploadFormProps) {
       <div className="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           <span className="font-medium text-neutral-900 dark:text-white">Supported file types:</span>{" "}
-          Videos (MP4, WebM, MOV), Audio (MP3, WAV, OGG, M4A), PDFs — file type is auto-detected
+          Videos (MP4, WebM, MOV), Audio (MP3, WAV, OGG, M4A), PDFs, Images (JPG, PNG, WebP) — file type is auto-detected
         </p>
       </div>
 
@@ -519,7 +523,7 @@ export function UploadForm({ courses }: UploadFormProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*,audio/*,.pdf,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a"
+            accept="video/*,audio/*,.pdf,.jpg,.jpeg,.png,.webp,.svg,.gif,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a"
             onChange={handleFileChange}
             multiple
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -539,7 +543,7 @@ export function UploadForm({ courses }: UploadFormProps) {
               </p>
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
-              Videos, Audio, PDFs • Max 100MB per file
+              Videos, Audio, PDFs, Images • Max 100MB per file
             </p>
           </div>
         </div>
@@ -584,8 +588,8 @@ export function UploadForm({ courses }: UploadFormProps) {
                       <AlertCircle className="h-5 w-5 text-red-600" />
                     ) : fileUpload.status === "uploaded" ? (
                       <CloudUpload className="h-5 w-5 text-green-500" />
-                    ) : fileUpload.status === "uploading" || fileUpload.status === "saving" ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                    ) : fileUpload.type === "image" ? (
+                      <ImageIcon className="h-5 w-5 text-emerald-500" />
                     ) : (
                       <FileStack className="h-5 w-5 text-neutral-400" />
                     )}
@@ -608,6 +612,8 @@ export function UploadForm({ courses }: UploadFormProps) {
                               ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                               : fileUpload.type === "audio"
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              : fileUpload.type === "image"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                               : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                           }`}>
                             {fileUpload.type}
@@ -642,6 +648,8 @@ export function UploadForm({ courses }: UploadFormProps) {
                               ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                               : fileUpload.type === "audio"
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              : fileUpload.type === "image"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                               : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                           }`}>
                             {fileUpload.type}
