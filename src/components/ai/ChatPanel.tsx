@@ -61,6 +61,8 @@ export function ChatPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   // Close options menu when clicking outside
   useEffect(() => {
@@ -78,10 +80,22 @@ export function ChatPanel({
     setMessages(initialMessages);
   }, [initialMessages]);
 
-  // Auto-scroll
+  // Handle scroll events to detect if user is at bottom
+  const handleScroll = () => {
+    if (!scrollAreaRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+    
+    // Check if user is within 100px of bottom
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsAtBottom(isNearBottom);
+  };
+
+  // Auto-scroll logic: only if user is already at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+    if (isAtBottom && scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages, isLoading, isAtBottom]);
 
   // Auto-focus on PC
   useEffect(() => {

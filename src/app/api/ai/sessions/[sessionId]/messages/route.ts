@@ -144,37 +144,46 @@ export async function POST(
         .eq("id", sessionId);
     }
 
-    // 🚀 Call Mistral AI using the official SDK (with RAG context)
-    const aiResponse = await callMistralAI(allMessages || [], mode, enable_search, image || (images && images.length > 0), content);
+    // 🚀 Call Mistral AI with streaming
+    const stream = await callMistralAIStream(allMessages || [], mode, enable_search || mode === "search", !!(images && images.length > 0), content);
 
-    // Save assistant message
-    const { data: assistantMsg, error: assistantMsgError } = await supabase
-      .from("chat_messages")
-      .insert({
-        session_id: sessionId,
-        role: "assistant",
-        content: aiResponse,
-        mode: mode || "chat",
-      })
-      .select()
-      .single();
+    const encoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        let fullContent = "";
+        try {
+          for await (const chunk of stream) {
+            const delta = chunk.data.choices[0]?.delta?.content;
+            if (typeof delta === "string") {
+              fullContent += delta;
+              controller.enqueue(encoder.encode(delta));
+            }
+          }
 
-    if (assistantMsgError) {
-      console.error("Error saving assistant message:", assistantMsgError);
-    }
+          // Save assistant message to DB after stream completes
+          if (fullContent) {
+            await supabase.from("chat_messages").insert({
+              session_id: sessionId,
+              role: "assistant",
+              content: fullContent,
+              mode: mode || "chat",
+            });
+          }
+        } catch (err) {
+          console.error("Streaming error:", err);
+          controller.error(err);
+        } finally {
+          controller.close();
+        }
+      },
+    });
 
-    // Get updated session title
-    const { data: updatedSession } = await supabase
-      .from("chat_sessions")
-      .select("title")
-      .eq("id", sessionId)
-      .single();
-
-    return NextResponse.json({
-      userMessage: userMsg,
-      assistantMessage: assistantMsg,
-      content: aiResponse,
-      sessionTitle: updatedSession?.title || session.title,
+    return new Response(readableStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
     });
   } catch (error) {
     console.error("Messages POST error:", error);
@@ -188,24 +197,20 @@ interface DBMessage {
   image_url?: string | null;
 }
 
-async function callMistralAI(
+async function callMistralAIStream(
   messages: DBMessage[],
   mode: string,
   enableSearch: boolean,
   hasImageRequest: boolean,
   latestUserContent?: string
-): Promise<string> {
+): Promise<AsyncIterable<any>> {
   if (!MISTRAL_API_KEY) {
-    return "Sorry, the AI service is not configured. Please contact the administrator.";
+    throw new Error("Mistral API Key not configured");
   }
 
-  // Build Mistral messages
   const mistralMessages: any[] = messages.map((msg) => {
     if (msg.image_url) {
-      const contentArray: any[] = [
-        { type: "text", text: msg.content }
-      ];
-
+      const contentArray: any[] = [{ type: "text", text: msg.content }];
       if (msg.image_url.startsWith("[")) {
         try {
           const parsed = JSON.parse(msg.image_url);
@@ -218,85 +223,45 @@ async function callMistralAI(
       } else {
         contentArray.push({ type: "image_url", imageUrl: { url: msg.image_url } });
       }
-
       return { role: msg.role, content: contentArray };
     }
     return { role: msg.role, content: msg.content };
   });
 
-  // 🎓 RAG: Search study materials for relevant context
   if (latestUserContent) {
     try {
       const ragContext = await getRAGContext(latestUserContent);
-
       if (ragContext) {
-        mistralMessages.unshift({
-          role: "system",
-          content: ragContext,
-        });
+        mistralMessages.unshift({ role: "system", content: ragContext });
       }
     } catch (err) {
-      console.warn("[RAG] Context search failed (continuing without):", err);
+      console.warn("[RAG] Context search failed:", err);
     }
   }
 
-  // 🌐 Search Mode: Add specific instructions
   if (mode === "search" || enableSearch) {
     mistralMessages.unshift({
       role: "system",
-      content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information or specific details, use your web search tool. If you use a tool, explain to the student that you are searching the web for them."
+      content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information or specific details, use your web search tool.",
     });
   }
 
-  // Force Agent/Search Logic
   if (!MISTRAL_AI_AGENT_ID) {
-    return "Error: Mistral AI Agent ID not configured in environment variables.";
+    throw new Error("Mistral Agent ID not configured");
   }
 
-  try {
-    const shouldUseWebSearch = enableSearch || mode === "search";
+  const shouldUseWebSearch = enableSearch || mode === "search";
 
-    if (shouldUseWebSearch) {
-      console.log("[Messages API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
-      const response = await (client.chat.complete as any)({
-        model: "mistral-large-latest",
-        messages: mistralMessages,
-        web_search: true,
-      });
-
-      const choice = response.choices?.[0];
-      const content = choice?.message?.content?.toString();
-      
-      if (!content) {
-        console.warn("[Messages API] ⚠️ Search returned empty content. Response:", JSON.stringify(response, null, 2));
-      }
-      return content || "Search completed but I couldn't summarize the findings.";
-    }
-
-    // ✅ Standard Agent Logic
-    const response = await client.agents.complete({
-      agentId: MISTRAL_AI_AGENT_ID,
+  if (shouldUseWebSearch) {
+    return (client.chat.stream as any)({
+      model: "mistral-large-latest",
       messages: mistralMessages,
+      web_search: true,
     });
-    
-    const choice = response.choices?.[0];
-    const content = choice?.message?.content?.toString();
-    const toolCalls = (choice?.message as any)?.toolCalls;
-
-    if (toolCalls && toolCalls.length > 0 && !content) {
-      const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
-      console.log(`[Messages API] 🛠️ AI requested tools: ${toolNames}`);
-      
-      return `I need to use tools (${toolNames}) to answer this, but they are not yet fully integrated for automatic execution in this mode.`;
-    }
-
-    if (!content) {
-      console.warn("[Messages API] ⚠️ Agent returned empty content. Response:", JSON.stringify(response, null, 2));
-    }
-    
-    return content || "The AI agent did not provide a text response.";
-  } catch (apiError: any) {
-    console.error("[Messages API] ❌ Mistral failure:", apiError);
-    return `Sorry, I encountered an error with the AI Service: ${apiError.message}`;
   }
+
+  return client.agents.stream({
+    agentId: MISTRAL_AI_AGENT_ID,
+    messages: mistralMessages,
+  });
 }
