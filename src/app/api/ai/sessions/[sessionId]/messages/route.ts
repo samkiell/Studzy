@@ -198,13 +198,13 @@ async function callMistralAI(
         try {
           const parsed = JSON.parse(msg.image_url);
           parsed.forEach((url: string) => {
-            contentArray.push({ type: "image_url", image_url: { url } });
+            contentArray.push({ type: "image_url", imageUrl: { url } });
           });
         } catch (e) {
-          contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
+          contentArray.push({ type: "image_url", imageUrl: { url: msg.image_url } });
         }
       } else {
-        contentArray.push({ type: "image_url", image_url: { url: msg.image_url } });
+        contentArray.push({ type: "image_url", imageUrl: { url: msg.image_url } });
       }
 
       return { role: msg.role, content: contentArray };
