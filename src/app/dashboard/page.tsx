@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   // Fetch profile for study time, streak, and personalization
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username")
+    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username, role")
     .eq("id", user.id)
     .single();
 
