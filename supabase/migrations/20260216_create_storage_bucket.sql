@@ -14,19 +14,19 @@ create policy "Admin Upload"
 on storage.objects for insert
 with check (
   bucket_id = 'RAG' AND
-  (select role from public.profiles where id = auth.uid()) = 'admin'
+  public.is_admin_user()
 );
 
 create policy "Admin Update"
 on storage.objects for update
 using (
   bucket_id = 'RAG' AND
-  (select role from public.profiles where id = auth.uid()) = 'admin'
+  public.is_admin_user()
 );
 
 create policy "Admin Delete"
 on storage.objects for delete
 using (
   bucket_id = 'RAG' AND
-  (select role from public.profiles where id = auth.uid()) = 'admin'
+  public.is_admin_user()
 );
