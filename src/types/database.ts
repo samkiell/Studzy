@@ -14,6 +14,12 @@ export interface Profile {
   role: UserRole;
   status: UserStatus;
   last_login: string | null;
+  bio: string | null;
+  learning_goal: string | null;
+  current_streak: number;
+  last_login_date: string | null;
+  longest_streak: number;
+  total_study_seconds: number;
   created_at: string;
   updated_at: string;
 }
@@ -110,6 +116,62 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<UserActivity, "id">>;
+      };
+      bookmarks: {
+        Row: {
+          id: string;
+          user_id: string;
+          resource_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          resource_id: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          resource_id: string;
+        }>;
+      };
+      discussions: {
+        Row: {
+          id: string;
+          resource_id: string;
+          user_id: string;
+          content: TEXT;
+          parent_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          resource_id: string;
+          user_id: string;
+          content: string;
+          parent_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          content: string;
+          updated_at?: string;
+        }>;
+      };
+      study_presence: {
+        Row: {
+          user_id: string;
+          course_id: string;
+          last_pulse: string;
+        };
+        Insert: {
+          user_id: string;
+          course_id: string;
+          last_pulse?: string;
+        };
+        Update: Partial<{
+          last_pulse: string;
+        }>;
       };
     };
   };
