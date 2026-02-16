@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getURL } from "@/lib/utils";
+import { getEmailTemplate } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -76,10 +78,15 @@ export async function signup(formData: FormData) {
 
 export async function resetPassword(email: string) {
   try {
-    const supabase = await createClient();
+    const adminClient = createAdminClient();
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${getURL()}auth/callback?type=recovery`,
+    // 1. Generate the recovery link using admin client
+    const { data, error } = await adminClient.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: {
+        redirectTo: `${getURL()}auth/callback?type=recovery`,
+      },
     });
 
     if (error) {
@@ -89,8 +96,26 @@ export async function resetPassword(email: string) {
       return { error: error.message };
     }
 
+    // 2. Format the email using our template
+    const template = getEmailTemplate('reset', {
+      link: data.properties.action_link,
+    });
+
+    // 3. Send the email manually via SMTP
+    const emailResult = await sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+    });
+
+    if (!emailResult.success) {
+      console.error("[resetPassword] SMTP Error:", emailResult.error);
+      return { error: "Reset link generated, but failed to send email. Please try again." };
+    }
+
     return { success: true, message: "Password reset link sent to your email" };
   } catch (err: any) {
+    console.error("[resetPassword] Exception:", err);
     return { error: err.message || "An error occurred during password reset" };
   }
 }

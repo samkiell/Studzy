@@ -22,6 +22,13 @@ export function ImageViewer({ src, title }: ImageViewerProps) {
             className={`max-w-full rounded-lg shadow-lg transition-transform duration-300 ${isZoomed ? "max-h-[85vh] scale-100" : "max-h-[60vh] hover:scale-[1.02]"}`}
           />
           
+          {/* Watermark Overlay */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10 select-none">
+            <span className="text-6xl font-black uppercase tracking-[2em] text-neutral-500 -rotate-12">
+              Studzy
+            </span>
+          </div>
+          
           {/* Controls Overlay */}
           <div className="absolute right-4 top-4 flex flex-col gap-2">
             <button
