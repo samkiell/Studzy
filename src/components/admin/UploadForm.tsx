@@ -427,8 +427,11 @@ export function UploadForm({ courses }: UploadFormProps) {
           id="courseId"
           value={selectedCourseId}
           onChange={(e) => setSelectedCourseId(e.target.value)}
-          required
-          className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-neutral-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+          required={!isRAG}
+          disabled={isRAG}
+          className={`w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-neutral-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white ${
+            isRAG ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           <option value="">Select a course</option>
           {courses.map((course) => (
@@ -544,10 +547,10 @@ export function UploadForm({ courses }: UploadFormProps) {
             </div>
             <div>
               <p className="font-medium text-neutral-900 dark:text-white">
-                {selectedCourseId ? "Drag and drop files here" : "Select a course first"}
+                {selectedCourseId || isRAG ? "Drag and drop files here" : "Select a course first"}
               </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                {selectedCourseId ? "or click to browse • Mixed file types allowed" : "Choose a course to enable uploads"}
+                {selectedCourseId || isRAG ? "or click to browse • Mixed file types allowed" : "Choose a course to enable uploads"}
               </p>
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
