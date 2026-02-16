@@ -92,8 +92,6 @@ export async function POST(request: NextRequest) {
 
     // Convert messages to Mistral content format
     const mistralMessages: any[] = messages.map((msg, i) => {
-      const isLast = i === messages.length - 1;
-      
       // If message has images, we use the vision content array format
       const msgImages = (msg as any).images || (msg.image ? [msg.image] : []);
       
@@ -101,10 +99,10 @@ export async function POST(request: NextRequest) {
         return {
           role: msg.role,
           content: [
-            { type: "text", text: msg.content },
+            { type: "text", text: msg.content || "Analyze this image." },
             ...msgImages.map((url: string) => ({
               type: "image_url",
-              image_url: { url }
+              image_url: url
             }))
           ]
         };
@@ -117,7 +115,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // 🎓 RAG: Search study materials for relevant context
+    // 🎓 RAG: Search study material embeddings for context relevant to the user's question.
     // Only do this for text-only messages (not image analysis)
     if (!hasImages && messages.length > 0) {
       const lastUserMessage = messages.filter(m => m.role === "user").pop();
@@ -162,7 +160,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       try {
-        const model = hasImages ? "pixtral-large-latest" : "mistral-large-latest";
+        const model = hasImages ? "pixtral-12b-2409" : "mistral-large-latest";
         const response = await client.chat.stream({
           model: model,
           messages: mistralMessages,
