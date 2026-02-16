@@ -215,14 +215,25 @@ export async function queryRAGStream(
   const systemPrompt = buildSystemPrompt(chunks);
 
   // Step 4: Create streaming response
-  const mistralStream = await client.chat.stream({
-    model: CHAT_MODEL,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: question },
-    ],
-    temperature: 0.3,
-  });
+  const agentId = process.env.MISTRAL_AI_AGENT_ID;
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: question },
+  ];
+
+  let mistralStream;
+  if (agentId) {
+    mistralStream = await client.agents.stream({
+      agentId: agentId,
+      messages: messages as any,
+    });
+  } else {
+    mistralStream = await client.chat.stream({
+      model: CHAT_MODEL,
+      messages: messages as any,
+      temperature: 0.3,
+    });
+  }
 
   const encoder = new TextEncoder();
 
