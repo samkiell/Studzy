@@ -189,7 +189,7 @@ export default async function DashboardPage() {
                   className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600 active:scale-95"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  Verify me on Store Chatbot
+                  Abeg Verify me
                 </a>
               </div>
             </div>

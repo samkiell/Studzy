@@ -11,7 +11,10 @@ import {
   MessageSquare,
   ChevronLeft,
   Eye,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  Building2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -116,6 +119,12 @@ export default async function UserDetailsPage({
                   }`}>
                     {profile.status}
                   </span>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    profile.is_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                  }`}>
+                    {profile.is_verified ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                    {profile.is_verified ? 'Verified' : 'Unverified'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -124,6 +133,10 @@ export default async function UserDetailsPage({
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Mail className="h-4 w-4 shrink-0" />
                 <span className="truncate">{profile.email}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                <Building2 className="h-4 w-4 shrink-0" />
+                <span>{profile.department || "No Department assigned"}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Calendar className="h-4 w-4 shrink-0" />

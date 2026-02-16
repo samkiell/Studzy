@@ -81,6 +81,27 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to PERMANENTLY delete this user? This action cannot be undone.")) return;
+    
+    setLoadingId(userId);
+    try {
+      const response = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+      } else {
+        alert(result.error || "Failed to delete user");
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   const handleUpdateVerification = async (userId: string, isVerified: boolean) => {
     const user = users.find(u => u.id === userId);
     if (isVerified && user?.department !== "Software Engineering") {
@@ -92,10 +113,11 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
 
     setLoadingId(userId);
     try {
-      const response = await fetch("/api/admin/verify-user", {
+      const endpoint = isVerified ? "/api/admin/verify-user" : "/api/admin/demote-user";
+      const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, isVerified }),
+        body: JSON.stringify({ userId }),
       });
       const result = await response.json();
       if (result.success) {
@@ -338,7 +360,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                 )}
                                 
                                 <button 
-                                  onClick={() => handleUpdateStatus(user.id, 'deleted')}
+                                  onClick={() => handleDeleteUser(user.id)}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 rounded-lg"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" /> Delete User
