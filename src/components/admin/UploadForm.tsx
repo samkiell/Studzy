@@ -13,6 +13,7 @@ import {
   Loader2,
   Image as ImageIcon
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { Course, ResourceType, ResourceStatus } from "@/types/database";
 
 interface UploadFormProps {
@@ -101,77 +102,82 @@ export function UploadForm({ courses }: UploadFormProps) {
     }
   }, [selectedCourseId, isRAG]);
 
-  // Upload file to storage immediately
-  const uploadFileToStorage = useCallback((fileUpload: FileUpload): Promise<{ fileUrl: string; storagePath: string } | null> => {
-    return new Promise((resolve) => {
-      const xhr = new XMLHttpRequest();
+  // Upload file to storage immediately (Client-Side to bypass Vercel limits)
+  const uploadFileToStorage = useCallback(async (fileUpload: FileUpload): Promise<{ fileUrl: string; storagePath: string } | null> => {
+    const supabase = createClient();
+    const fileExtension = fileUpload.file.name.split(".").pop()?.toLowerCase() || "";
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 9);
+    // Use the same folder structure as before: type/filename
+    const fileName = `${fileUpload.type}/${timestamp}-${randomId}.${fileExtension}`;
 
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileUpload.id ? { ...f, progress, status: "uploading" } : f
-            )
-          );
-        }
-      });
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileUpload.id ? { ...f, status: "uploading", progress: 10, message: "Starting upload..." } : f
+      )
+    );
 
-      xhr.addEventListener("load", () => {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          if (xhr.status >= 200 && xhr.status < 300 && response.success) {
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileUpload.id
-                  ? { ...f, progress: 100, status: "uploaded", fileUrl: response.fileUrl, storagePath: response.storagePath }
-                  : f
-              )
-            );
-            resolve({ fileUrl: response.fileUrl, storagePath: response.storagePath });
-          } else {
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileUpload.id
-                  ? { ...f, status: "error", message: response.message || "Upload failed" }
-                  : f
-              )
-            );
-            resolve(null);
-          }
-        } catch {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileUpload.id
-                ? { ...f, status: "error", message: "Invalid response from server" }
-                : f
-            )
-          );
-          resolve(null);
-        }
-      });
+    try {
+      // 1. Upload directly to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("RAG")
+        .upload(fileName, fileUpload.file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-      xhr.addEventListener("error", () => {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileUpload.id
-              ? { ...f, status: "error", message: "Network error occurred" }
-              : f
-          )
-        );
-        resolve(null);
-      });
-
-      const formData = new FormData();
-      formData.append("file", fileUpload.file);
-      formData.append("type", fileUpload.type);
-      if (isRAG) {
-        formData.append("isRAG", "true");
+      if (error) {
+        throw error;
       }
 
-      xhr.open("POST", "/api/admin/upload-file");
-      xhr.send(formData);
-    });
+      setFiles((prev) =>
+        prev.map((f) => f.id === fileUpload.id ? { ...f, progress: 90, message: "Processing..." } : f)
+      );
+
+      // 2. Get Public URL
+      const { data: urlData } = supabase.storage
+        .from("RAG")
+        .getPublicUrl(data.path);
+
+      const fileUrl = urlData.publicUrl;
+      const storagePath = data.path;
+
+      // 3. Trigger RAG Ingestion (if applicable)
+      if (isRAG && (fileUpload.type === "pdf" || fileUpload.type === "document")) {
+        await fetch("/api/admin/trigger-ingestion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filePath: storagePath,
+            // We can add courseCode/level here if we had them selected, 
+            // but for "RAG Storage Mode", we might not have a course selected.
+            // If we DO have a course selected (mixed mode?), pass it.
+            // But currently RAG mode clears course selection.
+          }),
+        });
+      }
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileUpload.id
+            ? { ...f, progress: 100, status: "uploaded", fileUrl, storagePath, message: "Ready to save" }
+            : f
+        )
+      );
+
+      return { fileUrl, storagePath };
+
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileUpload.id
+            ? { ...f, status: "error", message: error.message || "Upload failed" }
+            : f
+        )
+      );
+      return null;
+    }
   }, [isRAG]);
 
   const handleFilesSelect = async (newFiles: File[]) => {
