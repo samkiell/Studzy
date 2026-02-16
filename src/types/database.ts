@@ -173,6 +173,36 @@ export interface Database {
           last_pulse: string;
         }>;
       };
+      study_material_embeddings: {
+        Row: {
+          id: string;
+          file_path: string;
+          content: string;
+          embedding: string; // vector stored as string/json
+          course_code: string | null;
+          level: string | null;
+          username: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          file_path: string;
+          content: string;
+          embedding: string;
+          course_code?: string | null;
+          level?: string | null;
+          username?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          file_path: string;
+          content: string;
+          embedding: string;
+          course_code: string | null;
+          level: string | null;
+          username: string | null;
+        }>;
+      };
     };
   };
 }
