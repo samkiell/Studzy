@@ -15,11 +15,12 @@ export default async function PublicIDPage({ params }: PageProps) {
   const { username } = await params;
   const supabase = await createClient();
 
-  // Fetch profile by username
+  // Fetch profile by username (case-insensitive search using ilike or making sure the column uses citext)
+  // If the citext migration hasn't fully applied yet, we can use ilike to be safe.
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("username", username)
+    .ilike("username", username)
     .single();
 
   if (error || !profile) {
@@ -32,7 +33,7 @@ export default async function PublicIDPage({ params }: PageProps) {
     .select("*", { count: "exact", head: true })
     .eq("user_id", profile.id);
 
-  const displayName = profile.full_name || username;
+  const displayName = profile.full_name || profile.username || username;
   const currentStreak = profile.current_streak || 0;
   const totalSeconds = profile.total_study_seconds || 0;
 
@@ -57,7 +58,7 @@ export default async function PublicIDPage({ params }: PageProps) {
         <div className="w-full animation-fade-in">
           <StudentIDCard 
             displayName={displayName}
-            username={username}
+            username={profile.username || username}
             avatarUrl={profile.avatar_url}
             isViewOnly={true}
             role={profile.role === "admin" ? "Admin" : "Student"}
