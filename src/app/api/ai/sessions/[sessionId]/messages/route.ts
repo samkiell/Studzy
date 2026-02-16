@@ -274,7 +274,7 @@ async function callMistralAI(
     if (!content) {
       console.warn("[Messages API] ⚠️ Agent returned empty content. Response:", JSON.stringify(response, null, 2));
     }
-    return content || "The AI agent did not provide a response.";
+    return content || "I can't answer now, I'm eating.";
   } catch (apiError: any) {
     console.error("[Messages API] ❌ Mistral API failure:", apiError);
     return `Sorry, I encountered an error with the AI Service: ${apiError.message}`;
