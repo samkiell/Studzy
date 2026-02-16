@@ -152,8 +152,8 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">User</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Role</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Courses</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Joined</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Last Login</th>
+                <th className="hidden md:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Joined</th>
+                <th className="hidden lg:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Last Login</th>
                 <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
               </tr>
