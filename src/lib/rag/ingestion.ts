@@ -4,6 +4,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractPDFFromStorage } from "./pdf-extractor";
+import { extractTextFromStorage } from "./text-extractor";
 import { cleanText, hasSubstantialContent } from "./text-cleaner";
 import { chunkText, type TextChunk } from "./chunker";
 import { embedBatch } from "./embeddings";
@@ -149,12 +150,40 @@ export async function ingestFile(
       }
     }
 
-    // Step 2: Fetch and extract PDF
-    console.log(`[RAG] Extracting text from PDF...`);
-    const { text: rawText, pageCount, fileName } = await extractPDFFromStorage(filePath);
+    // Step 2: Fetch and extract content based on file type
+    const extension = filePath.split(".").pop()?.toLowerCase();
+    let rawText = "";
+    let pageCount = 0;
+    let fileName = "";
+
+    if (extension === "pdf") {
+      console.log(`[RAG] Extracting text from PDF...`);
+      const result = await extractPDFFromStorage(filePath);
+      rawText = result.text;
+      pageCount = result.pageCount;
+      fileName = result.fileName;
+    } else if (["txt", "md", "json", "csv", "ts", "js", "tsx", "jsx"].includes(extension || "")) {
+      console.log(`[RAG] Extracting text from file...`);
+      const result = await extractTextFromStorage(filePath);
+      rawText = result.text;
+      pageCount = result.pageCount;
+      fileName = result.fileName;
+    } else {
+      console.log(`[RAG] Skipping unsupported file type for ingestion: ${extension}`);
+      return {
+        success: true,
+        filePath,
+        chunksProcessed: 0,
+        chunksStored: 0,
+        pageCount: 0,
+        skipped: true,
+        skipReason: `Unsupported file type for RAG: ${extension}`,
+        durationMs: Date.now() - startTime,
+      };
+    }
 
     console.log(
-      `[RAG] Extracted ${rawText.length} chars from ${pageCount} pages (${fileName})`
+      `[RAG] Extracted ${rawText.length} chars from ${pageCount} pages/sections (${fileName})`
     );
 
     // Step 3: Clean text
