@@ -258,10 +258,10 @@ async function callMistralAI(
 
     if (shouldUseWebSearch) {
       console.log("[Messages API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
-      const response = await client.chat.complete({
+      const response = await (client.chat.complete as any)({
         model: "mistral-large-latest",
         messages: mistralMessages,
-        web_search: true as any,
+        web_search: true,
       });
 
       const choice = response.choices?.[0];
