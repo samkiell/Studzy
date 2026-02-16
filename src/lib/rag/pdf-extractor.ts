@@ -45,7 +45,8 @@ export async function extractPDFFromStorage(
   }
 
   // Dynamically import pdf-parse (it's a CommonJS module)
-  const pdfParse = (await import("pdf-parse")).default;
+  const pdfParseModule = await import("pdf-parse");
+  const pdfParse = pdfParseModule.default || pdfParseModule;
 
   const pdfData = await pdfParse(buffer, {
     // Limit page rendering to prevent memory issues with huge PDFs
