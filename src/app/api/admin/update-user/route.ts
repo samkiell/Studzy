@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
-    const { userId, role, status, department } = await request.json();
+    const { userId, role, status } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ success: false, message: "User ID required" }, { status: 400 });
@@ -36,7 +36,6 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {};
     if (role) updateData.role = role;
     if (status) updateData.status = status;
-    if (department !== undefined) updateData.department = department;
 
     const { error: updateError } = await supabase
       .from("profiles")

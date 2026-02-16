@@ -28,24 +28,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: "User ID required" }, { status: 400 });
     }
 
-    // Fetch user to check department
-    const { data: userProfile } = await supabase
-      .from("profiles")
-      .select("department")
-      .eq("id", userId)
-      .single();
-
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
-    }
-
-    if (userProfile.department !== "Software Engineering") {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Only Software Engineering students can be verified for ID card generation." 
-      }, { status: 400 });
-    }
-
     const { error: updateError } = await supabase
       .from("profiles")
       .update({ is_verified: true })
