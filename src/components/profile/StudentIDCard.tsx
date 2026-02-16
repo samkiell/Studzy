@@ -52,16 +52,25 @@ export function StudentIDCard({
     return await html2canvas(ref.current, {
       scale: 3,
       useCORS: true,
-      backgroundColor: "#000000", // Force black to match theme
+      backgroundColor: "#0a0a0a", // Match site dark mode exactly
       logging: false,
       onclone: (doc) => {
-        // Ensure the cloned element is visible and not flipped/hidden
-        const el = doc.getElementById(ref.current!.id);
-        if (el) {
-          el.style.transform = "none";
-          el.style.position = "relative";
-          el.style.display = "block";
+        // Find the element in the cloned document
+        // We look for any element that might have the rotation class
+        const clonedEl = doc.querySelector(`[ref="${ref.current}"]`) || doc.getElementById(ref.current!.id);
+        if (clonedEl instanceof HTMLElement) {
+          clonedEl.style.transform = "none";
+          clonedEl.style.transition = "none";
         }
+        
+        // Also ensure any parent containers in the clone don't have rotation
+        const elementsWithRotation = doc.querySelectorAll(".rotate-y-180, .preserve-3d");
+        elementsWithRotation.forEach((el) => {
+          if (el instanceof HTMLElement) {
+            el.style.transform = "none";
+            el.style.perspective = "none";
+          }
+        });
       }
     });
   };
@@ -83,7 +92,7 @@ export function StudentIDCard({
         frontLink.href = frontCanvas.toDataURL("image/png");
         frontLink.click();
 
-        // Small delay for browser to handle first download
+        // Small delay for browser
         await new Promise(r => setTimeout(r, 500));
 
         // Back
@@ -104,10 +113,7 @@ export function StudentIDCard({
         const width = pdf.internal.pageSize.getWidth();
         const height = pdf.internal.pageSize.getHeight();
         
-        // Page 1: Front
         pdf.addImage(frontCanvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
-        
-        // Page 2: Back
         pdf.addPage();
         pdf.addImage(backCanvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
         
@@ -115,7 +121,7 @@ export function StudentIDCard({
       }
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Failed to export card. Please try again.");
+      alert("Failed to export card.");
     } finally {
       setIsExporting(false);
     }
@@ -125,67 +131,69 @@ export function StudentIDCard({
     window.print();
   };
 
-  // Shared Card Styles to ensure consistency between Screen/Print/Export
-  const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/10 ring-1 ring-white/5";
+  // Shared Card Styles
+  const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
 
   // Shared Front Face Content
   const FrontFaceContent = () => (
-    <div id="id-front" className={`${cardFaceClasses} bg-neutral-900`}>
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 z-0" />
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+    <div id="id-front" className={`${cardFaceClasses} bg-[#0a0a0a]`}>
+      {/* Background Decor */}
+      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-primary-950/30 to-transparent z-0" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col p-6 text-white justify-between bg-white/5 backdrop-blur-[2px]">
-        <div className="flex justify-between items-start">
+      <div className="relative z-10 h-full flex flex-col p-6 text-white justify-between bg-white/0 backdrop-blur-[1px]">
+        <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20">
-              <Image src="/favicon.png" alt="Logo" width={20} height={20} />
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shadow-inner">
+              <Image src="/favicon.png" alt="Logo" width={18} height={18} />
             </div>
-            <span className="font-bold tracking-wide text-sm opacity-90">STUDZY ID</span>
+            <span className="font-bold tracking-wider text-xs opacity-80">STUDZY ID</span>
           </div>
-          <div className="px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-[10px] font-bold tracking-wider uppercase">
-            OAU
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-white/10 bg-white/5">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/90">OAU</span>
+            <div className="w-4 h-4 relative">
+              <Image src="/oau.png" alt="OAU" fill className="object-contain" />
+            </div>
           </div>
         </div>
 
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-5">
           <div className="relative mx-auto w-32 h-32">
-             <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/30 animate-[spin_10s_linear_infinite]" />
-             <div className="absolute inset-2 rounded-full border-2 border-white/20" />
-             <div className="absolute inset-3 rounded-full overflow-hidden bg-neutral-800 shadow-inner">
+             <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
+             <div className="absolute inset-2 rounded-full border border-white/10" />
+             <div className="absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-neutral-700">
-                    <span className="text-2xl font-bold">{username.charAt(0).toUpperCase()}</span>
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-800">
+                    <span className="text-3xl font-black text-primary-400">{username.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
              </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">{displayName}</h2>
-            <p className="text-primary-400 font-medium text-sm">@{username}</p>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm">{displayName}</h2>
+            <p className="text-primary-400 font-bold text-sm tracking-tight">@{username}</p>
           </div>
-          <div className="flex flex-col gap-2 w-full">
-            <div className="flex justify-between items-center px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
-              <span className="text-[10px] uppercase text-neutral-400 font-semibold">Department</span>
-              <span className="text-xs font-bold text-white">Software Engineering</span>
+          <div className="flex flex-col gap-2 w-full pt-2">
+            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
+              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Department</span>
+              <span className="text-[11px] font-bold text-white/90">Software Engineering</span>
             </div>
-            <div className="flex justify-between items-center px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
-              <span className="text-[10px] uppercase text-neutral-400 font-semibold">Edition</span>
-              <span className="text-xs font-bold text-white truncate max-w-[100px] text-right">DevCore&apos;23</span>
+            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
+              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Edition</span>
+              <span className="text-[11px] font-bold text-white/90 truncate max-w-[110px]">DevCore&apos;23</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-auto pt-6 flex justify-between items-end border-t border-white/10">
-           <div className="text-[10px] text-neutral-400 font-medium opacity-70 italic">
+        <div className="mt-auto pt-6 flex justify-between items-end border-t border-white/5">
+           <div className="text-[9px] text-neutral-500 font-bold opacity-80 italic tracking-tighter">
               &quot;Study smarter. Stress less.&quot;
            </div>
-           <div className="bg-white p-1 rounded-lg">
-              <QRCode value={`https://studzy.me/u/${username}`} size={42} />
+           <div className="bg-white p-1 rounded-lg shadow-xl ring-1 ring-black/10">
+              <QRCode value={`https://studzy.me/u/${username}`} size={40} />
            </div>
         </div>
       </div>
@@ -194,44 +202,44 @@ export function StudentIDCard({
 
   // Shared Back Face Content
   const BackFaceContent = () => (
-    <div id="id-back" className={`${cardFaceClasses} bg-neutral-900 border-neutral-800`}>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 to-neutral-900 z-10" />
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary-900 via-neutral-900 to-black z-0" />
+    <div id="id-back" className={`${cardFaceClasses} bg-[#0a0a0a]`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-primary-950/20 to-transparent z-10" />
+      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-900 via-transparent to-transparent z-0" />
       
       <div className="relative z-20 h-full p-6 flex flex-col text-white">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-yellow-400" />
-            Your Stats
+          <h3 className="text-sm font-black flex items-center gap-2 tracking-widest text-white/90">
+            <Trophy className="w-4 h-4 text-primary-400" />
+            PLAYER_STATS
           </h3>
-          <span className="text-xs text-neutral-500 font-mono">ID_VERIFIED</span>
+          <span className="text-[10px] text-neutral-600 font-mono font-bold">VERIFIED_AUTH</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center gap-1">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Flame className="w-5 h-5 text-orange-500" />
-            <span className="text-2xl font-black">{stats.streak}</span>
-            <span className="text-[10px] uppercase text-neutral-400 font-bold tracking-wider">Day Streak</span>
+            <span className="text-2xl font-black tabular-nums">{stats.streak}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Streak</span>
           </div>
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center gap-1">
-            <Clock className="w-5 h-5 text-blue-400" />
-            <span className="text-2xl font-black">{stats.hours}</span>
-            <span className="text-[10px] uppercase text-neutral-400 font-bold tracking-wider">Total Hours</span>
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
+            <Clock className="w-5 h-5 text-primary-400" />
+            <span className="text-2xl font-black tabular-nums">{stats.hours}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Hours</span>
           </div>
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center gap-1">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Trophy className="w-5 h-5 text-yellow-500" />
-            <span className="text-2xl font-black">#{stats.rank}</span>
-            <span className="text-[10px] uppercase text-neutral-400 font-bold tracking-wider">Rank</span>
+            <span className="text-2xl font-black tabular-nums">#{stats.rank}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Rank</span>
           </div>
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center gap-1">
-            <Bookmark className="w-5 h-5 text-emerald-400" />
-            <span className="text-2xl font-black">{stats.bookmarks}</span>
-            <span className="text-[10px] uppercase text-neutral-400 font-bold tracking-wider">Saved</span>
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
+            <Bookmark className="w-5 h-5 text-emerald-500" />
+            <span className="text-2xl font-black tabular-nums">{stats.bookmarks}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Saved</span>
           </div>
         </div>
 
-        <div className="mt-auto p-4 rounded-xl bg-gradient-to-r from-primary-900/40 to-primary-800/40 border border-primary-500/20">
-          <p className="text-sm font-bold text-center text-primary-200 italic leading-relaxed">
+        <div className="mt-auto p-4 rounded-2xl bg-primary-950/20 border border-primary-500/10 text-center">
+          <p className="text-xs font-black text-primary-200 uppercase tracking-tighter leading-relaxed">
             &quot;DevCore&apos;23 no dey carry last.&quot;
           </p>
         </div>
