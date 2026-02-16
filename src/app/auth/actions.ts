@@ -31,6 +31,7 @@ export async function signup(formData: FormData) {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
+  const department = formData.get("department") as string;
 
   if (!username) {
     return { error: "Username is required" };
@@ -53,6 +54,8 @@ export async function signup(formData: FormData) {
       data: {
         username: username,
         full_name: username, // Fallback for various UI parts
+        department: department,
+        is_verified: false,
       }
     },
   });

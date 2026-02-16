@@ -12,6 +12,7 @@ export function SignupForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
+  const [department, setDepartment] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,7 +23,7 @@ export function SignupForm() {
     e.preventDefault();
     setError("");
 
-    if (!email || !username || !password || !confirmPassword) {
+    if (!email || !username || !department || !password || !confirmPassword) {
       setError("Please fill in all fields");
       return;
     }
@@ -43,6 +44,7 @@ export function SignupForm() {
       const formData = new FormData();
       formData.append("email", email);
       formData.append("username", username);
+      formData.append("department", department);
       formData.append("password", password);
       formData.append("confirmPassword", confirmPassword);
 
@@ -107,6 +109,25 @@ export function SignupForm() {
         required
         autoComplete="username"
       />
+      <div className="space-y-1.5">
+        <label htmlFor="department" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          Department
+        </label>
+        <select
+          id="department"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+          required
+          className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-800 dark:bg-neutral-950"
+        >
+          <option value="">Select Department</option>
+          <option value="Software Engineering">Software Engineering</option>
+          <option value="Computer Engineering">Computer Engineering</option>
+          <option value="Electrical Engineering">Electrical Engineering</option>
+          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          <option value="Civil Engineering">Civil Engineering</option>
+        </select>
+      </div>
       <PasswordInput
         id="password"
         label="Password"

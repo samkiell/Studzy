@@ -20,6 +20,8 @@ export interface Profile {
   last_login_date: string | null;
   longest_streak: number;
   total_study_seconds: number;
+  is_verified: boolean;
+  department: string | null;
   created_at: string;
   updated_at: string;
 }
