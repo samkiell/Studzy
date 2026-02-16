@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
 import { VideoPlayer, AudioPlayer, PDFViewer, ImageViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
 import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
+import { DiscussionPanel } from "@/components/resources/DiscussionPanel";
 
 interface ResourcePageProps {
   params: Promise<{
@@ -411,6 +412,9 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             Back to {course?.title || "Course"}
           </Link>
         </div>
+
+        {/* Discussions Section */}
+        <DiscussionPanel resourceId={resource.id} />
       </main>
     </div>
   );
