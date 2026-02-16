@@ -271,11 +271,13 @@ export function StudentIDCard({
                   e.stopPropagation();
                   if (!isViewOnly) setShowStackMenu(!showStackMenu);
                 }}
-                className={`text-primary-400 font-bold text-sm tracking-tight flex items-center gap-1.5 transition-opacity ${!isViewOnly ? 'hover:opacity-80 active:scale-95' : ''}`}
+                className={`group/stack relative px-4 py-1 text-primary-400 font-bold text-sm tracking-tight flex items-center justify-center transition-all ${!isViewOnly ? 'hover:opacity-80 active:scale-95' : ''}`}
                 disabled={isViewOnly}
               >
-                {stack.toUpperCase()}
-                {!isViewOnly && <RotateCcw className="w-3 h-3 opacity-50" />}
+                <span className="relative z-10">{stack.toUpperCase()}</span>
+                {!isViewOnly && (
+                  <RotateCcw className="absolute -right-1 w-3 h-3 opacity-50 group-hover/stack:opacity-100 transition-opacity" />
+                )}
               </button>
               
               {showStackMenu && !isViewOnly && (
