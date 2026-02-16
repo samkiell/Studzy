@@ -28,12 +28,15 @@ export default async function DashboardPage() {
   // Fetch total resources count (only published)
   const [
     { count: totalResources },
-    { count: viewedResourcesCount }
+    { count: viewedResourcesCount },
+    { count: bookmarksCount }
   ] = await Promise.all([
     supabase.from("resources").select("*", { count: "exact", head: true }).eq("status", "published"),
     supabase.from("user_activity").select("resource_id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .eq("action_type", "view_resource")
+      .eq("action_type", "view_resource"),
+    supabase.from("bookmarks").select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
   ]);
 
   if (error) {
@@ -159,9 +162,14 @@ export default async function DashboardPage() {
           <StudentIDCard 
             displayName={displayName}
             username={username}
-            bio={bio}
-            learningGoal={learningGoal}
+            role={profile?.role === "admin" ? "Admin" : "Student"}
             avatarUrl={avatarUrl}
+            stats={{
+              streak: currentStreak,
+              hours: Math.floor(totalSeconds / 3600),
+              rank: 0, // Placeholder for rank if no leaderboard logic yet
+              bookmarks: bookmarksCount || 0
+            }}
           />
 
           <ProfileEditor 
