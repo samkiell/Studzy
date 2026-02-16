@@ -114,27 +114,28 @@ export function StudentIDCard({
     if (!ref.current) return null;
     const html2canvas = (await import("html2canvas")).default;
     
+    // Create a configuration that preserves colors and quality
     return await html2canvas(ref.current, {
-      scale: 3,
+      scale: 4, // Higher scale for even better resolution
       useCORS: true,
-      backgroundColor: "#0a0a0a",
-      logging: false,
       allowTaint: true,
+      backgroundColor: null, // Allow CSS backgrounds (gradients, colors) to be captured
+      logging: false,
+      width: 300,
+      height: 450,
+      windowWidth: 1200, // Prevent layout shifts during capture
+      windowHeight: 1800,
       onclone: (doc) => {
         const clonedEl = doc.getElementById(ref.current!.id);
         if (clonedEl instanceof HTMLElement) {
-          // Deep clean targeting mirroring and bending
+          // Flatten 3D transforms but keep the visual identity
           clonedEl.style.transform = "none";
-          clonedEl.style.transition = "none";
           clonedEl.style.perspective = "none";
-          clonedEl.style.position = "relative";
-          clonedEl.style.top = "0";
-          clonedEl.style.left = "0";
-          clonedEl.style.width = "300px";
-          clonedEl.style.height = "450px";
-          clonedEl.style.overflow = "visible";
+          clonedEl.style.transition = "none";
+          clonedEl.style.borderRadius = "24px"; // Match UI rounded corners
+          clonedEl.style.overflow = "hidden";
           
-          // Force all descendants to be flat
+          // Force all descendants to be flat but keep colors/filters intact
           const children = clonedEl.querySelectorAll("*");
           children.forEach((child) => {
             if (child instanceof HTMLElement) {
@@ -142,19 +143,15 @@ export function StudentIDCard({
               child.style.transition = "none";
               child.style.perspective = "none";
               child.style.backfaceVisibility = "visible";
-              child.style.backdropFilter = "none";
               child.style.animation = "none";
             }
           });
 
-          // Special fix for the back-side mirroring: 
-          // If we are capturing the back side, it's often inside a container that is rotated.
-          // We must find any parent with rotate-y-180 and neutralize it in the clone.
+          // Un-mirror any parent rotation in the clone
           let parent = clonedEl.parentElement;
           while (parent) {
              parent.style.transform = "none";
              parent.style.perspective = "none";
-             parent.style.transition = "none";
              parent = parent.parentElement;
           }
         }
@@ -185,22 +182,33 @@ export function StudentIDCard({
       if (format === "png") {
         const frontLink = document.createElement("a");
         frontLink.download = `studzy-id-${username}-front.png`;
-        frontLink.href = frontCanvas.toDataURL("image/png");
+        frontLink.href = frontCanvas.toDataURL("image/png", 1.0); // Max quality
         frontLink.click();
         await new Promise(r => setTimeout(r, 500));
         const backLink = document.createElement("a");
         backLink.download = `studzy-id-${username}-back.png`;
-        backLink.href = backCanvas.toDataURL("image/png");
+        backLink.href = backCanvas.toDataURL("image/png", 1.0);
         backLink.click();
       } else if (format === "pdf") {
         const jspdfModule = await import("jspdf");
         const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
-        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a7" });
+        
+        // Use a7 format but ensure high DPI handling
+        const pdf = new jsPDF({ 
+          orientation: "portrait", 
+          unit: "mm", 
+          format: "a7",
+          compress: false // Avoid extra compression that can distort colors
+        });
+        
         const width = pdf.internal.pageSize.getWidth();
         const height = pdf.internal.pageSize.getHeight();
-        pdf.addImage(frontCanvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
+        
+        // Use PNG format within PDF to keep transparency/gradients accurate
+        pdf.addImage(frontCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "FAST");
         pdf.addPage();
-        pdf.addImage(backCanvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
+        pdf.addImage(backCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "FAST");
+        
         pdf.save(`studzy-id-${username}.pdf`);
       }
     } catch (err) {
