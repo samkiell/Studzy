@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ExternalLink,
+  User,
 } from "lucide-react";
 import NextImage from "next/image";
 import type { ChatMessage, ChatMode } from "@/types/database";
@@ -427,13 +428,17 @@ export function ChatPanel({
                 >
                   {/* Avatar */}
                   <div
-                    className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden ${
                       message.role === "user"
                         ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                        : "bg-gradient-to-br from-primary-500 to-primary-600 text-white"
+                        : "bg-white dark:bg-neutral-800 p-1"
                     }`}
                   >
-                    {message.role === "user" ? "U" : "S"}
+                    {message.role === "user" ? (
+                      <User className="h-4 w-4" />
+                    ) : (
+                      <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
+                    )}
                   </div>
 
                   {/* Content */}
@@ -538,8 +543,8 @@ export function ChatPanel({
             {isLoading && (
               <div className="flex justify-start">
                 <div className="flex max-w-[85%] gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-bold text-white">
-                    S
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white dark:bg-neutral-800 p-1">
+                    <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
                   </div>
                   <div className="rounded-2xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800">
                     <div className="flex items-center gap-1.5 py-1">

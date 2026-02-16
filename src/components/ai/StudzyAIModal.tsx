@@ -21,6 +21,7 @@ import {
   Clipboard,
   Check,
   ImageUp,
+  User,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -443,12 +444,16 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                   }`}
                 >
                   <div className={`flex max-w-[85%] gap-3 ${message.role === "user" ? "flex-row-reverse text-right" : ""}`}>
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden ${
                       message.role === "assistant" 
-                        ? "bg-gradient-to-br from-primary-500 to-primary-600" 
-                        : "bg-neutral-500"
+                        ? "bg-white dark:bg-neutral-800 p-1" 
+                        : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
                     }`}>
-                      {message.role === "assistant" ? "S" : "U"}
+                      {message.role === "assistant" ? (
+                        <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="group relative">
                       <div className={`rounded-2xl px-4 py-3 text-sm ${
@@ -515,8 +520,8 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
-                      S
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-neutral-800 p-1">
+                      <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
                     </div>
                     <div className="rounded-2xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800">
                       <div className="flex items-center gap-1.5 py-1">
