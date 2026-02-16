@@ -6,6 +6,8 @@ import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
 import { StreakCounter } from "@/components/dashboard/StreakCounter";
 import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
+import { StudentIDCard } from "@/components/profile/StudentIDCard";
+import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { BookOpen, FileText, Eye, Zap, CreditCard } from "lucide-react";
 import type { Course } from "@/types/database";
 
@@ -59,15 +61,19 @@ export default async function DashboardPage() {
       .map(a => a.resource_id)
   ).size;
 
-  // Fetch profile for study time and streak
+  // Fetch profile for study time, streak, and personalization
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_study_seconds, current_streak")
+    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username")
     .eq("id", user.id)
     .single();
 
   const totalSeconds = profile?.total_study_seconds || 0;
   const currentStreak = profile?.current_streak || 0;
+  const bio = profile?.bio || null;
+  const learningGoal = profile?.learning_goal || null;
+  const avatarUrl = profile?.avatar_url || null;
+  const username = profile?.username || user?.email?.split("@")[0] || "student";
 
   // Format time: only show non-zero units
   const formatStudyTime = (totalSecs: number) => {
@@ -150,28 +156,18 @@ export default async function DashboardPage() {
         <div className="lg:col-span-4 space-y-6">
           <StreakCounter streak={currentStreak} />
           
-          {/* Digital ID Card Preview */}
-          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary-600" />
-                <h3 className="font-bold text-neutral-900 dark:text-white">Student ID</h3>
-              </div>
-              <Link href="/profile" className="text-xs font-medium text-primary-600 hover:underline">
-                View Card
-              </Link>
-            </div>
-            <div className="aspect-[1.58/1] w-full rounded-lg bg-gradient-to-br from-primary-600 to-primary-800 p-4 text-white">
-              <div className="flex justify-between items-start">
-                <p className="text-[10px] font-bold tracking-widest uppercase">DevCore&apos;23 Student</p>
-                <div className="h-6 w-6 rounded bg-white/20" />
-              </div>
-              <div className="mt-8">
-                <p className="text-lg font-bold truncate">{displayName}</p>
-                <p className="text-[10px] opacity-80 uppercase">Software Engineering</p>
-              </div>
-            </div>
-          </div>
+          <StudentIDCard 
+            displayName={displayName}
+            username={username}
+            bio={bio}
+            learningGoal={learningGoal}
+            avatarUrl={avatarUrl}
+          />
+
+          <ProfileEditor 
+            initialBio={bio}
+            initialGoal={learningGoal}
+          />
 
           <LeaderboardWidget />
           <BookmarksWidget />
