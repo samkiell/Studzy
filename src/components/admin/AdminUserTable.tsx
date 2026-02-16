@@ -176,14 +176,18 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-                            <span className="font-bold text-sm">
-                              {(user.full_name || user.email || "?")[0].toUpperCase()}
-                            </span>
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 overflow-hidden">
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="font-bold text-sm">
+                                {(user.username || user.full_name || user.email || "?")[0].toUpperCase()}
+                              </span>
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[150px]">
-                              {user.full_name || "Anonymous User"}
+                              {user.username || user.full_name || "New Student"}
                             </p>
                             <p className="text-xs text-neutral-500 truncate max-w-[150px]">{user.email}</p>
                           </div>

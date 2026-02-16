@@ -197,8 +197,12 @@ export function AdminResourceTable({
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${typeColors[resource.type]}`}>
-                            {resource.type === "image" ? <ImageIcon className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden ${typeColors[resource.type]}`}>
+                            {resource.type === "image" ? (
+                              <img src={resource.file_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <Hash className="h-4 w-4" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[200px]">{resource.title}</p>
