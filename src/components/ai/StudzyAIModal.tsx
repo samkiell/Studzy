@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useRouter } from "next/navigation";
+import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 
 type ChatMode = "chat" | "image" | "search" | "code";
 

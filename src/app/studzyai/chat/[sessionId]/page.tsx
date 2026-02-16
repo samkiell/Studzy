@@ -197,6 +197,7 @@ export default function ChatSessionPage() {
 
   return (
     <div className="flex h-screen">
+      <StudyTimeTracker />
       {/* Sidebar */}
       <ChatSidebar
         sessions={sessions}
