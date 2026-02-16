@@ -354,6 +354,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
       >
         {/* Fixed Header */}
         <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 sm:relative sm:top-auto sm:left-auto sm:right-auto sm:px-6 sm:py-4">
+          <StudyTimeTracker />
           <div className="flex items-center gap-3">
             <NextImage src="/favicon.png" alt="Studzy" width={24} height={24} />
             <div>
@@ -361,7 +362,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                 STUDZY AI
               </h2>
               <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                Created by <span className="text-primary-500 dark:text-primary-400 font-medium">Samkiel</span>
+                Created by <a href="https://samkiel.dev" target="_blank" rel="noopener noreferrer" className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a>
               </p>
             </div>
           </div>

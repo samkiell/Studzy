@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ChatSidebar } from "@/components/ai/ChatSidebar";
 import { ChatPanel } from "@/components/ai/ChatPanel";
+import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 import type { ChatSession, ChatMessage } from "@/types/database";
 
 export default function ChatSessionPage() {
