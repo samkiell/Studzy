@@ -111,14 +111,14 @@ export function StudentIDCard({
     
     // Capture from the pre-flattened hidden elements
     return await html2canvas(element, {
-      scale: 5, // Even higher resolution for pixel-perfection
+      scale: 5, 
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
       width: 300,
       height: 450,
-      imageTimeout: 0,
+      imageTimeout: 5000, // Wait longer for images to render
       onclone: (doc) => {
         const el = doc.getElementById(element.id);
         if (el) {
@@ -205,14 +205,14 @@ export function StudentIDCard({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
-              <Image src="/favicon.png" alt="Logo" width={20} height={20} priority />
+              <Image src="/favicon.png" alt="Logo" width={22} height={22} priority quality={100} />
             </div>
-            <span className="font-bold tracking-wider text-xs opacity-90 uppercase leading-none">Studzy ID</span>
+            <span className="font-bold tracking-wider text-xs opacity-90 uppercase">Studzy ID</span>
           </div>
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-white/10 bg-white/5">
-            <span className="text-[10px] font-bold tracking-wider uppercase text-white/90">OAU</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 h-8">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/90 leading-none">OAU</span>
             <div className="w-4 h-4 relative">
-              <Image src="/oau.png" alt="OAU" fill className="object-contain" priority />
+              <Image src="/oau.png" alt="OAU" fill className="object-contain" priority quality={100} />
             </div>
           </div>
         </div>
@@ -286,13 +286,13 @@ export function StudentIDCard({
           
           
           <div className="flex flex-col gap-2 w-full pt-1">
-            <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5">
+            <div className="flex justify-between items-center px-4 py-4 rounded-xl bg-white/5 border border-white/5">
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Department</span>
-              <span className="text-[11px] font-bold text-white/90 leading-none">Software Engineering</span>
+              <span className="text-[11px] font-bold text-white/95">Software Engineering</span>
             </div>
-            <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5">
-              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">ClassName</span>
-              <span className="text-[11px] font-bold text-white/90 leading-none truncate max-w-[140px]">DevCore&apos;23</span>
+            <div className="flex justify-between items-center px-4 py-4 rounded-xl bg-white/5 border border-white/5">
+              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">ClassName</span>
+              <span className="text-[11px] font-bold text-white/95 truncate max-w-[140px]">DevCore&apos;23</span>
             </div>
           </div>
         </div>
