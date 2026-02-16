@@ -263,9 +263,9 @@ export function StudentIDCard({
              </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 flex flex-col items-center">
             <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm uppercase leading-none">@{username}</h2>
-            <div className="relative inline-block">
+            <div className="relative">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
