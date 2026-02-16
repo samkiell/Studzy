@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 9);
+    const isRAG = formData.get("isRAG") === "true";
+    const bucketName = isRAG ? "studzy-rag" : "studzy-materials";
     const fileName = `${type}/${timestamp}-${randomId}.${fileExtension}`;
 
     // Convert file to buffer
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("studzy-materials")
+      .from(bucketName)
       .upload(fileName, buffer, {
         contentType: file.type,
         cacheControl: "3600",
@@ -83,14 +85,34 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // 🎓 If this is a RAG upload, trigger ingestion automatically
+    if (isRAG && type === "pdf") {
+      try {
+        const { ingestFile } = await import("@/lib/rag/ingestion");
+        console.log(`[RAG Upload] Triggering auto-ingestion for: ${uploadData.path}`);
+        
+        // This runs asynchronously in the background (we don't await it to avoid blocking response)
+        // But for reliability, we'll wait for it or at least log failure
+        ingestFile({
+          filePath: uploadData.path,
+          force: true,
+          // We can't pass courseCode/level as it's a generic dump
+        }).catch(err => {
+          console.error(`[RAG Upload] Ingestion failed for ${uploadData.path}:`, err);
+        });
+      } catch (err) {
+        console.error(`[RAG Upload] Failed to trigger ingestion:`, err);
+      }
+    }
+
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from("studzy-materials")
+      .from(bucketName)
       .getPublicUrl(uploadData.path);
 
     return NextResponse.json({
       success: true,
-      message: "File uploaded successfully",
+      message: isRAG ? "File uploaded and triggered for RAG ingestion" : "File uploaded successfully",
       fileUrl: urlData.publicUrl,
       storagePath: uploadData.path,
     });

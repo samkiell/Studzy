@@ -158,15 +158,18 @@ export function UploadForm({ courses }: UploadFormProps) {
       const formData = new FormData();
       formData.append("file", fileUpload.file);
       formData.append("type", fileUpload.type);
+      if (isRAG) {
+        formData.append("isRAG", "true");
+      }
 
       xhr.open("POST", "/api/admin/upload-file");
       xhr.send(formData);
     });
-  }, []);
+  }, [isRAG]);
 
   const handleFilesSelect = async (newFiles: File[]) => {
-    if (!selectedCourseId) {
-      setGlobalMessage({ type: "error", text: "Please select a course first" });
+    if (!selectedCourseId && !isRAG) {
+      setGlobalMessage({ type: "error", text: "Please select a course or enable RAG mode first" });
       return;
     }
 

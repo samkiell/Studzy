@@ -7,11 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getURL() {
   const isDev = process.env.NODE_ENV === "development";
-  let url = isDev
-    ? "http://localhost:3000/"
-    : process?.env?.NEXT_PUBLIC_SITE_URL ?? 
-      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? 
-      "http://localhost:3000/";
+  let url = 
+    process?.env?.NEXT_PUBLIC_SITE_URL ?? 
+    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? 
+    "https://studzy.me/";
   // Make sure to include `https://` when not localhost.
   url = url.includes("http") ? url : `https://${url}`;
   // Make sure to include a trailing `/`.

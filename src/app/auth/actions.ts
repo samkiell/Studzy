@@ -76,39 +76,17 @@ export async function signup(formData: FormData) {
 
 export async function resetPassword(email: string) {
   try {
-    const adminClient = createAdminClient();
+    const supabase = await createClient();
     
-    // Generate the recovery link
-    const { data, error } = await adminClient.auth.admin.generateLink({
-      type: 'recovery',
-      email,
-      options: {
-        redirectTo: `${getURL()}auth/callback?type=recovery`,
-      },
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${getURL()}auth/callback?type=recovery`,
     });
 
     if (error) {
       if (error.message.includes("User not found")) {
-        // Obfuscate user existence for security, or keep it for UX? 
-        // User said "forget pwd not working", so let's be helpfull.
         return { error: "No account found with this email address." };
       }
       return { error: error.message };
-    }
-
-    // Send the email manually via SMTP
-    const template = getEmailTemplate('reset', {
-      link: data.properties.action_link,
-    });
-
-    const emailResult = await sendEmail({
-      to: email,
-      subject: template.subject,
-      html: template.html,
-    });
-
-    if (!emailResult.success) {
-      return { error: "Failed to send reset email. Please try again later." };
     }
 
     return { success: true, message: "Password reset link sent to your email" };
