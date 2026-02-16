@@ -40,6 +40,7 @@ const FILE_TYPES: Record<ResourceType, { accept: string; label: string }> = {
   video: { accept: "video/*,.mp4,.webm,.mov", label: "Video files (MP4, WebM, MOV)" },
   pdf: { accept: ".pdf,application/pdf", label: "PDF documents" },
   image: { accept: "image/*,.jpg,.jpeg,.png,.webp,.svg,.gif", label: "Image files (JPG, PNG, WebP, SVG)" },
+  document: { accept: ".txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx", label: "Documents & Code (TXT, MD, JSON, JS/TS)" },
 };
 
 // Auto-detect resource type from MIME type
@@ -56,6 +57,7 @@ const detectResourceType = (file: File): ResourceType | null => {
   if (["mp3", "wav", "ogg", "m4a", "flac"].includes(ext || "")) return "audio";
   if (ext === "pdf") return "pdf";
   if (["jpg", "jpeg", "png", "webp", "svg", "gif"].includes(ext || "")) return "image";
+  if (["txt", "md", "json", "csv", "js", "ts", "py", "tsx", "jsx"].includes(ext || "")) return "document";
   
   return null;
 };
@@ -465,7 +467,7 @@ export function UploadForm({ courses }: UploadFormProps) {
       <div className="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           <span className="font-medium text-neutral-900 dark:text-white">Supported file types:</span>{" "}
-          Videos (MP4, WebM, MOV), Audio (MP3, WAV, OGG, M4A), PDFs, Images (JPG, PNG, WebP) — file type is auto-detected
+          Videos, Audio, PDFs, Images, Text/Code (.txt, .md, .json, .js, .ts) — file type is auto-detected
         </p>
       </div>
 
@@ -523,7 +525,7 @@ export function UploadForm({ courses }: UploadFormProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*,audio/*,.pdf,.jpg,.jpeg,.png,.webp,.svg,.gif,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a"
+            accept="video/*,audio/*,.pdf,.jpg,.jpeg,.png,.webp,.svg,.gif,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a,.txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx"
             onChange={handleFileChange}
             multiple
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
