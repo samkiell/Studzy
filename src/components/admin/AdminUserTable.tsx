@@ -16,7 +16,11 @@ import {
   MoreHorizontal,
   Clock,
   Mail,
-  Calendar
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  Building2,
+  AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -69,6 +73,35 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
       const result = await response.json();
       if (result.success) {
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+      } else {
+        alert(result.error || "Failed to update status");
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleUpdateVerification = async (userId: string, isVerified: boolean) => {
+    const user = users.find(u => u.id === userId);
+    if (isVerified && user?.department !== "Software Engineering") {
+      alert("Only Software Engineering students can be verified for ID card generation.");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to ${isVerified ? 'VERIFY' : 'DEMOTE'} this user?`)) return;
+
+    setLoadingId(userId);
+    try {
+      const response = await fetch("/api/admin/verify-user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, isVerified }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: isVerified } : u));
+      } else {
+        alert(result.error || "Failed to update verification status");
       }
     } finally {
       setLoadingId(null);
@@ -150,10 +183,10 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">User</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Role</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Verification</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Role & Dept</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Courses</th>
-                <th className="hidden md:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Joined</th>
-                <th className="hidden lg:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Last Login</th>
+                <th className="hidden lg:table-cell px-6 py-4 font-semibold text-neutral-900 dark:text-white">Joined</th>
                 <th className="px-6 py-4 text-center font-semibold text-neutral-900 dark:text-white">Status</th>
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">Actions</th>
               </tr>
@@ -194,23 +227,38 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                          user.role === 'admin' 
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
-                            : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
-                        }`}>
-                          {user.role === 'admin' ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
-                          {user.role}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            user.is_verified
+                              ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                              : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                          }`}>
+                            {user.is_verified ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                            {user.is_verified ? 'Verified' : 'Unverified'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            user.role === 'admin' 
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+                          }`}>
+                            {user.role === 'admin' ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
+                            {user.role}
+                          </span>
+                          <span className="flex items-center gap-1 text-[10px] text-neutral-500 font-medium">
+                            <Building2 className="h-2.5 w-2.5" />
+                            {user.department || "No Dept"}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-center font-medium tabular-nums">
                         {user.courses_enrolled}
                       </td>
-                      <td className="hidden md:table-cell px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
-                        {formatDate(user.created_at)}
-                      </td>
                       <td className="hidden lg:table-cell px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
-                        {formatDate(user.last_login)}
+                        {formatDate(user.created_at)}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
@@ -236,6 +284,25 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                             </button>
                             <div className="absolute right-0 bottom-full mb-2 w-48 invisible group-hover/actions:visible bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 overflow-hidden">
                               <div className="p-1">
+                                {user.is_verified ? (
+                                  <button 
+                                    onClick={() => handleUpdateVerification(user.id, false)}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" /> Demote Verification
+                                  </button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleUpdateVerification(user.id, true)}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={user.department !== "Software Engineering"}
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> Verify Student
+                                  </button>
+                                )}
+
+                                <div className="h-px bg-neutral-100 dark:bg-neutral-800 my-1" />
+
                                 {user.role === 'student' ? (
                                   <button 
                                     onClick={() => handleUpdateRole(user.id, 'admin')}

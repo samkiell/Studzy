@@ -8,7 +8,7 @@ import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
-import { BookOpen, FileText, Eye, Zap, CreditCard } from "lucide-react";
+import { BookOpen, FileText, Eye, Zap, CreditCard, ShieldAlert, MessageCircle } from "lucide-react";
 import type { Course } from "@/types/database";
 
 export default async function DashboardPage() {
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   // Fetch profile for study time, streak, and personalization
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username, role")
+    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username, role, is_verified, department")
     .eq("id", user.id)
     .single();
 
@@ -159,18 +159,41 @@ export default async function DashboardPage() {
         <div className="lg:col-span-4 space-y-6">
           <StreakCounter streak={currentStreak} />
           
-          <StudentIDCard 
-            displayName={displayName}
-            username={username}
-            role={profile?.role === "admin" ? "Admin" : "Student"}
-            avatarUrl={avatarUrl}
-            stats={{
-              streak: currentStreak,
-              hours: Math.floor(totalSeconds / 3600),
-              rank: 0, 
-              bookmarks: bookmarksCount || 0
-            }}
-          />
+          {profile?.is_verified ? (
+            <StudentIDCard 
+              displayName={displayName}
+              username={username}
+              role={profile?.role === "admin" ? "Admin" : "Student"}
+              avatarUrl={avatarUrl}
+              stats={{
+                streak: currentStreak,
+                hours: Math.floor(totalSeconds / 3600),
+                rank: 0, 
+                bookmarks: bookmarksCount || 0
+              }}
+            />
+          ) : (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="flex flex-col items-center text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 font-semibold text-neutral-900 dark:text-white">ID Card Generation Locked</h3>
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  You need to be verified as a Software Engineering student to generate an ID card.
+                </p>
+                <a 
+                  href={`https://wa.link/5i91sx?text=${encodeURIComponent(`Hello, please verify me. My username is ${username}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600 active:scale-95"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Verify me on Store Chatbot
+                </a>
+              </div>
+            </div>
+          )}
 
           <LeaderboardWidget />
           <BookmarksWidget />
