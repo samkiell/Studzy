@@ -6,6 +6,7 @@ import { UserPresence } from "@/components/auth/UserPresence";
 import { LoadingProvider } from "@/components/providers/LoadingProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
