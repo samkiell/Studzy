@@ -121,7 +121,7 @@ export function ContinueStudying() {
           <Link
             key={resource.id}
             href={`/course/${resource.course_code}/resource/${resource.slug}`}
-            className="group flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
+            className="group flex min-w-0 w-full items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
           >
             <div
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${typeColors[resource.type]}`}
@@ -129,7 +129,7 @@ export function ContinueStudying() {
               {typeIcons[resource.type]}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <p className="truncate text-xs font-medium text-neutral-500 dark:text-neutral-400">
                 {resource.course_code}
               </p>
               <h3 className="truncate font-medium text-neutral-900 dark:text-white">

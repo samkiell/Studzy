@@ -140,7 +140,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8 space-y-10 min-w-0">
+        <div className="lg:col-span-8 space-y-10 min-w-0 overflow-hidden">
           <ContinueStudying />
           
           <div>
@@ -195,9 +195,9 @@ function StatCard({
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
           {icon}
         </div>
-        <div>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">{title}</p>
-          <p className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-neutral-600 dark:text-neutral-400">{title}</p>
+          <p className="truncate text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
         </div>
       </div>
     </div>
