@@ -1,11 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { Mistral } from "@mistralai/mistralai";
+import { embedText } from "@/lib/rag/embeddings";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { TOP_K, SIMILARITY_THRESHOLD } from "@/lib/rag/config";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
 
 const client = new Mistral({ apiKey: MISTRAL_API_KEY });
+
+/**
+ * Search study material embeddings for context relevant to the user's question.
+ * Returns a system prompt with the context, or null if no relevant chunks found.
+ */
+async function getRAGContext(
+  question: string,
+  courseCode?: string,
+  level?: string
+): Promise<string | null> {
+  try {
+    const queryEmbedding = await embedText(question);
+    const supabase = createAdminClient();
+
+    const { data, error } = await supabase.rpc("match_embeddings", {
+      query_embedding: JSON.stringify(queryEmbedding),
+      match_threshold: SIMILARITY_THRESHOLD,
+      match_count: TOP_K,
+      filter_course_code: courseCode || null,
+      filter_level: level || null,
+    });
+
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+
+    const contextBlocks = data
+      .map(
+        (chunk: any, i: number) =>
+          `--- Source ${i + 1} (${chunk.file_path}, relevance: ${(chunk.similarity * 100).toFixed(1)}%) ---\n${chunk.content}`
+      )
+      .join("\n\n");
+
+    return `RELEVANT STUDY MATERIALS FOUND:
+${contextBlocks}
+
+INSTRUCTIONS FOR USING STUDY MATERIALS:
+- When the student's question relates to the study materials above, use them to provide accurate answers.
+- Cite which source the information comes from when possible.
+- If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
+- Format responses with markdown for readability.`;
+  } catch (err) {
+    console.warn("[RAG] Context retrieval failed (continuing without):", err);
+    return null;
+  }
+}
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
 export async function POST(
@@ -83,8 +132,8 @@ export async function POST(
         .eq("id", sessionId);
     }
 
-    // 🚀 Call Mistral AI using the official SDK
-    const aiResponse = await callMistralAI(allMessages || [], mode, enable_search, image || (images && images.length > 0));
+    // 🚀 Call Mistral AI using the official SDK (with RAG context)
+    const aiResponse = await callMistralAI(allMessages || [], mode, enable_search, image || (images && images.length > 0), content);
 
     // Save assistant message
     const { data: assistantMsg, error: assistantMsgError } = await supabase
@@ -131,7 +180,8 @@ async function callMistralAI(
   messages: DBMessage[],
   mode: string,
   enableSearch: boolean,
-  hasImageRequest: boolean
+  hasImageRequest: boolean,
+  latestUserContent?: string
 ): Promise<string> {
   if (!MISTRAL_API_KEY) {
     return "Sorry, the AI service is not configured. Please contact the administrator.";
@@ -162,8 +212,29 @@ async function callMistralAI(
     return { role: msg.role, content: msg.content };
   });
 
-  // Force Agent Logic
+  // 🎓 RAG: Search study materials for relevant context
   const hasVisionContent = messages.some(m => m.image_url) || hasImageRequest;
+  
+  if (!hasVisionContent && latestUserContent) {
+    try {
+      console.log(`[RAG] Searching study materials for: "${latestUserContent.substring(0, 60)}..."`);
+      const ragContext = await getRAGContext(latestUserContent);
+
+      if (ragContext) {
+        console.log("[RAG] ✅ Found relevant study material context");
+        mistralMessages.unshift({
+          role: "system",
+          content: ragContext,
+        });
+      } else {
+        console.log("[RAG] No relevant study materials found");
+      }
+    } catch (err) {
+      console.warn("[RAG] Context search failed (continuing without):", err);
+    }
+  }
+
+  // Force Agent Logic
   const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasVisionContent;
 
   try {
