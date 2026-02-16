@@ -199,7 +199,10 @@ export function StudentIDCard({
 
         <div className="text-center space-y-5">
           {/* Avatar with Click-to-Upload */}
-          <div className="relative mx-auto w-32 h-32 group/avatar">
+          <div 
+            className="relative mx-auto w-32 h-32 group/avatar"
+            onClick={(e) => e.stopPropagation()} // Strictly prevent flip when clicking the avatar area
+          >
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
              <div className="absolute inset-2 rounded-full border border-white/10" />
              <div 
@@ -215,8 +218,8 @@ export function StudentIDCard({
                     key={currentAvatarUrl}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-neutral-800">
-                    <span className="text-3xl font-black text-primary-400">{username.charAt(0).toUpperCase()}</span>
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-800/50 backdrop-blur-sm">
+                    <Camera className="w-10 h-10 text-primary-500/40 animate-pulse" />
                   </div>
                 )}
                 
