@@ -1,30 +1,23 @@
 declare module "pdf-parse" {
-  interface PDFParseOptions {
-    data?: Buffer | Uint8Array;
-    url?: string;
-    verbosity?: number;
-  }
-
-  interface PDFTextResult {
+  interface PDFData {
+    numpages: number;
+    numrender: number;
+    info: Record<string, unknown>;
+    metadata: Record<string, unknown> | null;
     text: string;
+    version: string;
   }
 
-  interface PDFInfoResult {
-    numPages: number;
-    [key: string]: unknown;
+  interface PDFOptions {
+    pagerender?: (pageData: unknown) => string;
+    max?: number;
+    version?: string;
   }
 
-  export class PDFParse {
-    constructor(options: PDFParseOptions);
-    getText(): Promise<PDFTextResult>;
-    getInfo(): Promise<PDFInfoResult>;
-    destroy(): Promise<void>;
-    load(): Promise<void>;
-  }
+  function pdfParse(
+    dataBuffer: Buffer | Uint8Array,
+    options?: PDFOptions
+  ): Promise<PDFData>;
 
-  export const VerbosityLevel: {
-    ERRORS: number;
-    WARNINGS: number;
-    INFOS: number;
-  };
+  export = pdfParse;
 }
