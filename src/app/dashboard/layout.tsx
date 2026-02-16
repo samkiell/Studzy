@@ -48,7 +48,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <DashboardNav user={user} isAdmin={isAdmin} />
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <main className="mx-auto max-w-7xl px-2 py-8 md:px-8">
         {children}
         
         {/* Bottom AI Access */}

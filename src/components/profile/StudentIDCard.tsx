@@ -365,9 +365,9 @@ export function StudentIDCard({
         <div ref={exportBackRef} id="export-id-back"><BackFaceContent isExport={true} /></div>
       </div>
 
-      <div>
+      <div className="flex w-full flex-col items-center overflow-x-visible">
         <div 
-          className={`group relative h-[450px] w-[300px] cursor-pointer perspective-1000 ${isExporting ? 'pointer-events-none opacity-50' : ''}`}
+          className={`group relative h-[450px] w-[300px] cursor-pointer perspective-1000 origin-center scale-[0.88] xs:scale-100 transition-transform duration-300 ${isExporting ? 'pointer-events-none opacity-50' : ''}`}
           onClick={() => !isExporting && !isUploading && setIsFlipped(!isFlipped)}
         >
           <div className={`relative h-full w-full transition-all duration-700 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
@@ -389,14 +389,14 @@ export function StudentIDCard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 w-full max-w-[300px]">
+      <div className="flex flex-col gap-2 w-full max-w-[300px] -mt-10 xs:mt-0 px-2">
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsFlipped(!isFlipped)} className="flex-1" disabled={isUploading || isExporting}>
             <RotateCcw className="w-3 h-3 mr-2" /> Flip Card
           </Button>
         </div>
         {!isViewOnly && (
-          <div className="flex gap-2">
+          <div className="flex flex-col xs:flex-row gap-2">
             <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
               {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
               Download PNG

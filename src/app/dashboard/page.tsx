@@ -116,7 +116,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Courses" 
           value={String(courses?.length || 0)} 
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8 space-y-10">
+        <div className="lg:col-span-8 space-y-10 min-w-0">
           <ContinueStudying />
           
           <div>
