@@ -235,28 +235,32 @@ async function callMistralAI(
   }
 
   // Force Agent Logic
-  const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasVisionContent;
-
-  try {
-    if (shouldUseAgent) {
+  if (MISTRAL_AI_AGENT_ID) {
+    try {
       // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
       const response = await client.agents.complete({
-        agentId: MISTRAL_AI_AGENT_ID!,
+        agentId: MISTRAL_AI_AGENT_ID,
         messages: mistralMessages,
       });
       return response.choices?.[0]?.message?.content?.toString() || "No response";
-    } else {
-      // Fallback Vision/Standard
+    } catch (agentError: any) {
+      console.error("Mistral Agent Error:", agentError);
+      throw agentError;
+    }
+  } else {
+    // Fallback Vision/Standard if no agent configured
+    try {
       const model = hasVisionContent ? "pixtral-large-latest" : "mistral-large-latest";
+      console.warn(`[API] MISTRAL_AI_AGENT_ID not set. Falling back to base model: ${model}`);
       const response = await client.chat.complete({
         model: model,
         messages: mistralMessages,
         temperature: mode === "code" ? 0.3 : 0.7,
       });
       return response.choices?.[0]?.message?.content?.toString() || "No response";
+    } catch (chatError: any) {
+      console.error("Mistral Chat Error:", chatError);
+      throw chatError;
     }
-  } catch (error: any) {
-    console.error("Mistral API call error:", error);
-    return `Sorry, I encountered an error: ${error.message}`;
   }
 }

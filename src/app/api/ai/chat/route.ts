@@ -141,16 +141,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 🚀 LOGIC FOR AGENT VS BASE MODEL
-    // We "Force" the Agent ID if it exists and there are no images.
-    // If there ARE images, we MUST use a vision model (like Pixtral) because
-    // most agents are configured with text-only models and will error on vision content.
-    const shouldUseAgent = MISTRAL_AI_AGENT_ID && !hasImages;
-    console.log(`AI Request - Mode: ${mode}, Use Agent: ${shouldUseAgent}, Has Images: ${hasImages}`);
-
-    if (shouldUseAgent) {
+    // We use the Agent ID if it exists, which handles both text and vision content.
+    if (MISTRAL_AI_AGENT_ID) {
+      console.log(`AI Request - Mode: ${mode}, Using Agent: ${MISTRAL_AI_AGENT_ID}, Has Images: ${hasImages}`);
       try {
         const response = await client.agents.stream({
-          agentId: MISTRAL_AI_AGENT_ID!,
+          agentId: MISTRAL_AI_AGENT_ID,
           messages: mistralMessages,
         });
         return streamResponse(response);
@@ -159,8 +155,10 @@ export async function POST(request: NextRequest) {
         throw agentError;
       }
     } else {
+      // Fallback if no agent is configured
       try {
         const model = hasImages ? "pixtral-12b-2409" : "mistral-large-latest";
+        console.warn(`[API] MISTRAL_AI_AGENT_ID not set. Falling back to base model: ${model}`);
         const response = await client.chat.stream({
           model: model,
           messages: mistralMessages,
