@@ -13,7 +13,8 @@ import {
   BarChart3, 
   Users, 
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  BrainCircuit
 } from "lucide-react";
 
 const NAV_LINKS = [
