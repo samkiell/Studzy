@@ -44,20 +44,19 @@ export async function extractPDFFromStorage(
     throw new Error(`Downloaded file is empty: ${filePath}`);
   }
 
-  // Dynamically import pdf-parse
+  // Import pdf-parse v2 (class-based API)
   const { PDFParse } = await import("pdf-parse");
-  const pdfParse = PDFParse;
 
-  const pdfData = await pdfParse(buffer, {
-    // Limit page rendering to prevent memory issues with huge PDFs
-    max: 0, // 0 = no limit, but we handle chunking downstream
-  });
+  const parser = new PDFParse({ data: buffer });
+  const pdfData = await parser.getText();
+  const info = await parser.getInfo();
+  await parser.destroy();
 
   const fileName = filePath.split("/").pop() || filePath;
 
   return {
     text: pdfData.text,
-    pageCount: pdfData.numpages,
+    pageCount: info.numPages || 0,
     fileName,
   };
 }
