@@ -132,13 +132,20 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     }
   };
   
-  const formatDate = (dateString: string | null) => {
+  const formatDateTime = (dateString: string | null) => {
     if (!dateString) return "Never";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    };
   };
 
   return (
@@ -191,13 +198,14 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Status</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Verification</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Role</th>
+                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-left">Joined</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">
                     No users found
                   </td>
                 </tr>
@@ -259,6 +267,16 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                           {user.role === 'admin' ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
                           {user.role}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-neutral-900 dark:text-white">
+                            {formatDateTime(user.created_at).date}
+                          </span>
+                          <span className="text-[10px] text-neutral-500">
+                            {formatDateTime(user.created_at).time}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
