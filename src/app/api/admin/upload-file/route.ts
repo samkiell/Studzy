@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Check admin status
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, username")
       .eq("id", user.id)
       .single();
 

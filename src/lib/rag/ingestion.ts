@@ -56,7 +56,8 @@ async function storeChunksWithEmbeddings(
   embeddings: number[][],
   filePath: string,
   courseCode?: string,
-  level?: string
+  level?: string,
+  username?: string
 ): Promise<number> {
   const supabase = createAdminClient();
 

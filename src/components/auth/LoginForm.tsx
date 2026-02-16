@@ -55,14 +55,14 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        id="email"
-        type="email"
-        label="Email"
-        placeholder="you@example.com"
+        id="identifier"
+        type="text"
+        label="Email or Username"
+        placeholder="you@example.com or username"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
-        autoComplete="email"
+        autoComplete="username"
       />
       <PasswordInput
         id="password"
