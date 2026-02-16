@@ -94,11 +94,17 @@ export default async function UserDetailsPage({
         <div className="lg:col-span-1 space-y-6">
           <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 text-3xl font-bold text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-                {(profile.full_name || profile.email || "?")[0].toUpperCase()}
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 text-3xl font-bold text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 overflow-hidden">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (profile.username?.[0] || profile.full_name?.[0] || profile.email?.[0] || "?").toUpperCase()
+                )}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">{profile.full_name || "Anonymous User"}</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  {profile.username || profile.full_name || "New Student"}
+                </h2>
                 <div className="mt-1 flex items-center justify-center gap-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                     profile.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
