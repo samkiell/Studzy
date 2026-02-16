@@ -85,7 +85,7 @@ export async function resetPassword(email: string) {
       type: 'recovery',
       email,
       options: {
-        redirectTo: `${getURL()}auth/callback?type=recovery`,
+        redirectTo: `${getURL()}auth/confirm?type=recovery`,
       },
     });
 
