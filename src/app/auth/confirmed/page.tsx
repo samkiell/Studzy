@@ -48,7 +48,7 @@ export default async function ConfirmedPage({
             </div>
 
             <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-500">
-              No carry phone enter exam hall, abeg 🤲🏾🙏�
+              No carry phone enter exam hall, abeg 🤲🏾🙏
             </p>
           </div>
         </div>
