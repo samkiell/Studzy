@@ -240,7 +240,7 @@ export function StudentIDCard({
 
         <div className="mt-auto p-4 rounded-2xl bg-primary-950/20 border border-primary-500/10 text-center">
           <p className="text-xs font-black text-primary-200 uppercase tracking-tighter leading-relaxed">
-            &quot;DevCore&apos;23 no dey carry last.&quot;
+            &quot;DevCore&apos;23, Pioneering the future of Software Engineering&quot;
           </p>
         </div>
       </div>
