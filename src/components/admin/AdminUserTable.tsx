@@ -202,10 +202,10 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                       <td className="px-6 py-4 text-center font-medium tabular-nums">
                         {user.courses_enrolled}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
+                      <td className="hidden md:table-cell px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
                         {formatDate(user.created_at)}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
+                      <td className="hidden lg:table-cell px-6 py-4 text-xs text-neutral-500 whitespace-nowrap font-mono">
                         {formatDate(user.last_login)}
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -218,7 +218,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                           <Link
                             href={`/admin/users/${user.id}`}
                             className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
