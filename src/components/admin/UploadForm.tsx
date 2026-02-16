@@ -586,6 +586,8 @@ export function UploadForm({ courses }: UploadFormProps) {
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
                     ) : fileUpload.status === "error" ? (
                       <AlertCircle className="h-5 w-5 text-red-600" />
+                    ) : fileUpload.status === "uploading" || fileUpload.status === "saving" ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                     ) : fileUpload.status === "uploaded" ? (
                       <CloudUpload className="h-5 w-5 text-green-500" />
                     ) : fileUpload.type === "image" ? (

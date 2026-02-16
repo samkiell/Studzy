@@ -112,6 +112,7 @@ export function EditResourceModal({ resource, onClose, onSave }: EditResourceMod
               <option value="video">Video</option>
               <option value="audio">Audio</option>
               <option value="pdf">PDF</option>
+              <option value="image">Image</option>
             </select>
           </div>
 

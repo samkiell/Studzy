@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { ResourceStatus } from "@/types/database";
-import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle } from "lucide-react";
+import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle, Image as ImageIcon } from "lucide-react";
 import { EditResourceModal } from "./EditResourceModal";
 import { Modal, useModal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -120,6 +120,7 @@ export function AdminResourceTable({
     video: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400",
     audio: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
     pdf: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+    image: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
   };
 
   return (
@@ -158,6 +159,7 @@ export function AdminResourceTable({
             <option value="video">Video</option>
             <option value="audio">Audio</option>
             <option value="pdf">PDF</option>
+            <option value="image">Image</option>
           </select>
         </div>
       </div>
@@ -196,7 +198,7 @@ export function AdminResourceTable({
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${typeColors[resource.type]}`}>
-                            <Hash className="h-4 w-4" />
+                            {resource.type === "image" ? <ImageIcon className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[200px]">{resource.title}</p>
