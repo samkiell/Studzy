@@ -32,23 +32,23 @@ export default async function ConfirmedPage({
             </Link>
 
             <h1 className="mt-4 text-2xl font-bold text-neutral-900 dark:text-white">
-              Account Verified!
+              Welcome, {username}
             </h1>
             
             <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-              Welcome, <strong>{username}</strong>! Your email has been verified and your account is fully activated. You can now log in.
+              Your email has been verified. E good as you no use fake email. Now you fit get access to all Studzy functionalities, Premium resources and chat with the best AI in town (personally endorsed by Elon himself).
             </p>
 
             <div className="mt-8">
               <Link href="/login">
                 <Button className="w-full h-12 text-lg shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 transition-all duration-300">
-                  Go to Login
+                  Jaye lo
                 </Button>
               </Link>
             </div>
 
             <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-500">
-              Welcome aboard, scholar. 🎓
+              No carry phone enter exam hall, abeg 🤲🏾🙏�
             </p>
           </div>
         </div>
