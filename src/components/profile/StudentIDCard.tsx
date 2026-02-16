@@ -170,10 +170,6 @@ export function StudentIDCard({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
 
   const FrontFaceContent = () => (
@@ -325,7 +321,7 @@ export function StudentIDCard({
         onChange={handleFileChange}
       />
 
-      <div className="print:hidden">
+      <div>
         <div 
           className="group relative h-[450px] w-[300px] cursor-pointer perspective-1000"
           onClick={() => !isExporting && !isUploading && setIsFlipped(!isFlipped)}
@@ -350,47 +346,24 @@ export function StudentIDCard({
         </div>
       </div>
 
-      <div className="hidden print:flex flex-col items-center gap-8 bg-white py-8">
-         <div className="page-break-after-always">
-            <FrontFaceContent />
-         </div>
-         <div>
-            <BackFaceContent />
-         </div>
-      </div>
-
-      <div className="flex flex-col gap-2 w-full max-w-[300px] print:hidden">
+      <div className="flex flex-col gap-2 w-full max-w-[300px]">
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsFlipped(!isFlipped)} className="flex-1" disabled={isUploading}>
-            <RotateCcw className="w-3 h-3 mr-2" /> Flip
-          </Button>
-          <Button variant="outline" size="sm" onClick={handlePrint} className="flex-1" disabled={isUploading}>
-            <Printer className="w-3 h-3 mr-2" /> Print
+            <RotateCcw className="w-3 h-3 mr-2" /> Flip Card
           </Button>
         </div>
         
         <div className="flex gap-2">
           <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
             {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
-            PNG
+            Download PNG
           </Button>
           <Button onClick={() => handleExport("pdf")} disabled={isExporting || isUploading} className="flex-1 bg-primary-600 text-white">
             {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3 mr-2" />}
-            PDF
+            Download PDF
           </Button>
         </div>
       </div>
-
-      <style jsx global>{`
-        @media print {
-          @page { size: A7; margin: 0; }
-          body { background: white !important; }
-          body * { visibility: hidden; }
-          .print\:flex, .print\:flex * { visibility: visible; }
-          .print\:flex { position: absolute; left: 0; top: 0; width: 100%; display: flex !important; }
-          .page-break-after-always { page-break-after: always; break-after: page; }
-        }
-      `}</style>
     </div>
   );
 }
