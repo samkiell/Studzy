@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MessageSquare, Send, Reply, User as UserIcon, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
+import { formatDistanceToNow } from "date-fns";
 
 interface Profile {
   username: string | null;
@@ -153,7 +154,7 @@ function DiscussionItem({ discussion, allDiscussions, onReply }: { discussion: D
               {discussion.profiles.username || "Anonymous"}
             </span>
             <span className="text-[10px] text-neutral-500">
-              {new Date(discussion.created_at).toLocaleDateString()}
+              {formatDistanceToNow(new Date(discussion.created_at), { addSuffix: true })}
             </span>
           </div>
           <div className="prose prose-sm dark:prose-invert max-w-none text-neutral-700 dark:text-neutral-300">
