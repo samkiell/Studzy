@@ -1,8 +1,12 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
-import { BookOpen, FileText, Eye, Zap } from "lucide-react";
+import { StreakCounter } from "@/components/dashboard/StreakCounter";
+import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
+import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
+import { BookOpen, FileText, Eye, Zap, CreditCard } from "lucide-react";
 import type { Course } from "@/types/database";
 
 export default async function DashboardPage() {
@@ -55,14 +59,15 @@ export default async function DashboardPage() {
       .map(a => a.resource_id)
   ).size;
 
-  // Fetch profile for study time
+  // Fetch profile for study time and streak
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_study_seconds")
+    .select("total_study_seconds, current_streak")
     .eq("id", user.id)
     .single();
 
   const totalSeconds = profile?.total_study_seconds || 0;
+  const currentStreak = profile?.current_streak || 0;
 
   // Format time: only show non-zero units
   const formatStudyTime = (totalSecs: number) => {
@@ -125,19 +130,51 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-10">
-        <ContinueStudying />
-      </div>
+      <div className="mt-10 grid gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8 space-y-10">
+          <ContinueStudying />
+          
+          <div>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Your Courses
+            </h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              Omo, Exam don near oo. Select the course wey you wan brainstorm and get access to the full resources.
+            </p>
+            <div className="mt-4">
+              <CourseGrid courses={(courses as Course[]) || []} />
+            </div>
+          </div>
+        </div>
 
-      <div className="mt-10">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-          Your Courses
-        </h2>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Omo, Exam don near oo. Select the course wey you wan brainstorm and get access to the full resources.
-       </p>
-        <div className="mt-4">
-          <CourseGrid courses={(courses as Course[]) || []} />
+        <div className="lg:col-span-4 space-y-6">
+          <StreakCounter streak={currentStreak} />
+          
+          {/* Digital ID Card Preview */}
+          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary-600" />
+                <h3 className="font-bold text-neutral-900 dark:text-white">Student ID</h3>
+              </div>
+              <Link href="/profile" className="text-xs font-medium text-primary-600 hover:underline">
+                View Card
+              </Link>
+            </div>
+            <div className="aspect-[1.58/1] w-full rounded-lg bg-gradient-to-br from-primary-600 to-primary-800 p-4 text-white">
+              <div className="flex justify-between items-start">
+                <p className="text-[10px] font-bold tracking-widest uppercase">DevCore&apos;23 Student</p>
+                <div className="h-6 w-6 rounded bg-white/20" />
+              </div>
+              <div className="mt-8">
+                <p className="text-lg font-bold truncate">{displayName}</p>
+                <p className="text-[10px] opacity-80 uppercase">Software Engineering</p>
+              </div>
+            </div>
+          </div>
+
+          <LeaderboardWidget />
+          <BookmarksWidget />
         </div>
       </div>
     </div>

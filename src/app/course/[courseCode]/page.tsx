@@ -7,6 +7,7 @@ import { ResourceList } from "@/components/resources/ResourceList";
 import { CourseProgress } from "@/components/courses/CourseProgress";
 import { ShareCourseButton } from "@/components/courses/ShareCourseButton";
 import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
+import { StudyBuddies } from "@/components/study/StudyBuddies";
 import type { Course, Resource } from "@/types/database";
 import type { Metadata } from "next";
 
@@ -208,6 +209,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white sm:text-3xl">
               {typedCourse.title}
             </h1>
+            <StudyBuddies courseId={typedCourse.id} />
             {typedCourse.description && (
               <p className="max-w-2xl text-neutral-600 dark:text-neutral-400">
                 {typedCourse.description}
