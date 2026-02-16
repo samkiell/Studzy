@@ -44,19 +44,28 @@ export function StudentIDCard({
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
+  const [stack, setStack] = useState("Frontend Dev");
+  const [showStackMenu, setShowStackMenu] = useState(false);
   
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync internal state with prop if it changes externally
+  const stackOptions = [
+    "Frontend Dev",
+    "Backend Dev",
+    "Full Stack Dev",
+    "UI/UX Dev"
+  ];
+
+  // Sync internal state
   useEffect(() => {
     setCurrentAvatarUrl(avatarUrl);
   }, [avatarUrl]);
 
   // --- Avatar Upload Logic ---
   const handleAvatarClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Don't flip the card when clicking avatar
+    e.stopPropagation(); 
     if (!isUploading && !isViewOnly) {
       fileInputRef.current?.click();
     }
@@ -82,15 +91,9 @@ export function StudentIDCard({
     try {
       const formData = new FormData();
       formData.append("file", file);
-
-      const res = await fetch("/api/profile/upload", {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await fetch("/api/profile/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
-
       setCurrentAvatarUrl(data.url);
       toast.success("Avatar updated!", { id: uploadToast });
     } catch (err: any) {
@@ -103,11 +106,10 @@ export function StudentIDCard({
   };
 
   // --- Capture Side Logic ---
-  const captureSide = async (ref: React.RefObject<HTMLDivElement>) => {
+  const captureSide = async (ref: React.RefObject<HTMLDivElement>, isBack: boolean = false) => {
     if (!ref.current) return null;
     const html2canvas = (await import("html2canvas")).default;
     
-    // Create a configuration that fixes "bending" and "truncation"
     return await html2canvas(ref.current, {
       scale: 3,
       useCORS: true,
@@ -117,20 +119,18 @@ export function StudentIDCard({
       onclone: (doc) => {
         const clonedEl = doc.getElementById(ref.current!.id);
         if (clonedEl instanceof HTMLElement) {
-          // 1. Remove ANY transformation or perspective that causes "bending"
+          // Deep clean targeting mirroring and bending
           clonedEl.style.transform = "none";
           clonedEl.style.transition = "none";
           clonedEl.style.perspective = "none";
           clonedEl.style.position = "relative";
           clonedEl.style.top = "0";
           clonedEl.style.left = "0";
-          
-          // 2. Fix truncation by ensuring explicit dimensions and visible overflow
           clonedEl.style.width = "300px";
           clonedEl.style.height = "450px";
           clonedEl.style.overflow = "visible";
           
-          // 3. Force children to be flat and clean
+          // Force all descendants to be flat
           const children = clonedEl.querySelectorAll("*");
           children.forEach((child) => {
             if (child instanceof HTMLElement) {
@@ -138,10 +138,21 @@ export function StudentIDCard({
               child.style.transition = "none";
               child.style.perspective = "none";
               child.style.backfaceVisibility = "visible";
-              child.style.backdropFilter = "none"; // Backdrop blur can cause rendering artifacts in canvas
-              child.style.animation = "none"; // Prevent animations from being in a partial state
+              child.style.backdropFilter = "none";
+              child.style.animation = "none";
             }
           });
+
+          // Special fix for the back-side mirroring: 
+          // If we are capturing the back side, it's often inside a container that is rotated.
+          // We must find any parent with rotate-y-180 and neutralize it in the clone.
+          let parent = clonedEl.parentElement;
+          while (parent) {
+             parent.style.transform = "none";
+             parent.style.perspective = "none";
+             parent.style.transition = "none";
+             parent = parent.parentElement;
+          }
         }
       }
     });
@@ -151,19 +162,18 @@ export function StudentIDCard({
   const handleExport = async (format: "png" | "pdf") => {
     setIsExporting(true);
     try {
-      // Temporarily set flip to false to ensure capturing references is clean
       const wasFlipped = isFlipped;
-      setIsFlipped(false);
-      await new Promise(r => setTimeout(r, 100)); // Wait for flip transition
-
-      const frontCanvas = await captureSide(frontRef);
       
-      // Capture back side
+      // Capture front
+      setIsFlipped(false);
+      await new Promise(r => setTimeout(r, 600)); 
+      const frontCanvas = await captureSide(frontRef, false);
+      
+      // Capture back
       setIsFlipped(true);
-      await new Promise(r => setTimeout(r, 800)); // Wait for full flip duration
-      const backCanvas = await captureSide(backRef);
+      await new Promise(r => setTimeout(r, 800)); 
+      const backCanvas = await captureSide(backRef, true);
 
-      // Restore flip state
       setIsFlipped(wasFlipped);
 
       if (!frontCanvas || !backCanvas) throw new Error("Capture failed");
@@ -173,9 +183,7 @@ export function StudentIDCard({
         frontLink.download = `studzy-id-${username}-front.png`;
         frontLink.href = frontCanvas.toDataURL("image/png");
         frontLink.click();
-        
         await new Promise(r => setTimeout(r, 500));
-        
         const backLink = document.createElement("a");
         backLink.download = `studzy-id-${username}-back.png`;
         backLink.href = backCanvas.toDataURL("image/png");
@@ -212,7 +220,7 @@ export function StudentIDCard({
             <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
               <Image src="/favicon.png" alt="Logo" width={18} height={18} />
             </div>
-            <span className="font-bold tracking-wider text-xs opacity-80">STUDZY ID</span>
+            <span className="font-bold tracking-wider text-xs opacity-80 uppercase leading-none">Studzy ID</span>
           </div>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-white/10 bg-white/5">
             <span className="text-[10px] font-bold tracking-wider uppercase text-white/90">OAU</span>
@@ -223,39 +231,26 @@ export function StudentIDCard({
         </div>
 
         <div className="text-center space-y-5">
-          {/* Avatar Area */}
           <div 
             className={`relative mx-auto w-32 h-32 group/avatar ${isViewOnly ? '' : 'cursor-pointer'}`}
             onClick={handleAvatarClick}
           >
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
              <div className="absolute inset-2 rounded-full border border-white/10" />
-             <div 
-               className={`absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10 transition-transform duration-300 ${!isUploading && !isViewOnly ? 'hover:scale-[1.02] active:scale-95' : ''}`}
-             >
+             <div className="absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10 transition-transform duration-300">
                 {currentAvatarUrl ? (
-                  <Image 
-                    src={currentAvatarUrl} 
-                    alt={displayName} 
-                    fill 
-                    className="object-cover transition-opacity duration-500" 
-                    key={currentAvatarUrl}
-                  />
+                  <Image src={currentAvatarUrl} alt={displayName} fill className="object-cover" key={currentAvatarUrl} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-neutral-800/50 backdrop-blur-sm">
                     <Camera className="w-10 h-10 text-primary-500/40 animate-pulse" />
                   </div>
                 )}
-                
-                {/* Hover Overlay - Only in Edit Mode */}
                 {!isUploading && !isViewOnly && (
                   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                     <Camera className="w-6 h-6 text-white/80 mb-1" />
                     <span className="text-[8px] font-bold uppercase tracking-widest text-white/80">Change Photo</span>
                   </div>
                 )}
-
-                {/* Loading State */}
                 {isUploading && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
@@ -265,9 +260,41 @@ export function StudentIDCard({
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm">{displayName}</h2>
-            <p className="text-primary-400 font-bold text-sm tracking-tight">@{username}</p>
+            <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm uppercase leading-none">@{username}</h2>
+            <div className="relative inline-block">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isViewOnly) setShowStackMenu(!showStackMenu);
+                }}
+                className={`text-primary-400 font-bold text-sm tracking-tight flex items-center gap-1.5 transition-opacity ${!isViewOnly ? 'hover:opacity-80 active:scale-95' : ''}`}
+                disabled={isViewOnly}
+              >
+                {stack.toUpperCase()}
+                {!isViewOnly && <RotateCcw className="w-3 h-3 opacity-50" />}
+              </button>
+              
+              {showStackMenu && !isViewOnly && (
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 bg-[#0f0f0f] border border-white/10 rounded-xl py-2 shadow-2xl z-50 backdrop-blur-xl ring-1 ring-white/5">
+                  {stackOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStack(opt);
+                        setShowStackMenu(false);
+                        toast.success(`Role set to ${opt}`);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-colors ${stack === opt ? 'text-primary-400 bg-white/5' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          
           <div className="flex flex-col gap-2 w-full pt-2">
             <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Department</span>
@@ -301,31 +328,31 @@ export function StudentIDCard({
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-black flex items-center gap-2 tracking-widest text-white/90">
             <Trophy className="w-4 h-4 text-primary-400" />
-            PLAYER_STATS
+            SWE_STATS
           </h3>
-          <span className="text-[10px] text-neutral-600 font-mono font-bold">VERIFIED_AUTH</span>
+          <span className="text-[10px] text-neutral-600 font-mono font-bold tracking-tighter">Pioneer</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Flame className="w-5 h-5 text-orange-500" />
-            <span className="text-2xl font-black tabular-nums">{stats.streak}</span>
-            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Streak</span>
+            <span className="text-2xl font-black tabular-nums leading-none">{stats.streak}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Streak</span>
           </div>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Clock className="w-5 h-5 text-primary-400" />
-            <span className="text-2xl font-black tabular-nums">{stats.hours}</span>
-            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Hours</span>
+            <span className="text-2xl font-black tabular-nums leading-none">{stats.hours}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Hours</span>
           </div>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Trophy className="w-5 h-5 text-yellow-500" />
-            <span className="text-2xl font-black tabular-nums">#{stats.rank}</span>
-            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Rank</span>
+            <span className="text-2xl font-black tabular-nums leading-none">#{stats.rank}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Rank</span>
           </div>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Bookmark className="w-5 h-5 text-emerald-500" />
-            <span className="text-2xl font-black tabular-nums">{stats.bookmarks}</span>
-            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Saved</span>
+            <span className="text-2xl font-black tabular-nums leading-none">{stats.bookmarks}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Saved</span>
           </div>
         </div>
 
@@ -339,16 +366,8 @@ export function StudentIDCard({
   );
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {!isViewOnly && (
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          className="hidden" 
-          accept="image/*" 
-          onChange={handleFileChange}
-        />
-      )}
+    <div className="flex flex-col items-center gap-6" onClick={() => setShowStackMenu(false)}>
+      {!isViewOnly && <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />}
 
       <div>
         <div 
@@ -364,7 +383,6 @@ export function StudentIDCard({
                  </div>
                )}
             </div>
-
             <div className="absolute inset-0 backface-hidden rotate-y-180" ref={backRef}>
                <BackFaceContent />
                <div className="absolute inset-x-0 bottom-4 flex justify-center opacity-40">
@@ -381,7 +399,6 @@ export function StudentIDCard({
             <RotateCcw className="w-3 h-3 mr-2" /> Flip Card
           </Button>
         </div>
-        
         {!isViewOnly && (
           <div className="flex gap-2">
             <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
