@@ -159,18 +159,20 @@ export default async function DashboardPage() {
         <div className="lg:col-span-4 space-y-6">
           <StreakCounter streak={currentStreak} />
           
-          <StudentIDCard 
-            displayName={displayName}
-            username={username}
-            role={profile?.role === "admin" ? "Admin" : "Student"}
-            avatarUrl={avatarUrl}
-            stats={{
-              streak: currentStreak,
-              hours: Math.floor(totalSeconds / 3600),
-              rank: 0, 
-              bookmarks: bookmarksCount || 0
-            }}
-          />
+          <div className="flex justify-center lg:block">
+            <StudentIDCard 
+              displayName={displayName}
+              username={username}
+              role={profile?.role === "admin" ? "Admin" : "Student"}
+              avatarUrl={avatarUrl}
+              stats={{
+                streak: currentStreak,
+                hours: Math.floor(totalSeconds / 3600),
+                rank: 0, 
+                bookmarks: bookmarksCount || 0
+              }}
+            />
+          </div>
 
           <LeaderboardWidget />
           <BookmarksWidget />
