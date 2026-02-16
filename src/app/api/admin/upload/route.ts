@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("studzy-materials")
+      .from("RAG")
       .upload(fileName, buffer, {
         contentType: file.type,
         cacheControl: "3600",
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from("studzy-materials")
+      .from("RAG")
       .getPublicUrl(uploadData.path);
 
     const fileUrl = urlData.publicUrl;
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       // Clean up uploaded file if database insert fails
-      await supabase.storage.from("studzy-materials").remove([uploadData.path]);
+      await supabase.storage.from("RAG").remove([uploadData.path]);
       console.error("Database insert error:", insertError);
       return NextResponse.json(
         { success: false, message: `Failed to save resource: ${insertError.message}` },

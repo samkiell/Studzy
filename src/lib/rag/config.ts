@@ -24,7 +24,7 @@ export const TOP_K = 5;
 export const SIMILARITY_THRESHOLD = 0.5;
 
 /** Supabase Storage bucket name */
-export const STORAGE_BUCKET = "studzy-materials";
+export const STORAGE_BUCKET = "RAG";
 
 /** Approximate tokens per word (English text) */
 export const TOKENS_PER_WORD = 1.33;
