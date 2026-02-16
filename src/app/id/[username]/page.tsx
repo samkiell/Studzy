@@ -83,6 +83,13 @@ export default async function PublicIDPage({ params }: PageProps) {
         </div>
 
         {/* CTA */}
+        <div className="mt-4">
+           <Link 
+             href="/auth/signup" 
+             className="px-6 py-2.5 rounded-full bg-white text-black text-xs font-bold hover:bg-neutral-200 transition-colors shadow-lg"
+           >
+             Get Your Own ID
+           </Link>
         </div>
       </div>
     </main>
