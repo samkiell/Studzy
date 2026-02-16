@@ -22,7 +22,7 @@ export function StudentIDCard({ displayName, username, bio, learningGoal, avatar
         <div className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white shadow-xl module-3d">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold tracking-widest uppercase opacity-80">Institutional ID</p>
+              <p className="text-[10px] font-bold tracking-widest uppercase opacity-80">Studzy ID</p>
               <h3 className="text-xl font-black italic tracking-tighter">STUDZY</h3>
             </div>
             <div className="h-10 w-10 overflow-hidden rounded-lg border-2 border-white/20 bg-white/10">
