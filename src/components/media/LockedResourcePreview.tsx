@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 interface LockedResourcePreviewProps {
-  resourceType: "audio" | "video" | "pdf";
+  resourceType: "audio" | "video" | "pdf" | "image";
   title: string;
   description?: string | null;
   courseCode: string;
@@ -69,6 +69,18 @@ export function LockedResourcePreview({
             </div>
           </div>
         )}
+        {resourceType === "image" && (
+          <div className="flex h-full flex-wrap gap-4 p-8 bg-neutral-100 dark:bg-neutral-900">
+            {[...Array(6)].map((_, i) => (
+              <div 
+                key={i} 
+                className="h-32 flex-1 min-w-[30%] rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center"
+              >
+                <div className="h-10 w-10 rounded border-2 border-dashed border-neutral-200 dark:border-neutral-700" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Blurred Overlay */}
@@ -104,7 +116,7 @@ export function LockedResourcePreview({
             </p>
           )}
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 text-xs font-semibold uppercase tracking-wider">
-            Premium {resourceType === "pdf" ? "Document" : resourceType}
+            Premium {resourceType === "pdf" ? "Document" : resourceType === "image" ? "Visual" : resourceType}
           </div>
         </div>
 
