@@ -97,8 +97,9 @@ export async function resetPassword(email: string) {
     }
 
     // 2. Format the email using our template
+    const resetLink = `${getURL()}auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery`;
     const template = getEmailTemplate('reset', {
-      link: data.properties.action_link,
+      link: resetLink,
     });
 
     // 3. Send the email manually via SMTP
