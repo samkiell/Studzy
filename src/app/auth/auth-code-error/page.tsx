@@ -12,36 +12,48 @@ export default function AuthCodeErrorPage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // If we have a session, it means the auth was actually successful 
-        // (likely via implicit flow fragment which server-side callback missed).
-        const searchParams = new URLSearchParams(window.location.search);
-        const type = searchParams.get('type');
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (type === 'recovery' || window.location.hash.includes("type=recovery")) {
-          router.push("/dashboard/settings/password");
-        } else if (type === 'signup') {
-          router.push("/auth/confirm");
+        if (session) {
+          console.log("Session found on error page, redirecting...");
+          const searchParams = new URLSearchParams(window.location.search);
+          const type = searchParams.get('type');
+          
+          if (type === 'recovery' || window.location.hash.includes("type=recovery")) {
+            router.replace("/dashboard/settings/password");
+          } else if (type === 'signup' || type === 'invite') {
+            router.replace("/auth/confirm");
+          } else {
+            router.replace("/dashboard");
+          }
         } else {
-          router.push("/dashboard");
+          setChecking(false);
         }
-      } else {
+      } catch (err) {
+        console.error("Error checking session:", err);
         setChecking(false);
       }
     };
 
+    const timeout = setTimeout(() => {
+      if (checking) {
+        console.warn("Session check timed out");
+        setChecking(false);
+      }
+    }, 5000);
+
     checkSession();
-  }, [router]);
+    return () => clearTimeout(timeout);
+  }, [router, checking]);
 
   if (checking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-          <span className="text-neutral-600 dark:text-neutral-400">Verifying session...</span>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+          <span className="text-lg font-medium text-neutral-600 dark:text-neutral-400">Verifying your account...</span>
         </div>
       </main>
     );
