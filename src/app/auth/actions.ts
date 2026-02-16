@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getURL } from "@/lib/utils";
+import { sendEmail } from "@/lib/email";
+import { getEmailTemplate } from "@/lib/email-templates";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -128,7 +130,7 @@ export async function resendConfirmation(email: string) {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: `${getURL()}auth/callback`,
+      emailRedirectTo: `${getURL()}auth/confirm`,
     },
   });
 

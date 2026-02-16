@@ -3,12 +3,13 @@ import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle2 } from "lucide-react";
 
-export default function ConfirmedPage({
+export default async function ConfirmedPage({
   searchParams,
 }: {
-  searchParams: { username?: string };
+  searchParams: Promise<{ username?: string }>;
 }) {
-  const username = searchParams?.username || "Scholar";
+  const params = await searchParams;
+  const username = params?.username || "Scholar";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 dark:bg-neutral-950">
