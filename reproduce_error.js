@@ -10,7 +10,7 @@ async function test() {
         { type: "text", text: "What is in this image?" },
         {
           type: "image_url",
-          image_url: { url: "https://example.com/image.png" },
+          imageUrl: { url: "https://example.com/image.png" },
         },
       ],
     },
