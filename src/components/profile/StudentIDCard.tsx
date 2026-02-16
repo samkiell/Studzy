@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, ExternalLink, QrCode, User as UserIcon } from "lucide-react";
+import QRCode from "react-qr-code";
+import { ExternalLink, User as UserIcon } from "lucide-react";
 
 interface StudentIDCardProps {
   displayName: string;
@@ -15,10 +16,10 @@ export function StudentIDCard({ displayName, username, bio, learningGoal, avatar
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div className="group perspective-1000 h-[220px] w-full cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
-      <div className={`relative h-full w-full transition-all duration-500 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
+    <div className="group h-[220px] w-full cursor-pointer perspective-1000" onClick={() => setIsFlipped(!isFlipped)}>
+      <div className={`relative h-full w-full transition-all duration-700 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
         {/* Front Side */}
-        <div className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white shadow-xl">
+        <div className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white shadow-xl module-3d">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <p className="text-[10px] font-bold tracking-widest uppercase opacity-80">Institutional ID</p>
@@ -57,7 +58,7 @@ export function StudentIDCard({ displayName, username, bio, learningGoal, avatar
         </div>
 
         {/* Back Side */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl bg-neutral-900 p-6 text-white shadow-xl overflow-hidden">
+        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl bg-neutral-900 p-6 text-white shadow-xl overflow-hidden module-3d">
           <div className="flex h-full gap-4">
             <div className="flex-1 space-y-3 overflow-hidden">
               <div>
@@ -78,8 +79,13 @@ export function StudentIDCard({ displayName, username, bio, learningGoal, avatar
             </div>
             
             <div className="flex flex-col items-center justify-center gap-2 border-l border-white/10 pl-4">
-              <div className="h-16 w-16 bg-white p-1 rounded">
-                <QrCode className="h-full w-full text-black" />
+              <div className="h-16 w-16 bg-white p-1 rounded flex items-center justify-center">
+                <QRCode 
+                  value={`https://studzy.me/u/${username}`}
+                  size={56}
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  viewBox={`0 0 256 256`}
+                />
               </div>
               <p className="text-[8px] font-bold tracking-widest text-primary-500">SCAN ME</p>
             </div>

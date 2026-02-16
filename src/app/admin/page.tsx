@@ -34,12 +34,21 @@ export default async function AdminPage() {
     supabase.from("courses").select("*", { count: "exact", head: true }),
     supabase.from("resources").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("last_seen", fiveMinsAgo),
+    supabase.from("study_presence").select("*", { count: "exact", head: true }).gt("last_pulse", fiveMinsAgo),
     supabase.from("resources").select("view_count, completion_count"),
-    supabase.from("profiles")
-      .select("id, email, full_name, last_seen")
-      .gte("last_seen", fiveMinsAgo)
-      .order("last_seen", { ascending: false })
+    supabase.from("study_presence")
+      .select(`
+        last_pulse,
+        profiles!inner (
+          id,
+          email,
+          full_name,
+          username,
+          avatar_url
+        )
+      `)
+      .gt("last_pulse", fiveMinsAgo)
+      .order("last_pulse", { ascending: false })
       .limit(10)
   ]);
 
@@ -209,29 +218,32 @@ export default async function AdminPage() {
           </div>
           <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {onlineUsersList?.map((user: any) => (
-                <div key={user.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 font-bold overflow-hidden">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      (user.username?.[0] || user.full_name?.[0] || user.email[0]).toUpperCase()
-                    )}
+              {onlineUsersList?.map((presence: any) => {
+                const user = presence.profiles;
+                return (
+                  <div key={user.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 font-bold overflow-hidden">
+                      {user.avatar_url ? (
+                        <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        (user.username?.[0] || user.full_name?.[0] || user.email[0]).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-neutral-900 dark:text-white truncate">
+                        {user.username || user.full_name || "New Student"}
+                      </h4>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                        Online now
+                      </span>
+                      <p className="text-[10px] text-neutral-400">{formatDate(presence.last_pulse)}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-neutral-900 dark:text-white truncate">
-                      {user.username || user.full_name || "New Student"}
-                    </h4>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                      Online now
-                    </span>
-                    <p className="text-[10px] text-neutral-400">{formatDate(user.last_seen)}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {(!onlineUsersList || onlineUsersList.length === 0) && (
                 <div className="p-10 text-center">
                   <p className="text-sm text-neutral-500">No users currently online</p>
