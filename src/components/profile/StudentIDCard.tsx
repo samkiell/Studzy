@@ -143,8 +143,8 @@ export function StudentIDCard({
                   </div>
                   <span className="font-bold tracking-wide text-sm opacity-90">STUDZY ID</span>
                 </div>
-                <div className="px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-[10px] font-medium tracking-wider uppercase">
-                  {role}
+                <div className="pt-23 px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-[10px] font-medium tracking-wider uppercase">
+                <span className="font-bold tracking-wide text-sm opacity-90">OAU</span>
                 </div>
               </div>
 
