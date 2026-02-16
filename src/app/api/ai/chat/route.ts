@@ -170,10 +170,10 @@ export async function POST(request: NextRequest) {
     try {
       if (shouldUseWebSearch) {
         console.log("[API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
-        const response = await client.chat.stream({
+        const response = await (client.chat.stream as any)({
           model: "mistral-large-latest",
           messages: mistralMessages,
-          web_search: true as any,
+          web_search: true,
         });
         return streamResponse(response, mode);
       }
