@@ -57,7 +57,9 @@ export function StudentIDCard({
     "Frontend Dev",
     "Backend Dev",
     "Full Stack Dev",
-    "UI/UX Dev"
+    "UI/UX Dev",
+    "Mobile Dev",
+    "Game Dev"
   ];
 
   // Sync internal state
