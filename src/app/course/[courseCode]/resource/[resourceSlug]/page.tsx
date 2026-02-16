@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { VideoPlayer, AudioPlayer, PDFViewer, ImageViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
 import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 import { DiscussionPanel } from "@/components/resources/DiscussionPanel";
+import { StarButton } from "@/components/resources/StarButton";
+import { ShareCourseButton } from "@/components/courses/ShareCourseButton";
 
 interface ResourcePageProps {
   params: Promise<{
@@ -374,6 +376,10 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
                   {resource.description}
                 </p>
               )}
+            </div>
+            <div className="flex items-center gap-2">
+              <StarButton resourceId={resource.id} />
+              <ShareCourseButton courseCode={course.code} />
             </div>
           </div>
         </div>
