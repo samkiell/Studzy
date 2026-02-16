@@ -14,11 +14,17 @@ async function test() {
         },
       ],
     },
+    {
+      role: "assistant",
+      content: "I see a sample image.",
+    },
+    {
+      role: "user",
+      content: "Thank you.",
+    },
   ];
 
   try {
-    // We don't actually need to call the API, just see if it fails validation during request prep
-    // (though validation usually happens inside the .complete method)
     await client.chat.complete({
       model: "pixtral-12b-2409",
       messages: messages,
@@ -26,7 +32,7 @@ async function test() {
   } catch (error) {
     console.log("Error type:", typeof error);
     console.log("Error message:", error.message);
-    if (error.stack) console.log("Stack trace:", error.stack);
+    // if (error.errors) console.log("Zod errors:", JSON.stringify(error.errors, null, 2));
   }
 }
 
