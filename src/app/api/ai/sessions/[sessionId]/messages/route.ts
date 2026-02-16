@@ -250,13 +250,18 @@ async function callMistralAI(
 
   try {
     if (shouldUseWebSearch) {
-      console.log("[Messages API] 🌐 Search Mode Active: Using mistral-large-latest with webSearch: true");
+      console.log("[Messages API] 🌐 Search Mode Active: Calling mistral-large-latest with web_search: true");
       const response = await client.chat.complete({
         model: "mistral-large-latest",
         messages: mistralMessages,
-        webSearch: true as any,
+        web_search: true as any,
       });
-      return response.choices?.[0]?.message?.content?.toString() || "No response";
+      
+      const content = response.choices?.[0]?.message?.content?.toString();
+      if (!content) {
+        console.warn("[Messages API] ⚠️ Search returned empty content. Response:", JSON.stringify(response, null, 2));
+      }
+      return content || "Search completed but no information was found.";
     }
 
     // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
@@ -264,9 +269,14 @@ async function callMistralAI(
       agentId: MISTRAL_AI_AGENT_ID,
       messages: mistralMessages,
     });
-    return response.choices?.[0]?.message?.content?.toString() || "No response";
-  } catch (agentError: any) {
-    console.error("Mistral API Error:", agentError);
-    return `Sorry, I encountered an error with the AI Service: ${agentError.message}`;
+    
+    const content = response.choices?.[0]?.message?.content?.toString();
+    if (!content) {
+      console.warn("[Messages API] ⚠️ Agent returned empty content. Response:", JSON.stringify(response, null, 2));
+    }
+    return content || "The AI agent did not provide a response.";
+  } catch (apiError: any) {
+    console.error("[Messages API] ❌ Mistral API failure:", apiError);
+    return `Sorry, I encountered an error with the AI Service: ${apiError.message}`;
   }
 }

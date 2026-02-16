@@ -121,6 +121,26 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
       };
     }
 
+    // 🎓 RAG: If this is a PDF, trigger ingestion automatically
+    if (type === "pdf") {
+      try {
+        const { ingestFile } = await import("@/lib/rag/ingestion");
+        console.log(`[Admin Upload] Triggering auto-ingestion for: ${uploadData.path}`);
+        
+        // This runs asynchronously in the background
+        ingestFile({
+          filePath: uploadData.path,
+          courseCode: courseId,
+          force: true,
+          username: "admin", // Tag as admin-uploaded
+        }).catch(err => {
+          console.error(`[Admin Upload] Ingestion failed for ${uploadData.path}:`, err);
+        });
+      } catch (err) {
+        console.error(`[Admin Upload] Failed to trigger ingestion:`, err);
+      }
+    }
+
     // Revalidate the course page to show new resource
     revalidatePath(`/course/${courseId}`);
     revalidatePath("/dashboard");

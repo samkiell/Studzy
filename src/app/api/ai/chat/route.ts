@@ -157,19 +157,24 @@ export async function POST(request: NextRequest) {
     }
 
     const shouldUseWebSearch = enable_search || mode === "search";
-    console.log(`AI Request - Mode: ${mode}, Using Agent: ${MISTRAL_AI_AGENT_ID}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
+    console.log(`[API] AI Request - Mode: ${mode}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
     
     try {
-      // If web search is requested, we use the chat completion with webSearch: true
-      // Otherwise, we use the configured agent.
       if (shouldUseWebSearch) {
-        console.log("[API] 🌐 Search Mode Active: Using mistral-large-latest with webSearch: true");
-        const response = await client.chat.stream({
-          model: "mistral-large-latest",
-          messages: mistralMessages,
-          webSearch: true as any, // Cast for SDK versions that might not have this in types yet
-        });
-        return streamResponse(response);
+        console.log("[API] 🌐 Search Mode Active: Calling mistral-large-latest with web_search: true");
+        try {
+          // Using mistral-large-latest which supports native web search
+          const response = await client.chat.stream({
+            model: "mistral-large-latest",
+            messages: mistralMessages,
+            web_search: true as any, 
+          });
+          return streamResponse(response);
+        } catch (searchError: any) {
+          console.error("[API] ❌ Search Mode Error:", searchError);
+          // Fallback to regular agent if search fails
+          console.log("[API] 🔄 Falling back to standard agent...");
+        }
       }
 
       const response = await client.agents.stream({
@@ -177,10 +182,10 @@ export async function POST(request: NextRequest) {
         messages: mistralMessages,
       });
       return streamResponse(response);
-    } catch (agentError: any) {
-      console.error("Mistral API Error:", agentError);
+    } catch (apiError: any) {
+      console.error("[API] ❌ Mistral API failure:", apiError);
       return NextResponse.json(
-        { error: `Mistral API Error: ${agentError.message}` },
+        { error: `Mistral API Error: ${apiError.message}` },
         { status: 500 }
       );
     }
@@ -203,9 +208,12 @@ async function streamResponse(response: any) {
     async start(controller) {
       try {
         for await (const chunk of response) {
-          // Some SDK versions or response types might wrap the chunk in a .data property
+          // Robust chunk parsing for streaming
           const data = (chunk as any).data || chunk;
+          
+          // Mistral SDK can return deltas in different formats depending on the model/capability
           const content = data.choices?.[0]?.delta?.content || "";
+          
           if (content) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content } }]
