@@ -337,7 +337,7 @@ export function ChatPanel({
             </h1>
           </div>
           <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-            Created by <a href="https://samkiel.dev" target="_blank" rel="noopener noreferrer" className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a>
+            DevCore&apos;23 edition • Created by <a href="https://samkiel.dev" target="_blank" rel="noopener noreferrer" className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a>
           </p>
         </div>
 

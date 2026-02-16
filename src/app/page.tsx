@@ -27,16 +27,23 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="mx-auto mt-20 max-w-3xl px-6 text-center md:mt-32">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-xs font-semibold text-primary-600 dark:border-primary-900/30 dark:bg-primary-900/20 dark:text-primary-400">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-400 opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-500"></span>
+          </span>
+          DevCore&apos;23 edition
+        </div>
         <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white md:text-6xl">
           Study smarter, <br />
           <span className="text-primary-600">not harder</span>
         </h1>
         <p className="mx-auto mt-6 max-w-lg text-lg text-neutral-500 dark:text-neutral-400">
-         Resources your lecturers don&apos;t want you to see, organised and summarised podcast, videos, audios, pdf and more.
+          Resources your lecturers don&apos;t want you to see, organised and summarised podcast, videos, audios, pdf and more.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link href="/signup">
-            <Button size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto">
+            <Button size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto text-white">
               Get Started
             </Button>
           </Link>
@@ -60,25 +67,22 @@ export default function Home() {
           <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
             <h3 className="font-semibold text-neutral-900 dark:text-white">Smart AI Assistant</h3>
             <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-             A smart AI that can understand texts, images and provide concise summary, flashcards, quizzes and more.
+              A smart AI that can understand texts, images and provide concise summary, flashcards, quizzes and more.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <h3 className="font-semibold text-neutral-900 dark:text-white">Made for Software Engineering Pioneers</h3>
+            <h3 className="font-semibold text-neutral-900 dark:text-white">Made for Pioneers</h3>
             <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-              Curated specifically for Part 2 SWE Students, OAU.
+              Specifically curated for <strong>DevCore&apos;23</strong> Software Engineering Pioneers, OAU.
             </p>
           </div>
         </div>
-        <p className="mt-8 text-center text-xs italic text-neutral-400 dark:text-neutral-600">
-          we dont have a name yet i could have used it.
-        </p>
       </section>
 
       {/* Footer */}
       <footer className="mt-auto border-t border-neutral-200 py-12 text-center dark:border-neutral-800">
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          &copy; 2026 Studzy. Built for Software Engineering Students.
+          &copy; 2026 Studzy. Built for <strong>DevCore&apos;23</strong> Pioneers.
         </p>
       </footer>
     </main>

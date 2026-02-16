@@ -363,7 +363,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                 STUDZY AI
               </h2>
               <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                Created by <a href="https://samkiel.dev" target="_blank" rel="noopener noreferrer" className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a>
+                DevCore&apos;23 edition • Created by <a href="https://samkiel.dev" target="_blank" rel="noopener noreferrer" className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a>
               </p>
             </div>
           </div>
@@ -409,11 +409,11 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
                 How can I help you today?
               </h3>
               <p className="mt-2 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                Created by <a 
+                DevCore&apos;23 edition • Created by <a 
                 href="https://samkiel.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a> • Expert Software Engineering Assistant
+                className="text-primary-500 dark:text-primary-400 font-medium hover:underline">Samkiel</a> • Expert SWE Assistant
               </p>
               <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
                 {[
