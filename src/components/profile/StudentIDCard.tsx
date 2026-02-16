@@ -194,7 +194,7 @@ export function StudentIDCard({
     }
   };
 
-  const cardFaceClasses = "relative h-[450px] w-full max-w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
+  const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
 
   const FrontFaceContent = ({ isExport = false }: { isExport?: boolean }) => (
     <div id={isExport ? "export-id-front" : "id-front"} className={`${cardFaceClasses} bg-[#0a0a0a]`}>
@@ -367,7 +367,7 @@ export function StudentIDCard({
 
       <div>
         <div 
-          className={`group relative h-[450px] w-full max-w-[300px] cursor-pointer perspective-1000 ${isExporting ? 'pointer-events-none opacity-50' : ''}`}
+          className={`group relative h-[450px] w-[300px] cursor-pointer perspective-1000 ${isExporting ? 'pointer-events-none opacity-50' : ''}`}
           onClick={() => !isExporting && !isUploading && setIsFlipped(!isFlipped)}
         >
           <div className={`relative h-full w-full transition-all duration-700 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
