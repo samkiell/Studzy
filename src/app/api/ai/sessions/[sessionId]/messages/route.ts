@@ -240,12 +240,25 @@ async function callMistralAI(
     }
   }
 
-  // Force Agent Logic
+  // Force Agent/Search Logic
   if (!MISTRAL_AI_AGENT_ID) {
     return "Error: Mistral AI Agent ID not configured in environment variables.";
   }
 
+  const shouldUseWebSearch = enableSearch || mode === "search";
+  console.log(`[Messages API] Request - Mode: ${mode}, Has Images: ${hasImageRequest}, WebSearch: ${shouldUseWebSearch}`);
+
   try {
+    if (shouldUseWebSearch) {
+      console.log("[Messages API] 🌐 Search Mode Active: Using mistral-large-latest with webSearch: true");
+      const response = await client.chat.complete({
+        model: "mistral-large-latest",
+        messages: mistralMessages,
+        webSearch: true as any,
+      });
+      return response.choices?.[0]?.message?.content?.toString() || "No response";
+    }
+
     // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
     const response = await client.agents.complete({
       agentId: MISTRAL_AI_AGENT_ID,
@@ -253,7 +266,7 @@ async function callMistralAI(
     });
     return response.choices?.[0]?.message?.content?.toString() || "No response";
   } catch (agentError: any) {
-    console.error("Mistral Agent Error:", agentError);
-    return `Sorry, I encountered an error with the AI Agent: ${agentError.message}`;
+    console.error("Mistral API Error:", agentError);
+    return `Sorry, I encountered an error with the AI Service: ${agentError.message}`;
   }
 }

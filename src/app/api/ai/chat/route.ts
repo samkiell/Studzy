@@ -156,18 +156,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`AI Request - Mode: ${mode}, Using Agent: ${MISTRAL_AI_AGENT_ID}, Has Images: ${hasImages}`);
+    const shouldUseWebSearch = enable_search || mode === "search";
+    console.log(`AI Request - Mode: ${mode}, Using Agent: ${MISTRAL_AI_AGENT_ID}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
     
     try {
+      // If web search is requested, we use the chat completion with webSearch: true
+      // Otherwise, we use the configured agent.
+      if (shouldUseWebSearch) {
+        console.log("[API] 🌐 Search Mode Active: Using mistral-large-latest with webSearch: true");
+        const response = await client.chat.stream({
+          model: "mistral-large-latest",
+          messages: mistralMessages,
+          webSearch: true as any, // Cast for SDK versions that might not have this in types yet
+        });
+        return streamResponse(response);
+      }
+
       const response = await client.agents.stream({
         agentId: MISTRAL_AI_AGENT_ID,
         messages: mistralMessages,
       });
       return streamResponse(response);
     } catch (agentError: any) {
-      console.error("Mistral Agent Error:", agentError);
+      console.error("Mistral API Error:", agentError);
       return NextResponse.json(
-        { error: `Mistral Agent Error: ${agentError.message}` },
+        { error: `Mistral API Error: ${agentError.message}` },
         { status: 500 }
       );
     }
