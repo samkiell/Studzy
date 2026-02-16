@@ -337,7 +337,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                 )}
                                 
                                 <button 
-                                  onClick={() => handleDeleteUser(user.id)}
+                                  onClick={() => openModal("delete", user.id)}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 rounded-lg"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" /> Delete User
