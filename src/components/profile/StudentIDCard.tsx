@@ -13,8 +13,8 @@ import {
   Printer, 
   RotateCcw
 } from "lucide-react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+// Moved to dynamic imports inside handleExport to prevent build-time resolution issues with core-js
+
 import { Button } from "@/components/ui/Button"; // Assuming Button exists, or use generic
 import { Loader2 } from "lucide-react";
 
@@ -61,6 +61,9 @@ export function StudentIDCard({
       // Wait for flip transition if needed, but better to capture a dedicated wrapper
       // Using a short timeout to ensure state update if we flipped back
       if (wasFlipped) await new Promise(r => setTimeout(r, 600));
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
 
       const canvas = await html2canvas(element, {
         scale: 3, // High res
