@@ -44,19 +44,17 @@ export async function extractPDFFromStorage(
     throw new Error(`Downloaded file is empty: ${filePath}`);
   }
 
-  // Import pdf-parse v2 (class-based API)
-  const { PDFParse } = await import("pdf-parse");
+  // pdf-parse v1: simple function(buffer) => Promise<{text, numpages}>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require("pdf-parse");
 
-  const parser = new PDFParse({ data: buffer });
-  const pdfData = await parser.getText();
-  const info = await parser.getInfo();
-  await parser.destroy();
+  const pdfData = await pdfParse(buffer);
 
   const fileName = filePath.split("/").pop() || filePath;
 
   return {
     text: pdfData.text,
-    pageCount: info.numPages || 0,
+    pageCount: pdfData.numpages,
     fileName,
   };
 }
