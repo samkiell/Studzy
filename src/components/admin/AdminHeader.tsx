@@ -20,6 +20,7 @@ const NAV_LINKS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/upload", label: "Upload", icon: CloudUpload },
   { href: "/admin/resources", label: "Resources", icon: FileText },
+  { href: "/admin/rag", label: "AI Knowledge", icon: BrainCircuit },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
 ];
