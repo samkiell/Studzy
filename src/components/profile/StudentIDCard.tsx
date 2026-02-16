@@ -111,13 +111,14 @@ export function StudentIDCard({
     
     // Capture from the pre-flattened hidden elements
     return await html2canvas(element, {
-      scale: 4, 
+      scale: 5, // Even higher resolution for pixel-perfection
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
       width: 300,
       height: 450,
+      imageTimeout: 0,
       onclone: (doc) => {
         const el = doc.getElementById(element.id);
         if (el) {
@@ -125,6 +126,15 @@ export function StudentIDCard({
           el.style.opacity = "1";
           el.style.visibility = "visible";
           el.style.display = "block";
+          
+          // Remove all backdrop-blurs as they fail in html2canvas
+          const blurs = el.querySelectorAll(".backdrop-blur-md, .backdrop-blur-sm, .backdrop-blur-xl");
+          blurs.forEach(b => {
+            if (b instanceof HTMLElement) {
+              b.style.backdropFilter = "none";
+              b.style.background = "rgba(255, 255, 255, 0.05)"; // Fallback to semi-transparent
+            }
+          });
         }
       }
     });
@@ -157,13 +167,21 @@ export function StudentIDCard({
         const jspdfModule = await import("jspdf");
         const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
         
-        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a7", compress: false });
+        // Use a7 format but ensure high DPI handling
+        const pdf = new jsPDF({ 
+          orientation: "portrait", 
+          unit: "mm", 
+          format: "a7",
+          compress: false 
+        });
+        
         const width = pdf.internal.pageSize.getWidth();
         const height = pdf.internal.pageSize.getHeight();
         
-        pdf.addImage(frontCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "FAST");
+        // Use PNG format without aggressive compression to maintain color/logo fidelity
+        pdf.addImage(frontCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "NONE");
         pdf.addPage();
-        pdf.addImage(backCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "FAST");
+        pdf.addImage(backCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "NONE");
         
         pdf.save(`studzy-id-${username}.pdf`);
       }
@@ -186,15 +204,15 @@ export function StudentIDCard({
       <div className="relative z-10 h-full flex flex-col p-6 text-white justify-between">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-              <Image src="/favicon.png" alt="Logo" width={18} height={18} />
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+              <Image src="/favicon.png" alt="Logo" width={20} height={20} priority />
             </div>
-            <span className="font-bold tracking-wider text-xs opacity-80 uppercase leading-none">Studzy ID</span>
+            <span className="font-bold tracking-wider text-xs opacity-90 uppercase leading-none">Studzy ID</span>
           </div>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-white/10 bg-white/5">
             <span className="text-[10px] font-bold tracking-wider uppercase text-white/90">OAU</span>
             <div className="w-4 h-4 relative">
-              <Image src="/oau.png" alt="OAU" fill className="object-contain" />
+              <Image src="/oau.png" alt="OAU" fill className="object-contain" priority />
             </div>
           </div>
         </div>
@@ -266,24 +284,25 @@ export function StudentIDCard({
             </div>
           </div>
           
-          <div className="flex flex-col gap-2 w-full pt-2">
-            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
+          
+          <div className="flex flex-col gap-2 w-full pt-1">
+            <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5">
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Department</span>
-              <span className="text-[11px] font-bold text-white/90">Software Engineering</span>
+              <span className="text-[11px] font-bold text-white/90 leading-none">Software Engineering</span>
             </div>
-            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md min-h-[44px]">
-              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">ClassName</span>
-              <span className="text-[11px] font-bold text-white/90 truncate max-w-[140px]">DevCore&apos;23</span>
+            <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5">
+              <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">ClassName</span>
+              <span className="text-[11px] font-bold text-white/90 leading-none truncate max-w-[140px]">DevCore&apos;23</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-auto pt-6 flex justify-between items-end border-t border-white/5">
-           <div className="text-[9px] text-neutral-500 font-bold opacity-80 italic tracking-tighter">
+        <div className="mt-auto pt-4 flex justify-between items-center border-t border-white/5">
+           <p className="text-[9px] text-neutral-400 font-bold opacity-90 italic tracking-tighter leading-none">
               &quot;Study smarter. bag 5.0.&quot;
-           </div>
-           <div className="bg-white p-1 rounded-lg shadow-xl ring-1 ring-black/10">
-              <QRCode value={isExport ? `https://studzy.me/id/${username}` : `https://studzy.me/id/${username}`} size={44} />
+           </p>
+           <div className="bg-white p-1 rounded-lg">
+              <QRCode value={isExport ? `https://studzy.me/id/${username}` : `https://studzy.me/id/${username}`} size={44} level="H" />
            </div>
         </div>
       </div>
