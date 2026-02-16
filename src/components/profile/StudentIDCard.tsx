@@ -144,11 +144,15 @@ export function StudentIDCard({
       if (format === "png") {
         const frontLink = document.createElement("a");
         frontLink.download = `studzy-id-${username}-front.png`;
-        frontLink.href = frontCanvas.toDataURL("image/png", 1.0); // Max quality
+        frontLink.href = frontCanvas.toDataURL("image/png", 1.0);
         frontLink.click();
+        
         await new Promise(r => setTimeout(r, 500));
+        
         const backLink = document.createElement("a");
-        download(backCanvas, `studzy-id-${username}-back.png`);
+        backLink.download = `studzy-id-${username}-back.png`;
+        backLink.href = backCanvas.toDataURL("image/png", 1.0);
+        backLink.click();
       } else if (format === "pdf") {
         const jspdfModule = await import("jspdf");
         const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
