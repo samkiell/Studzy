@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
             { type: "text", text: msg.content || "Analyze this image." },
             ...msgImages.map((url: string) => ({
               type: "image_url",
-              image_url: url
+              imageUrl: { url }
             }))
           ]
         };
