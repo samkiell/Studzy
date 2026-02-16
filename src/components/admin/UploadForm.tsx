@@ -59,6 +59,7 @@ const detectResourceType = (file: File): ResourceType | null => {
 export function UploadForm({ courses }: UploadFormProps) {
   const router = useRouter();
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [isRAG, setIsRAG] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -289,6 +290,15 @@ export function UploadForm({ courses }: UploadFormProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isRAG) {
+      setGlobalMessage({
+        type: "success",
+        text: `Successfully uploaded ${uploadedCount} file${uploadedCount > 1 ? "s" : ""} to RAG storage!`,
+      });
+      setTimeout(() => router.push("/admin"), 1500);
+      return;
+    }
+
     if (!selectedCourseId) {
       setGlobalMessage({ type: "error", text: "Please select a course" });
       return;
@@ -415,6 +425,36 @@ export function UploadForm({ courses }: UploadFormProps) {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* RAG Dump Toggle */}
+      <div className="rounded-lg border border-primary-200 bg-primary-50/50 p-4 dark:border-primary-900/50 dark:bg-primary-900/10">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-semibold text-primary-900 dark:text-primary-300">
+              RAG Storage Mode
+            </h3>
+            <p className="text-xs text-primary-700 dark:text-primary-400">
+              Upload files as generic dumps for AI knowledge. These won&apos;t be visible in any course.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsRAG(!isRAG);
+              if (!isRAG) setSelectedCourseId(""); // Clear course if RAG is on
+            }}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              isRAG ? "bg-primary-600" : "bg-neutral-200 dark:bg-neutral-700"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isRAG ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Resource Type Info */}
