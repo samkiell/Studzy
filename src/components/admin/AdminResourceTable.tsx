@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { ResourceStatus } from "@/types/database";
-import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { EditResourceModal } from "./EditResourceModal";
 import { Modal, useModal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -200,7 +200,17 @@ export function AdminResourceTable({
                         <div className="flex items-center gap-3">
                           <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden ${typeColors[resource.type]}`}>
                             {resource.type === "image" ? (
-                              <img src={resource.file_url} alt="" className="h-full w-full object-cover" />
+                              <a 
+                                href={resource.file_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="relative h-full w-full group/img"
+                              >
+                                <img src={resource.file_url} alt="" className="h-full w-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                  <ExternalLink className="h-3 w-3 text-white" />
+                                </div>
+                              </a>
                             ) : (
                               <Hash className="h-4 w-4" />
                             )}
