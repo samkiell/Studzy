@@ -104,7 +104,7 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl md:text-3xl">
-              Welcome back{displayName ? `, ${displayName}` : ""}
+              Welcome back, {username}
             </h1>
             <span className="hidden rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400 md:block">
               DevCore&apos;23
