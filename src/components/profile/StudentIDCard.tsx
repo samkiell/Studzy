@@ -51,16 +51,11 @@ export function StudentIDCard({
   
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
+  const exportFrontRef = useRef<HTMLDivElement>(null);
+  const exportBackRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const stackOptions = [
-    "Frontend Dev",
-    "Backend Dev",
-    "Full Stack Dev",
-    "UI/UX Dev",
-    "Mobile Dev",
-    "Game Dev"
-  ];
+  const stackOptions = ["Frontend Dev", "Backend Dev", "Full Stack Dev", "UI/UX Dev", "Mobile Dev", "Game Dev"];
 
   // Sync internal state
   useEffect(() => {
@@ -110,50 +105,26 @@ export function StudentIDCard({
   };
 
   // --- Capture Side Logic ---
-  const captureSide = async (ref: React.RefObject<HTMLDivElement>, isBack: boolean = false) => {
-    if (!ref.current) return null;
+  const captureSide = async (element: HTMLElement | null) => {
+    if (!element) return null;
     const html2canvas = (await import("html2canvas")).default;
     
-    // Create a configuration that preserves colors and quality
-    return await html2canvas(ref.current, {
-      scale: 4, // Higher scale for even better resolution
+    // Capture from the pre-flattened hidden elements
+    return await html2canvas(element, {
+      scale: 4, 
       useCORS: true,
       allowTaint: true,
-      backgroundColor: null, // Allow CSS backgrounds (gradients, colors) to be captured
+      backgroundColor: null,
       logging: false,
       width: 300,
       height: 450,
-      windowWidth: 1200, // Prevent layout shifts during capture
-      windowHeight: 1800,
       onclone: (doc) => {
-        const clonedEl = doc.getElementById(ref.current!.id);
-        if (clonedEl instanceof HTMLElement) {
-          // Flatten 3D transforms but keep the visual identity
-          clonedEl.style.transform = "none";
-          clonedEl.style.perspective = "none";
-          clonedEl.style.transition = "none";
-          clonedEl.style.borderRadius = "24px"; // Match UI rounded corners
-          clonedEl.style.overflow = "hidden";
-          
-          // Force all descendants to be flat but keep colors/filters intact
-          const children = clonedEl.querySelectorAll("*");
-          children.forEach((child) => {
-            if (child instanceof HTMLElement) {
-              child.style.transform = "none";
-              child.style.transition = "none";
-              child.style.perspective = "none";
-              child.style.backfaceVisibility = "visible";
-              child.style.animation = "none";
-            }
-          });
-
-          // Un-mirror any parent rotation in the clone
-          let parent = clonedEl.parentElement;
-          while (parent) {
-             parent.style.transform = "none";
-             parent.style.perspective = "none";
-             parent = parent.parentElement;
-          }
+        const el = doc.getElementById(element.id);
+        if (el) {
+          el.style.transform = "none";
+          el.style.opacity = "1";
+          el.style.visibility = "visible";
+          el.style.display = "block";
         }
       }
     });
@@ -162,20 +133,11 @@ export function StudentIDCard({
   // --- Export Logic ---
   const handleExport = async (format: "png" | "pdf") => {
     setIsExporting(true);
+    const t = toast.loading(`Generating ${format.toUpperCase()}...`);
     try {
-      const wasFlipped = isFlipped;
-      
-      // Capture front
-      setIsFlipped(false);
-      await new Promise(r => setTimeout(r, 600)); 
-      const frontCanvas = await captureSide(frontRef, false);
-      
-      // Capture back
-      setIsFlipped(true);
-      await new Promise(r => setTimeout(r, 800)); 
-      const backCanvas = await captureSide(backRef, true);
-
-      setIsFlipped(wasFlipped);
+      // Capture from the hidden FLAT renderers to guarantee no mirroring/bending
+      const frontCanvas = await captureSide(exportFrontRef.current);
+      const backCanvas = await captureSide(exportBackRef.current);
 
       if (!frontCanvas || !backCanvas) throw new Error("Capture failed");
 
@@ -186,34 +148,25 @@ export function StudentIDCard({
         frontLink.click();
         await new Promise(r => setTimeout(r, 500));
         const backLink = document.createElement("a");
-        backLink.download = `studzy-id-${username}-back.png`;
-        backLink.href = backCanvas.toDataURL("image/png", 1.0);
-        backLink.click();
+        download(backCanvas, `studzy-id-${username}-back.png`);
       } else if (format === "pdf") {
         const jspdfModule = await import("jspdf");
         const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
         
-        // Use a7 format but ensure high DPI handling
-        const pdf = new jsPDF({ 
-          orientation: "portrait", 
-          unit: "mm", 
-          format: "a7",
-          compress: false // Avoid extra compression that can distort colors
-        });
-        
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a7", compress: false });
         const width = pdf.internal.pageSize.getWidth();
         const height = pdf.internal.pageSize.getHeight();
         
-        // Use PNG format within PDF to keep transparency/gradients accurate
         pdf.addImage(frontCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "FAST");
         pdf.addPage();
         pdf.addImage(backCanvas.toDataURL("image/png", 1.0), "PNG", 0, 0, width, height, undefined, "FAST");
         
         pdf.save(`studzy-id-${username}.pdf`);
       }
+      toast.success("Ready for download!", { id: t });
     } catch (err) {
       console.error("Export failed:", err);
-      toast.error("Failed to export card.");
+      toast.error("Failed to export card.", { id: t });
     } finally {
       setIsExporting(false);
     }
@@ -221,8 +174,8 @@ export function StudentIDCard({
 
   const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
 
-  const FrontFaceContent = () => (
-    <div id="id-front" className={`${cardFaceClasses} bg-[#0a0a0a]`}>
+  const FrontFaceContent = ({ isExport = false }: { isExport?: boolean }) => (
+    <div id={isExport ? "export-id-front" : "id-front"} className={`${cardFaceClasses} bg-[#0a0a0a]`}>
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-primary-950/30 to-transparent z-0" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       
@@ -245,19 +198,19 @@ export function StudentIDCard({
         <div className="text-center space-y-5">
           <div 
             className={`relative mx-auto w-32 h-32 group/avatar ${isViewOnly ? '' : 'cursor-pointer'}`}
-            onClick={handleAvatarClick}
+            onClick={!isExport ? handleAvatarClick : undefined}
           >
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
              <div className="absolute inset-2 rounded-full border border-white/10" />
              <div className="absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10 transition-transform duration-300">
                 {currentAvatarUrl ? (
-                  <Image src={currentAvatarUrl} alt={displayName} fill className="object-cover" key={currentAvatarUrl} />
+                  <Image src={currentAvatarUrl} alt={displayName} fill className="object-cover" key={currentAvatarUrl} unoptimized={isExport} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-neutral-800/50 backdrop-blur-sm">
                     <Camera className="w-10 h-10 text-primary-500/40 animate-pulse" />
                   </div>
                 )}
-                {!isUploading && !isViewOnly && (
+                {!isUploading && !isViewOnly && !isExport && (
                   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                     <Camera className="w-6 h-6 text-white/80 mb-1" />
                     <span className="text-[8px] font-bold uppercase tracking-widest text-white/80">Change Photo</span>
@@ -277,18 +230,18 @@ export function StudentIDCard({
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!isViewOnly) setShowStackMenu(!showStackMenu);
+                  if (!isViewOnly && !isExport) setShowStackMenu(!showStackMenu);
                 }}
-                className={`group/stack relative px-4 py-1 text-primary-400 font-bold text-sm tracking-tight flex items-center justify-center transition-all ${!isViewOnly ? 'hover:opacity-80 active:scale-95' : ''}`}
-                disabled={isViewOnly}
+                className={`group/stack relative px-4 py-1 text-primary-400 font-bold text-sm tracking-tight flex items-center justify-center transition-all ${!isViewOnly && !isExport ? 'hover:opacity-80 active:scale-95' : ''}`}
+                disabled={isViewOnly || isExport}
               >
                 <span className="relative z-10">{stack.toUpperCase()}</span>
-                {!isViewOnly && (
+                {!isViewOnly && !isExport && (
                   <RotateCcw className="absolute -right-1 w-3 h-3 opacity-50 group-hover/stack:opacity-100 transition-opacity" />
                 )}
               </button>
               
-              {showStackMenu && !isViewOnly && (
+              {showStackMenu && !isViewOnly && !isExport && (
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-50 bg-[#0f0f0f] border border-white/10 rounded-xl py-2 shadow-2xl z-50 backdrop-blur-xl ring-1 ring-white/5 pl-2">
                   {stackOptions.map((opt) => (
                     <button
@@ -314,9 +267,9 @@ export function StudentIDCard({
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Department</span>
               <span className="text-[11px] font-bold text-white/90">Software Engineering</span>
             </div>
-            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
+            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md min-h-[44px]">
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">ClassName</span>
-              <span className="text-[11px] font-bold text-white/90 truncate max-w-[110px]">DevCore&apos;23</span>
+              <span className="text-[11px] font-bold text-white/90 truncate max-w-[140px]">DevCore&apos;23</span>
             </div>
           </div>
         </div>
@@ -326,15 +279,15 @@ export function StudentIDCard({
               &quot;Study smarter. bag 5.0.&quot;
            </div>
            <div className="bg-white p-1 rounded-lg shadow-xl ring-1 ring-black/10">
-              <QRCode value={`https://studzy.me/id/${username}`} size={40} />
+              <QRCode value={isExport ? `https://studzy.me/id/${username}` : `https://studzy.me/id/${username}`} size={44} />
            </div>
         </div>
       </div>
     </div>
   );
 
-  const BackFaceContent = () => (
-    <div id="id-back" className={`${cardFaceClasses} bg-[#0a0a0a]`}>
+  const BackFaceContent = ({ isExport = false }: { isExport?: boolean }) => (
+    <div id={isExport ? "export-id-back" : "id-back"} className={`${cardFaceClasses} bg-[#0a0a0a]`}>
       <div className="absolute inset-0 bg-gradient-to-t from-primary-950/20 to-transparent z-10" />
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-900 via-transparent to-transparent z-0" />
       
@@ -383,9 +336,15 @@ export function StudentIDCard({
     <div className="flex flex-col items-center gap-6" onClick={() => setShowStackMenu(false)}>
       {!isViewOnly && <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />}
 
+      {/* Hidden Flat Renderers for Perfect Export */}
+      <div className="fixed left-[-9999px] top-[-9999px] pointer-events-none opacity-0 overflow-hidden" aria-hidden="true">
+        <div ref={exportFrontRef} id="export-id-front"><FrontFaceContent isExport={true} /></div>
+        <div ref={exportBackRef} id="export-id-back"><BackFaceContent isExport={true} /></div>
+      </div>
+
       <div>
         <div 
-          className={`group relative h-[450px] w-[300px] cursor-pointer perspective-1000 ${isExporting ? 'pointer-events-none' : ''}`}
+          className={`group relative h-[450px] w-[300px] cursor-pointer perspective-1000 ${isExporting ? 'pointer-events-none opacity-50' : ''}`}
           onClick={() => !isExporting && !isUploading && setIsFlipped(!isFlipped)}
         >
           <div className={`relative h-full w-full transition-all duration-700 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
