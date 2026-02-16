@@ -53,6 +53,19 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [pathname]);
 
+  // Safety timeout: clear loading if it's stuck for more than 5 seconds
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (loading) {
+      timeout = setTimeout(() => {
+        setLoading(false);
+      }, 5000);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [loading]);
+
   return (
     <LoadingContext.Provider value={{ isLoading: loading, message, startLoading, stopLoading }}>
       {loading && (
