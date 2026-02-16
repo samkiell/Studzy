@@ -140,35 +140,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 🚀 LOGIC FOR AGENT VS BASE MODEL
-    // We use the Agent ID if it exists, which handles both text and vision content.
-    if (MISTRAL_AI_AGENT_ID) {
-      console.log(`AI Request - Mode: ${mode}, Using Agent: ${MISTRAL_AI_AGENT_ID}, Has Images: ${hasImages}`);
-      try {
-        const response = await client.agents.stream({
-          agentId: MISTRAL_AI_AGENT_ID,
-          messages: mistralMessages,
-        });
-        return streamResponse(response);
-      } catch (agentError: any) {
-        console.error("Mistral Agent Error:", agentError);
-        throw agentError;
-      }
-    } else {
-      // Fallback if no agent is configured
-      try {
-        const model = hasImages ? "pixtral-12b-2409" : "mistral-large-latest";
-        console.warn(`[API] MISTRAL_AI_AGENT_ID not set. Falling back to base model: ${model}`);
-        const response = await client.chat.stream({
-          model: model,
-          messages: mistralMessages,
-          temperature: mode === "code" ? 0.3 : 0.7,
-        });
-        return streamResponse(response);
-      } catch (chatError: any) {
-        console.error("Mistral Chat Error:", chatError);
-        throw chatError;
-      }
+    // 🚀 LOGIC FOR AGENT
+    // We strictly use the Agent ID from env, which handles both text and vision content.
+    if (!MISTRAL_AI_AGENT_ID) {
+      return NextResponse.json(
+        { error: "Mistral AI Agent ID not configured" },
+        { status: 500 }
+      );
+    }
+
+    console.log(`AI Request - Mode: ${mode}, Using Agent: ${MISTRAL_AI_AGENT_ID}, Has Images: ${hasImages}`);
+    
+    try {
+      const response = await client.agents.stream({
+        agentId: MISTRAL_AI_AGENT_ID,
+        messages: mistralMessages,
+      });
+      return streamResponse(response);
+    } catch (agentError: any) {
+      console.error("Mistral Agent Error:", agentError);
+      return NextResponse.json(
+        { error: `Mistral Agent Error: ${agentError.message}` },
+        { status: 500 }
+      );
     }
   } catch (error: any) {
     console.error("Total AI API Failure:", error);

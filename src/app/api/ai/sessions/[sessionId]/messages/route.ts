@@ -235,32 +235,19 @@ async function callMistralAI(
   }
 
   // Force Agent Logic
-  if (MISTRAL_AI_AGENT_ID) {
-    try {
-      // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
-      const response = await client.agents.complete({
-        agentId: MISTRAL_AI_AGENT_ID,
-        messages: mistralMessages,
-      });
-      return response.choices?.[0]?.message?.content?.toString() || "No response";
-    } catch (agentError: any) {
-      console.error("Mistral Agent Error:", agentError);
-      throw agentError;
-    }
-  } else {
-    // Fallback Vision/Standard if no agent configured
-    try {
-      const model = hasVisionContent ? "pixtral-large-latest" : "mistral-large-latest";
-      console.warn(`[API] MISTRAL_AI_AGENT_ID not set. Falling back to base model: ${model}`);
-      const response = await client.chat.complete({
-        model: model,
-        messages: mistralMessages,
-        temperature: mode === "code" ? 0.3 : 0.7,
-      });
-      return response.choices?.[0]?.message?.content?.toString() || "No response";
-    } catch (chatError: any) {
-      console.error("Mistral Chat Error:", chatError);
-      throw chatError;
-    }
+  if (!MISTRAL_AI_AGENT_ID) {
+    return "Error: Mistral AI Agent ID not configured in environment variables.";
+  }
+
+  try {
+    // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
+    const response = await client.agents.complete({
+      agentId: MISTRAL_AI_AGENT_ID,
+      messages: mistralMessages,
+    });
+    return response.choices?.[0]?.message?.content?.toString() || "No response";
+  } catch (agentError: any) {
+    console.error("Mistral Agent Error:", agentError);
+    return `Sorry, I encountered an error with the AI Agent: ${agentError.message}`;
   }
 }

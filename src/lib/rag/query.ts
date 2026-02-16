@@ -143,14 +143,25 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
   const systemPrompt = buildSystemPrompt(chunks);
 
   // Step 4: Generate response
-  const response = await client.chat.complete({
-    model: CHAT_MODEL,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: question },
-    ],
-    temperature: 0.3, // Low temperature for factual answers
-  });
+  const agentId = process.env.MISTRAL_AI_AGENT_ID;
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: question },
+  ];
+
+  let response;
+  if (agentId) {
+    response = await client.agents.complete({
+      agentId: agentId,
+      messages: messages as any,
+    });
+  } else {
+    response = await client.chat.complete({
+      model: CHAT_MODEL,
+      messages: messages as any,
+      temperature: 0.3,
+    });
+  }
 
   const answer =
     response.choices?.[0]?.message?.content || "Unable to generate a response.";
