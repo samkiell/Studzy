@@ -39,7 +39,7 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
             <Image src="/favicon.png" alt="Studzy" width={28} height={28} />
             <span className="text-xl font-bold text-primary-600">Studzy</span>
           </SmartLink>
-          <div className="hidden items-center gap-4 md:flex">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SmartLink 
               href="/dashboard" 
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
@@ -49,9 +49,9 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
             {isAdmin && (
               <SmartLink 
                 href="/admin"
-                className="flex items-center gap-1.5 rounded-md bg-amber-100 px-2.5 py-1 text-sm font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
+                className="flex items-center gap-1.5 rounded-md bg-amber-100 px-2 py-1 text-[11px] sm:text-sm font-bold sm:font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-3.5 w-3.5 sm:h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
                 Admin

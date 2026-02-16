@@ -157,6 +157,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const videoCount = typedResources.filter((r) => r.type === "video").length;
   const audioCount = typedResources.filter((r) => r.type === "audio").length;
   const pdfCount = typedResources.filter((r) => r.type === "pdf").length;
+  const imageCount = typedResources.filter((r) => r.type === "image").length;
 
   const jsonLd = {
     "@context": "https://schema.org",
