@@ -168,15 +168,24 @@ export async function POST(request: NextRequest) {
     console.log(`[API] AI Request - Mode: ${mode}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
     
     try {
-      // ✅ UNIFIED AGENT LOGIC: Always use the Agent ID. 
-      // The Agent's configuration (on Mistral dashboard) determines if it can search.
+      if (shouldUseWebSearch) {
+        console.log("[API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
+        const response = await client.chat.stream({
+          model: "mistral-large-latest",
+          messages: mistralMessages,
+          web_search: true as any,
+        });
+        return streamResponse(response, mode);
+      }
+
+      // ✅ Standard Agent Logic
       const response = await client.agents.stream({
         agentId: MISTRAL_AI_AGENT_ID,
         messages: mistralMessages,
       });
       return streamResponse(response, mode);
     } catch (apiError: any) {
-      console.error("[API] ❌ Mistral Agent failure:", apiError);
+      console.error("[API] ❌ Mistral failure:", apiError);
       return NextResponse.json(
         { error: `Mistral API Error: ${apiError.message}` },
         { status: 500 }

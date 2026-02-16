@@ -253,12 +253,27 @@ async function callMistralAI(
     return "Error: Mistral AI Agent ID not configured in environment variables.";
   }
 
-  const shouldUseWebSearch = enableSearch || mode === "search";
-  console.log(`[Messages API] Request - Mode: ${mode}, Has Images: ${hasImageRequest}, WebSearch: ${shouldUseWebSearch}`);
-
   try {
-    // ✅ UNIFIED AGENT LOGIC: Always use the Agent ID. 
-    // The Agent's configuration (on Mistral dashboard) determines if it can search.
+    const shouldUseWebSearch = enableSearch || mode === "search";
+
+    if (shouldUseWebSearch) {
+      console.log("[Messages API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
+      const response = await client.chat.complete({
+        model: "mistral-large-latest",
+        messages: mistralMessages,
+        web_search: true as any,
+      });
+
+      const choice = response.choices?.[0];
+      const content = choice?.message?.content?.toString();
+      
+      if (!content) {
+        console.warn("[Messages API] ⚠️ Search returned empty content. Response:", JSON.stringify(response, null, 2));
+      }
+      return content || "Search completed but I couldn't summarize the findings.";
+    }
+
+    // ✅ Standard Agent Logic
     const response = await client.agents.complete({
       agentId: MISTRAL_AI_AGENT_ID,
       messages: mistralMessages,
@@ -272,9 +287,7 @@ async function callMistralAI(
       const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
       console.log(`[Messages API] 🛠️ AI requested tools: ${toolNames}`);
       
-      return mode === "search" 
-        ? "I am currently attempting to search the web for this information. Please ensure that 'Search' is enabled on your Mistral Agent dashboard so I can provide the results!"
-        : `I need to use ${toolNames} to answer this, but I don't have local execution enabled for those tools yet.`;
+      return `I need to use tools (${toolNames}) to answer this, but they are not yet fully integrated for automatic execution in this mode.`;
     }
 
     if (!content) {
@@ -283,7 +296,7 @@ async function callMistralAI(
     
     return content || "The AI agent did not provide a text response.";
   } catch (apiError: any) {
-    console.error("[Messages API] ❌ Mistral Agent failure:", apiError);
+    console.error("[Messages API] ❌ Mistral failure:", apiError);
     return `Sorry, I encountered an error with the AI Service: ${apiError.message}`;
   }
 }
