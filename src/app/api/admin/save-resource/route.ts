@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
         file_url: fileUrl,
         description: description?.trim() || null,
         status: status || "published",
+        uploader_id: user.id,
       })
       .select()
       .single();
