@@ -31,23 +31,16 @@ export function ImageViewer({ src, title }: ImageViewerProps) {
             >
               <Maximize2 className={`h-5 w-5 ${isZoomed ? "rotate-180" : ""}`} />
             </button>
-            <a
-              href={src}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-all hover:bg-black/70"
-              title="Open Original"
-            >
-              <ExternalLink className="h-5 w-5" />
-            </a>
           </div>
         </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-4 dark:border-neutral-800">
-          <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-            Image Resource
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+              Studzy Watermark
+            </p>
+          </div>
           <a
             href={src}
             download={title}
