@@ -277,7 +277,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ViewTracker resourceId={resource.id} />
-      <StudyTimeTracker />
+      <StudyTimeTracker courseId={course.id} />
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">

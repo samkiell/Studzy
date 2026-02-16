@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react";
 
-export function StudyTimeTracker() {
+interface StudyTimeTrackerProps {
+  courseId?: string;
+}
+
+export function StudyTimeTracker({ courseId }: StudyTimeTrackerProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -12,6 +16,7 @@ export function StudyTimeTracker() {
         await fetch("/api/study/heartbeat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ courseId }),
         });
       } catch (err) {
         // Silently fail, heartbeat is low priority

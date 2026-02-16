@@ -6,6 +6,7 @@ import { Video, Music, FileText } from "lucide-react";
 import { ResourceList } from "@/components/resources/ResourceList";
 import { CourseProgress } from "@/components/courses/CourseProgress";
 import { ShareCourseButton } from "@/components/courses/ShareCourseButton";
+import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 import type { Course, Resource } from "@/types/database";
 import type { Metadata } from "next";
 
@@ -178,6 +179,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <StudyTimeTracker courseId={typedCourse.id} />
       {/* Breadcrumb */}
       <nav>
         <ol className="flex items-center gap-2 text-sm">
