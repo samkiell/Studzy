@@ -12,7 +12,8 @@ import {
   BookOpen,
   FileText,
   Eye,
-  Users
+  Users,
+  BrainCircuit
 } from "lucide-react";
 
 export default async function AdminPage() {
@@ -136,8 +137,8 @@ export default async function AdminPage() {
           {[
             { href: "/admin/upload", label: "Upload Resource", desc: "Add new materials", icon: CloudUpload, bg: "bg-primary-100", color: "text-primary-600" },
             { href: "/admin/resources", label: "Manage Content", desc: "Edit resources", icon: ClipboardCheck, bg: "bg-amber-100", color: "text-amber-600" },
+            { href: "/admin/rag", label: "AI Knowledge", desc: "Sync semantic data", icon: BrainCircuit, bg: "bg-purple-100", color: "text-purple-600" },
             { href: "/admin/courses", label: "Manage Courses", desc: "Edit code/title/desc", icon: BookOpen, bg: "bg-blue-100", color: "text-blue-600" },
-            { href: "/dashboard", label: "Preview App", desc: "View as student", icon: LayoutDashboard, bg: "bg-green-100", color: "text-green-600" },
           ].map((action) => (
             <Link
               key={action.label}
@@ -165,12 +166,17 @@ export default async function AdminPage() {
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {recentResources?.map((resource: any) => (
                 <div key={resource.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden ${
                     resource.type === "video" ? "bg-red-50 text-red-600" : 
                     resource.type === "audio" ? "bg-purple-50 text-purple-600" : 
+                    resource.type === "image" ? "bg-emerald-50 text-emerald-600" :
                     "bg-blue-50 text-blue-600"
                   } dark:bg-opacity-10`}>
-                    <FileText className="h-5 w-5" />
+                    {resource.type === "image" ? (
+                      <img src={resource.file_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <FileText className="h-5 w-5" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-neutral-900 dark:text-white truncate">{resource.title}</h4>
@@ -205,12 +211,16 @@ export default async function AdminPage() {
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {onlineUsersList?.map((user: any) => (
                 <div key={user.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 font-bold">
-                    {(user.full_name?.[0] || user.email[0]).toUpperCase()}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 font-bold overflow-hidden">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      (user.username?.[0] || user.full_name?.[0] || user.email[0]).toUpperCase()
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-neutral-900 dark:text-white truncate">
-                      {user.full_name || "Anonymous Student"}
+                      {user.username || user.full_name || "New Student"}
                     </h4>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
                   </div>
