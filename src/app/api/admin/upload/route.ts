@@ -9,6 +9,18 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
   video: ["video/mp4", "video/webm", "video/ogg", "video/quicktime"],
   pdf: ["application/pdf"],
   image: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"],
+  document: [
+    "text/plain",
+    "text/markdown",
+    "text/csv",
+    "application/json",
+    "text/javascript",
+    "application/javascript",
+    "application/typescript",
+    "text/x-typescript",
+    "text/x-python",
+    "application/x-python-code",
+  ],
 };
 
 export async function POST(request: NextRequest) {
