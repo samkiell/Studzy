@@ -8,7 +8,7 @@ import type { ResourceType } from "@/types/database";
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 const ALLOWED_TYPES: Record<ResourceType, string[]> = {
-  audio: ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp3", "audio/m4a"],
+  audio: ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp3", "audio/m4a", "audio/x-m4a"],
   video: ["video/mp4", "video/webm", "video/ogg", "video/quicktime"],
   pdf: ["application/pdf"],
   image: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"],
