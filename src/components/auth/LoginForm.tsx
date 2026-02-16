@@ -28,9 +28,26 @@ export function LoginForm() {
 
     try {
       const supabase = createClient();
+      let loginEmail = email;
+
+      // Handle username login
+      if (!email.includes("@")) {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("username", email)
+          .single();
+
+        if (profileError || !profile?.email) {
+          setError("Username not found. Please check and try again.");
+          setLoading(false);
+          return;
+        }
+        loginEmail = profile.email;
+      }
 
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
       });
 
