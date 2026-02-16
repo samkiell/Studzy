@@ -9,6 +9,18 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
   video: ["video/mp4", "video/webm", "video/ogg", "video/quicktime"],
   pdf: ["application/pdf"],
   image: ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"],
+  document: [
+    "text/plain",
+    "text/markdown",
+    "text/csv",
+    "application/json",
+    "text/javascript",
+    "application/javascript",
+    "application/typescript",
+    "text/x-typescript",
+    "text/x-python",
+    "application/x-python-code",
+  ],
 };
 
 export async function POST(request: NextRequest) {
@@ -87,7 +99,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 🎓 If this is a RAG upload, trigger ingestion automatically
-    if (isRAG && type === "pdf") {
+    // We support PDF and generic text documents
+    if (isRAG && (type === "pdf" || type === "document")) {
       try {
         const { ingestFile } = await import("@/lib/rag/ingestion");
         console.log(`[RAG Upload] Triggering auto-ingestion for: ${uploadData.path}`);
