@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
+import { AdminHeader } from "@/components/admin/AdminHeader";
 
 export default async function AdminLayout({
   children,
@@ -27,11 +27,11 @@ export default async function AdminLayout({
     // Not an admin - show access denied
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 dark:bg-neutral-950">
-        <div className="text-center">
+        <div className="max-w-md w-full text-center">
           <div className="mb-6 flex justify-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+            <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
               <svg
-                className="h-12 w-12 text-red-500"
+                className="h-10 w-10 sm:h-12 sm:w-12 text-red-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -45,15 +45,15 @@ export default async function AdminLayout({
               </svg>
             </div>
           </div>
-          <h1 className="mb-2 text-3xl font-bold text-neutral-900 dark:text-white">
+          <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white">
             Access Denied
           </h1>
-          <p className="mb-8 text-neutral-600 dark:text-neutral-400">
-            You don't have permission to access the admin area.
+          <p className="mb-8 text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
+            You don&apos;t have permission to access the admin area.
           </p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-700"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary-600 px-8 py-3.5 font-bold text-white shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-700 hover:scale-[1.02] active:scale-[0.98]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -72,62 +72,13 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      {/* Admin Header */}
-      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <Image src="/favicon.png" alt="Studzy" width={28} height={28} />
-              <span className="text-xl font-bold text-primary-600">Studzy</span>
-            </Link>
-            <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-              Admin
-            </span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/admin"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/admin/upload"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-            >
-              Upload
-            </Link>
-            <Link
-              href="/admin/resources"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-            >
-              Resources
-            </Link>
-            <Link
-              href="/admin/analytics"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-            >
-              Analytics
-            </Link>
-            <Link
-              href="/admin/users"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-            >
-              Users
-            </Link>
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
-            >
-              EXIT
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <AdminHeader />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {children}
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {children}
+        </div>
       </main>
     </div>
   );
