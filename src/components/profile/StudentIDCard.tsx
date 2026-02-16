@@ -24,6 +24,7 @@ interface StudentIDCardProps {
   avatarUrl: string | null;
   role?: string;
   isViewOnly?: boolean;
+  initialStack?: string;
   stats?: {
     streak: number;
     hours: number;
@@ -38,13 +39,14 @@ export function StudentIDCard({
   avatarUrl,
   role = "Student",
   isViewOnly = false,
+  initialStack = "Frontend Dev",
   stats = { streak: 0, hours: 0, rank: 0, bookmarks: 0 }
 }: StudentIDCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
-  const [stack, setStack] = useState("Frontend Dev");
+  const [stack, setStack] = useState(initialStack);
   const [showStackMenu, setShowStackMenu] = useState(false);
   
   const frontRef = useRef<HTMLDivElement>(null);
