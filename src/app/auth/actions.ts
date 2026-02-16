@@ -5,8 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getURL } from "@/lib/utils";
-import { sendEmail } from "@/lib/email";
-import { getEmailTemplate } from "@/lib/email-templates";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -49,7 +47,7 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${getURL()}auth/callback`,
+      emailRedirectTo: `${getURL()}auth/confirm`,
       data: {
         username: username,
         full_name: username, // Fallback for various UI parts
@@ -66,38 +64,10 @@ export async function signup(formData: FormData) {
     return { error: "An account with this email already exists" };
   }
 
-  // If email confirmation is required, send it manually via SMTP
+  // If email confirmation is required, Supabase will send the email automatically
+  // (configured via Supabase Dashboard email templates)
   if (data.session === null && data.user) {
-    try {
-      const adminClient = createAdminClient();
-      const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-        type: 'signup',
-        email,
-        password, // We have the password here
-        options: {
-          redirectTo: `${getURL()}auth/callback`,
-        },
-      });
-
-      if (linkError) throw linkError;
-
-      const template = getEmailTemplate('confirm', {
-        link: linkData.properties.action_link,
-      });
-
-      await sendEmail({
-        to: email,
-        subject: template.subject,
-        html: template.html,
-      });
-
-      return { success: true, message: "Check your email for a confirmation link" };
-    } catch (err: any) {
-      console.error("Manual signup email failed:", err);
-      // Even if manual email fails, the user is created in Supabase.
-      // They just won't get the custom email. 
-      return { success: true, message: "Check your email for a confirmation link (using default provider)" };
-    }
+    return { success: true, message: "Check your email for a confirmation link" };
   }
 
   revalidatePath("/", "layout");

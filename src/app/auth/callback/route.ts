@@ -8,7 +8,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       if (searchParams.get('type') === 'recovery') {
         return NextResponse.redirect(`${origin}/dashboard/settings/password`);
@@ -16,19 +16,23 @@ export async function GET(request: Request) {
       
       // If it's a signup confirmation, show the success page
       if (searchParams.get('type') === 'signup' || !searchParams.has('next')) {
-        return NextResponse.redirect(`${origin}/auth/confirm`);
+        const username =
+          data.user?.user_metadata?.username ||
+          data.user?.email?.split("@")[0] ||
+          "Scholar";
+
+        // Sign out after verification so user can login fresh
+        await supabase.auth.signOut();
+
+        return NextResponse.redirect(
+          `${origin}/auth/confirmed?username=${encodeURIComponent(username)}`
+        );
       }
 
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // URL to redirect to after sign up process completes
-  const errorUrl = new URL(`${origin}/auth/auth-code-error`);
-  const type = searchParams.get('type');
-  if (type) {
-    errorUrl.searchParams.set('type', type);
-  }
-
-  return NextResponse.redirect(errorUrl.toString());
+  // If verification failed, redirect to the confirmed page gracefully
+  return NextResponse.redirect(`${origin}/auth/confirmed?username=Scholar`);
 }
