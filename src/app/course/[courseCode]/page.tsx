@@ -206,12 +206,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
             <span className="inline-flex items-center rounded-lg bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
               {typedCourse.code}
             </span>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white sm:text-3xl">
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-white sm:text-3xl">
               {typedCourse.title}
             </h1>
             <StudyBuddies courseId={typedCourse.id} />
             {typedCourse.description && (
-              <p className="max-w-2xl text-neutral-600 dark:text-neutral-400">
+              <p className="max-w-2xl text-sm text-neutral-600 dark:text-neutral-400 sm:text-base">
                 {typedCourse.description}
               </p>
             )}
@@ -247,7 +247,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
       {/* Resources Section */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white sm:text-xl">
           Course Resources
         </h2>
         <ResourceList resources={typedResources} courseId={typedCourse.id} courseCode={typedCourse.code} />

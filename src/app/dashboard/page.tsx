@@ -100,7 +100,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white md:text-3xl">
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl md:text-3xl">
               Welcome back{displayName ? `, ${displayName}` : ""}
             </h1>
             <span className="hidden rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400 md:block">
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
           <ContinueStudying />
           
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            <h2 className="text-base font-semibold text-neutral-900 dark:text-white sm:text-lg">
               Your Courses
             </h2>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
@@ -187,7 +187,7 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
           {icon}

@@ -309,7 +309,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           <div className="flex items-start gap-4">
             {/* Type Icon */}
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${
                 resource.type === "video"
                   ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
                   : resource.type === "audio"
@@ -368,11 +368,11 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             </div>
 
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+              <h1 className="text-lg font-bold text-neutral-900 dark:text-white sm:text-2xl">
                 {resource.title}
               </h1>
               {resource.description && (
-                <p className="mt-1 text-neutral-600 dark:text-neutral-400">
+                <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 sm:text-sm">
                   {resource.description}
                 </p>
               )}
