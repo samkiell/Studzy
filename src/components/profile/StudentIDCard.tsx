@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import QRCode from "react-qr-code";
 import { 
@@ -11,20 +11,20 @@ import {
   Clock, 
   Bookmark, 
   Printer, 
-  RotateCcw
+  RotateCcw,
+  Camera,
+  Loader2
 } from "lucide-react";
-// Moved to dynamic imports inside handleExport to prevent build-time resolution issues with core-js
-
-import { Button } from "@/components/ui/Button"; // Assuming Button exists, or use generic
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { toast } from "react-hot-toast";
 
 interface StudentIDCardProps {
   displayName: string;
   username: string;
-  bio: string | null; // Kept for interface compatibility but might not be used on face
+  bio: string | null;
   learningGoal: string | null;
   avatarUrl: string | null;
-  role?: string; // "Student" | "Admin"
+  role?: string;
   stats?: {
     streak: number;
     hours: number;
@@ -42,8 +42,69 @@ export function StudentIDCard({
 }: StudentIDCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
+  
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync internal state with prop if it changes externally
+  useEffect(() => {
+    setCurrentAvatarUrl(avatarUrl);
+  }, [avatarUrl]);
+
+  // --- Avatar Upload Logic ---
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't flip the card when clicking avatar
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Basic validation
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image too large (max 5MB)");
+      return;
+    }
+
+    setIsUploading(true);
+    const uploadToast = toast.loading("Uploading new avatar...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      // Immediate UI update
+      setCurrentAvatarUrl(data.url);
+      toast.success("Avatar updated!", { id: uploadToast });
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(err.message || "Failed to upload avatar", { id: uploadToast });
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   // --- Capture Side Logic ---
   const captureSide = async (ref: React.RefObject<HTMLDivElement>) => {
@@ -52,18 +113,14 @@ export function StudentIDCard({
     return await html2canvas(ref.current, {
       scale: 3,
       useCORS: true,
-      backgroundColor: "#0a0a0a", // Match site dark mode exactly
+      backgroundColor: "#0a0a0a",
       logging: false,
       onclone: (doc) => {
-        // Find the element in the cloned document
-        // We look for any element that might have the rotation class
-        const clonedEl = doc.querySelector(`[ref="${ref.current}"]`) || doc.getElementById(ref.current!.id);
+        const clonedEl = doc.getElementById(ref.current!.id);
         if (clonedEl instanceof HTMLElement) {
           clonedEl.style.transform = "none";
           clonedEl.style.transition = "none";
         }
-        
-        // Also ensure any parent containers in the clone don't have rotation
         const elementsWithRotation = doc.querySelectorAll(".rotate-y-180, .preserve-3d");
         elementsWithRotation.forEach((el) => {
           if (el instanceof HTMLElement) {
@@ -78,7 +135,6 @@ export function StudentIDCard({
   // --- Export Logic ---
   const handleExport = async (format: "png" | "pdf") => {
     setIsExporting(true);
-
     try {
       const frontCanvas = await captureSide(frontRef);
       const backCanvas = await captureSide(backRef);
@@ -86,16 +142,11 @@ export function StudentIDCard({
       if (!frontCanvas || !backCanvas) throw new Error("Capture failed");
 
       if (format === "png") {
-        // Front
         const frontLink = document.createElement("a");
         frontLink.download = `studzy-id-${username}-front.png`;
         frontLink.href = frontCanvas.toDataURL("image/png");
         frontLink.click();
-
-        // Small delay for browser
         await new Promise(r => setTimeout(r, 500));
-
-        // Back
         const backLink = document.createElement("a");
         backLink.download = `studzy-id-${username}-back.png`;
         backLink.href = backCanvas.toDataURL("image/png");
@@ -103,25 +154,17 @@ export function StudentIDCard({
       } else if (format === "pdf") {
         const jspdfModule = await import("jspdf");
         const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
-        
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: "a7"
-        });
-        
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a7" });
         const width = pdf.internal.pageSize.getWidth();
         const height = pdf.internal.pageSize.getHeight();
-        
         pdf.addImage(frontCanvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
         pdf.addPage();
         pdf.addImage(backCanvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
-        
         pdf.save(`studzy-id-${username}.pdf`);
       }
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Failed to export card.");
+      toast.error("Failed to export card.");
     } finally {
       setIsExporting(false);
     }
@@ -131,21 +174,17 @@ export function StudentIDCard({
     window.print();
   };
 
-  // Shared Card Styles
   const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
 
-  // Shared Front Face Content
   const FrontFaceContent = () => (
     <div id="id-front" className={`${cardFaceClasses} bg-[#0a0a0a]`}>
-      {/* Background Decor */}
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-primary-950/30 to-transparent z-0" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       
-      {/* Content */}
-      <div className="relative z-10 h-full flex flex-col p-6 text-white justify-between bg-white/0 backdrop-blur-[1px]">
+      <div className="relative z-10 h-full flex flex-col p-6 text-white justify-between">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shadow-inner">
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
               <Image src="/favicon.png" alt="Logo" width={18} height={18} />
             </div>
             <span className="font-bold tracking-wider text-xs opacity-80">STUDZY ID</span>
@@ -159,19 +198,45 @@ export function StudentIDCard({
         </div>
 
         <div className="text-center space-y-5">
-          <div className="relative mx-auto w-32 h-32">
+          {/* Avatar with Click-to-Upload */}
+          <div className="relative mx-auto w-32 h-32 group/avatar">
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
              <div className="absolute inset-2 rounded-full border border-white/10" />
-             <div className="absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+             <div 
+               className={`absolute inset-3 rounded-full overflow-hidden bg-neutral-900 shadow-2xl ring-1 ring-white/10 transition-transform duration-300 ${!isUploading ? 'cursor-pointer hover:scale-[1.02] active:scale-95' : ''}`}
+               onClick={handleAvatarClick}
+             >
+                {currentAvatarUrl ? (
+                  <Image 
+                    src={currentAvatarUrl} 
+                    alt={displayName} 
+                    fill 
+                    className="object-cover transition-opacity duration-500" 
+                    key={currentAvatarUrl}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-neutral-800">
                     <span className="text-3xl font-black text-primary-400">{username.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
+                
+                {/* Hover Overlay */}
+                {!isUploading && (
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                    <Camera className="w-6 h-6 text-white/80 mb-1" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest text-white/80">Change Photo</span>
+                  </div>
+                )}
+
+                {/* Loading State */}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+                  </div>
+                )}
              </div>
           </div>
+
           <div className="space-y-1">
             <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm">{displayName}</h2>
             <p className="text-primary-400 font-bold text-sm tracking-tight">@{username}</p>
@@ -200,7 +265,6 @@ export function StudentIDCard({
     </div>
   );
 
-  // Shared Back Face Content
   const BackFaceContent = () => (
     <div id="id-back" className={`${cardFaceClasses} bg-[#0a0a0a]`}>
       <div className="absolute inset-0 bg-gradient-to-t from-primary-950/20 to-transparent z-10" />
@@ -249,23 +313,30 @@ export function StudentIDCard({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      
-      {/* 1. SCREEN DISPLAY (Interactive 3D) */}
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept="image/*" 
+        onChange={handleFileChange}
+      />
+
       <div className="print:hidden">
         <div 
           className="group relative h-[450px] w-[300px] cursor-pointer perspective-1000"
-          onClick={() => !isExporting && setIsFlipped(!isFlipped)}
+          onClick={() => !isExporting && !isUploading && setIsFlipped(!isFlipped)}
         >
           <div className={`relative h-full w-full transition-all duration-700 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
-            {/* Front Side Wrapper */}
             <div className="absolute inset-0 backface-hidden" ref={frontRef}>
                <FrontFaceContent />
-               <div className="absolute inset-x-0 bottom-4 flex justify-center opacity-0 group-hover:opacity-40 transition-opacity">
-                  <RotateCcw className="w-4 h-4 text-white animate-pulse" />
-               </div>
+               {!isUploading && (
+                 <div className="absolute inset-x-0 bottom-4 flex justify-center opacity-0 group-hover:opacity-40 transition-opacity">
+                    <RotateCcw className="w-4 h-4 text-white animate-pulse" />
+                 </div>
+               )}
             </div>
 
-            {/* Back Side Wrapper */}
             <div className="absolute inset-0 backface-hidden rotate-y-180" ref={backRef}>
                <BackFaceContent />
                <div className="absolute inset-x-0 bottom-4 flex justify-center opacity-40">
@@ -276,7 +347,6 @@ export function StudentIDCard({
         </div>
       </div>
 
-      {/* 2. PRINT LAYOUT (Hidden on screen) */}
       <div className="hidden print:flex flex-col items-center gap-8 bg-white py-8">
          <div className="page-break-after-always">
             <FrontFaceContent />
@@ -286,23 +356,22 @@ export function StudentIDCard({
          </div>
       </div>
 
-      {/* 3. INTERACTIVE CONTROLS (Hidden in print) */}
       <div className="flex flex-col gap-2 w-full max-w-[300px] print:hidden">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsFlipped(!isFlipped)} className="flex-1">
+          <Button variant="outline" size="sm" onClick={() => setIsFlipped(!isFlipped)} className="flex-1" disabled={isUploading}>
             <RotateCcw className="w-3 h-3 mr-2" /> Flip
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePrint} className="flex-1">
+          <Button variant="outline" size="sm" onClick={handlePrint} className="flex-1" disabled={isUploading}>
             <Printer className="w-3 h-3 mr-2" /> Print
           </Button>
         </div>
         
         <div className="flex gap-2">
-          <Button onClick={() => handleExport("png")} disabled={isExporting} className="flex-1 bg-neutral-900 text-white">
+          <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
             {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
             PNG
           </Button>
-          <Button onClick={() => handleExport("pdf")} disabled={isExporting} className="flex-1 bg-primary-600 text-white">
+          <Button onClick={() => handleExport("pdf")} disabled={isExporting || isUploading} className="flex-1 bg-primary-600 text-white">
             {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3 mr-2" />}
             PDF
           </Button>
