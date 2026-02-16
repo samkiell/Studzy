@@ -3,7 +3,13 @@ import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle2 } from "lucide-react";
 
-export default function ConfirmPage() {
+import { createClient } from "@/lib/supabase/server";
+
+export default async function ConfirmPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Scholar";
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 dark:bg-neutral-950">
       <div className="relative w-full max-w-sm">
@@ -25,11 +31,11 @@ export default function ConfirmPage() {
             </Link>
 
             <h1 className="mt-4 text-2xl font-bold text-neutral-900 dark:text-white">
-              Email Verified!
+              Welcome, {username}!
             </h1>
             
             <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-              Your learning journey at Studzy can now truly begin. Your account is fully activated.
+              Your email has been verified. Your learning journey at Studzy can now truly begin. Your account is fully activated.
             </p>
 
             <div className="mt-8">

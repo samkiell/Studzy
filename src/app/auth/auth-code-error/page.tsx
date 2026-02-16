@@ -71,14 +71,27 @@ export default function AuthCodeErrorPage() {
           Authentication Error
         </h1>
         <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-          There was a problem verifying your authentication. This could be due to an expired or invalid link.
+          We couldn&apos;t verify your account link. This usually happens if the link has expired or was already used.
         </p>
+
         <div className="mt-8 flex flex-col gap-3">
           <Link href="/login">
-            <Button className="w-full">Try signing in again</Button>
+            <Button className="w-full">Sign in to your account</Button>
           </Link>
+          
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-neutral-200 dark:border-neutral-800" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-neutral-50 px-2 text-neutral-500 dark:bg-neutral-950">Still having issues?</span></div>
+          </div>
+
+          <form action="/api/auth/signout" method="post">
+            <Button type="submit" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/30 dark:text-red-400">
+              Clear session & Try again
+            </Button>
+          </form>
+
           <Link href="/">
-            <Button variant="outline" className="w-full">Go to homepage</Button>
+            <Button variant="ghost" className="w-full">Go to homepage</Button>
           </Link>
         </div>
       </div>
