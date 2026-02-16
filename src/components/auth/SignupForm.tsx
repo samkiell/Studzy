@@ -11,6 +11,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 export function SignupForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,7 +22,7 @@ export function SignupForm() {
     e.preventDefault();
     setError("");
 
-    if (!email || !password || !confirmPassword) {
+    if (!email || !username || !password || !confirmPassword) {
       setError("Please fill in all fields");
       return;
     }
@@ -41,6 +42,7 @@ export function SignupForm() {
     try {
       const formData = new FormData();
       formData.append("email", email);
+      formData.append("username", username);
       formData.append("password", password);
       formData.append("confirmPassword", confirmPassword);
 

@@ -28,8 +28,13 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
+  const username = formData.get("username") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!username) {
+    return { error: "Username is required" };
+  }
 
   if (password !== confirmPassword) {
     return { error: "Passwords do not match" };
@@ -45,6 +50,10 @@ export async function signup(formData: FormData) {
     password,
     options: {
       emailRedirectTo: `${getURL()}auth/callback`,
+      data: {
+        username: username,
+        full_name: username, // Fallback for various UI parts
+      }
     },
   });
 
