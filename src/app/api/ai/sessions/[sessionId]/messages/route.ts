@@ -240,6 +240,14 @@ async function callMistralAI(
     }
   }
 
+  // 🌐 Search Mode: Add specific instructions
+  if (mode === "search" || enableSearch) {
+    mistralMessages.unshift({
+      role: "system",
+      content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information or specific details, use your web search tool. If you use a tool, explain to the student that you are searching the web for them."
+    });
+  }
+
   // Force Agent/Search Logic
   if (!MISTRAL_AI_AGENT_ID) {
     return "Error: Mistral AI Agent ID not configured in environment variables.";
@@ -249,34 +257,33 @@ async function callMistralAI(
   console.log(`[Messages API] Request - Mode: ${mode}, Has Images: ${hasImageRequest}, WebSearch: ${shouldUseWebSearch}`);
 
   try {
-    if (shouldUseWebSearch) {
-      console.log("[Messages API] 🌐 Search Mode Active: Calling mistral-large-latest with web_search: true");
-      const response = await client.chat.complete({
-        model: "mistral-large-latest",
-        messages: mistralMessages,
-        web_search: true as any,
-      });
-      
-      const content = response.choices?.[0]?.message?.content?.toString();
-      if (!content) {
-        console.warn("[Messages API] ⚠️ Search returned empty content. Response:", JSON.stringify(response, null, 2));
-      }
-      return content || "Search completed but no information was found.";
-    }
-
-    // ✅ USE OFFICIAL SDK AGENTS ENDPOINT
+    // ✅ UNIFIED AGENT LOGIC: Always use the Agent ID. 
+    // The Agent's configuration (on Mistral dashboard) determines if it can search.
     const response = await client.agents.complete({
       agentId: MISTRAL_AI_AGENT_ID,
       messages: mistralMessages,
     });
     
-    const content = response.choices?.[0]?.message?.content?.toString();
+    const choice = response.choices?.[0];
+    const content = choice?.message?.content?.toString();
+    const toolCalls = (choice?.message as any)?.toolCalls;
+
+    if (toolCalls && toolCalls.length > 0 && !content) {
+      const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
+      console.log(`[Messages API] 🛠️ AI requested tools: ${toolNames}`);
+      
+      return mode === "search" 
+        ? "I am currently attempting to search the web for this information. Please ensure that 'Search' is enabled on your Mistral Agent dashboard so I can provide the results!"
+        : `I need to use ${toolNames} to answer this, but I don't have local execution enabled for those tools yet.`;
+    }
+
     if (!content) {
       console.warn("[Messages API] ⚠️ Agent returned empty content. Response:", JSON.stringify(response, null, 2));
     }
-    return content || "I can't answer now, I'm eating.";
+    
+    return content || "The AI agent did not provide a text response.";
   } catch (apiError: any) {
-    console.error("[Messages API] ❌ Mistral API failure:", apiError);
+    console.error("[Messages API] ❌ Mistral Agent failure:", apiError);
     return `Sorry, I encountered an error with the AI Service: ${apiError.message}`;
   }
 }
