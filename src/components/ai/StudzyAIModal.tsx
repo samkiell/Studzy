@@ -278,7 +278,9 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     e.target.style.height = "auto";
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+    const isMobile = window.innerWidth < 768;
+    const maxH = isMobile ? 128 : window.innerHeight * 0.4;
+    e.target.style.height = `${Math.min(e.target.scrollHeight, maxH)}px`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -584,37 +586,15 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-                className={`flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-neutral-200 transition-colors dark:border-neutral-700 ${
-                  showOptionsMenu 
-                    ? "bg-primary-50 text-primary-600 dark:bg-primary-900/30" 
-                    : "bg-neutral-50 text-neutral-500 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
-                }`}
-              >
-                {showOptionsMenu ? (
-                  <Plus className="h-5 w-5 rotate-45" />
-                ) : (
-                  <div className="flex items-center justify-center">
-                    {mode === "chat" && <MessageSquare className="h-5 w-5" />}
-                    {mode === "image" && <ImageIcon className="h-5 w-5" />}
-                    {mode === "search" && <Globe className="h-5 w-5" />}
-                    {mode === "code" && <Code className="h-5 w-5" />}
-                  </div>
-                )}
-              </button>
-              <input 
-                ref={fileInputRef} 
-                type="file" 
-                accept="image/*" 
-                multiple 
-                onChange={handleImageUpload} 
-                className="hidden" 
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="flex items-end gap-2">
+            <input 
+              ref={fileInputRef} 
+              type="file" 
+              accept="image/*" 
+              multiple 
+              onChange={handleImageUpload} 
+              className="hidden" 
+            />
 
             <textarea
               ref={inputRef}
@@ -622,7 +602,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask STUDZY AI..."
-              className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white sm:text-base"
+              className="sm:max-h-[40vh] max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder-neutral-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white sm:text-base"
               rows={1}
             />
 
