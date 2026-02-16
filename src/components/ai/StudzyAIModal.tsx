@@ -88,9 +88,14 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   const router = useRouter();
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsAtBottom(isNearBottom);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -110,8 +115,10 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading, scrollToBottom]);
+    if (isAtBottom && containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [messages, isLoading, isAtBottom]);
 
   const handleStop = () => {
     if (abortControllerRef.current) {
@@ -403,7 +410,11 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
         </div>
 
         {/* Scrollable Messages Area */}
-        <div className="flex-1 overflow-y-auto px-4 pt-[60px] pb-[120px] sm:px-6 sm:pt-4 sm:pb-4">
+        <div 
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-4 pt-[60px] pb-[120px] sm:px-6 sm:pt-4 sm:pb-4 scroll-smooth"
+        >
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 dark:bg-primary-900/20">
