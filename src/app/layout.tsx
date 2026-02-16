@@ -105,6 +105,7 @@ export default function RootLayout({
         </LoadingProvider>
         <Analytics />
         <SpeedInsights />
+        <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
       </body>
     </html>
   );
