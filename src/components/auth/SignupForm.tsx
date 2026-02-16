@@ -101,7 +101,7 @@ export function SignupForm() {
         id="username"
         type="text"
         label="Username"
-        placeholder="e.g. Brainiac23"
+        placeholder="e.g. CPE Lecturer"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         required
