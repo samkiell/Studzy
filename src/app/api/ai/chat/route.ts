@@ -147,6 +147,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 🌐 Search Mode: Add specific instructions if in search mode
+    if (mode === "search" || enable_search) {
+      mistralMessages.unshift({
+        role: "system",
+        content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information or specific details not in your training data or study materials, please use your web search tool. If you use a tool, explain to the user that you are searching the web."
+      });
+    }
+
     // 🚀 LOGIC FOR AGENT
     // We strictly use the Agent ID from env, which handles both text and vision content.
     if (!MISTRAL_AI_AGENT_ID) {
@@ -160,30 +168,15 @@ export async function POST(request: NextRequest) {
     console.log(`[API] AI Request - Mode: ${mode}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
     
     try {
-      if (shouldUseWebSearch) {
-        console.log("[API] 🌐 Search Mode Active: Calling mistral-large-latest with web_search: true");
-        try {
-          // Using mistral-large-latest which supports native web search
-          const response = await client.chat.stream({
-            model: "mistral-large-latest",
-            messages: mistralMessages,
-            web_search: true as any, 
-          });
-          return streamResponse(response);
-        } catch (searchError: any) {
-          console.error("[API] ❌ Search Mode Error:", searchError);
-          // Fallback to regular agent if search fails
-          console.log("[API] 🔄 Falling back to standard agent...");
-        }
-      }
-
+      // ✅ UNIFIED AGENT LOGIC: Always use the Agent ID. 
+      // The Agent's configuration (on Mistral dashboard) determines if it can search.
       const response = await client.agents.stream({
         agentId: MISTRAL_AI_AGENT_ID,
         messages: mistralMessages,
       });
-      return streamResponse(response);
+      return streamResponse(response, mode);
     } catch (apiError: any) {
-      console.error("[API] ❌ Mistral API failure:", apiError);
+      console.error("[API] ❌ Mistral Agent failure:", apiError);
       return NextResponse.json(
         { error: `Mistral API Error: ${apiError.message}` },
         { status: 500 }
@@ -201,23 +194,40 @@ export async function POST(request: NextRequest) {
 /**
  * Helper to convert Mistral SDK stream to Next.js NextResponse
  */
-async function streamResponse(response: any) {
+async function streamResponse(response: any, mode: string) {
   const encoder = new TextEncoder();
   
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        let hasEmittedContent = false;
+
         for await (const chunk of response) {
-          // Robust chunk parsing for streaming
           const data = (chunk as any).data || chunk;
-          
-          // Mistral SDK can return deltas in different formats depending on the model/capability
-          const content = data.choices?.[0]?.delta?.content || "";
+          const choice = data.choices?.[0];
+          const content = choice?.delta?.content || "";
           
           if (content) {
+            hasEmittedContent = true;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content } }]
             })}\n\n`));
+          }
+
+          // Check for tool calls (common in search mode if not auto-executed)
+          const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
+          if (toolCalls && toolCalls.length > 0 && !hasEmittedContent) {
+            const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
+            console.log(`[API] 🛠️ AI requested tools: ${toolNames}`);
+            
+            const feedback = mode === "search" 
+              ? "\n\n*(Thinking: I am attempting to search the web for this info... please ensure Search is enabled on the Mistral Agent dashboard)*\n\n"
+              : `\n\n*(Thinking: I need to use ${toolNames} to answer this...)*\n\n`;
+            
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              choices: [{ delta: { content: feedback } }]
+            })}\n\n`));
+            hasEmittedContent = true; // Only emit once
           }
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
