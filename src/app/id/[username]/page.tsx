@@ -83,25 +83,9 @@ export default async function PublicIDPage({ params }: PageProps) {
         </div>
 
         {/* CTA */}
-        <div className="mt-4">
-           <Link 
-             href="/auth/signup" 
-             className="px-6 py-2.5 rounded-full bg-white text-black text-xs font-bold hover:bg-neutral-200 transition-colors shadow-lg"
-           >
-             Get Your Own ID
-           </Link>
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animation-fade-in {
-          animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
     </main>
   );
 }
+
