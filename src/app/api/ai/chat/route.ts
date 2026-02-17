@@ -223,20 +223,12 @@ async function streamResponse(response: any, mode: string) {
             })}\n\n`));
           }
 
-          // Check for tool calls (common in search mode if not auto-executed)
+          // Log tool calls privately in server console for debugging
           const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
           if (toolCalls && toolCalls.length > 0 && !hasEmittedContent) {
             const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
             console.log(`[API] 🛠️ AI requested tools: ${toolNames}`);
-            
-            const feedback = mode === "search" 
-              ? "\n\n*(Thinking: I am attempting to search the web for this info... please ensure Search is enabled on the Mistral Agent dashboard)*\n\n"
-              : `\n\n*(Thinking: I need to use ${toolNames} to answer this...)*\n\n`;
-            
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              choices: [{ delta: { content: feedback } }]
-            })}\n\n`));
-            hasEmittedContent = true; // Only emit once
+            // No longer emitting "Thinking" to user as per request
           }
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
