@@ -27,41 +27,65 @@ export async function embedText(text: string): Promise<number[]> {
 
 /**
  * Generate embeddings for multiple texts in efficient batches.
- *
- * - Processes in batches of EMBEDDING_BATCH_SIZE (10) to respect rate limits
- * - Adds a small delay between batches to avoid 429 errors
+ * 
+ * - Processes in larger batches (50) to minimize API round-trips
+ * - Implements exponential backoff with jitter to handle Rate Limits (429)
  * - Returns embeddings in the same order as the input texts
  */
 export async function embedBatch(texts: string[]): Promise<number[][]> {
   const allEmbeddings: number[][] = [];
+  const MAX_RETRIES = 5;
+  const INITIAL_DELAY = 1000; // 1s start
 
   for (let i = 0; i < texts.length; i += EMBEDDING_BATCH_SIZE) {
     const batch = texts.slice(i, i + EMBEDDING_BATCH_SIZE);
     const batchNum = Math.floor(i / EMBEDDING_BATCH_SIZE) + 1;
     const totalBatches = Math.ceil(texts.length / EMBEDDING_BATCH_SIZE);
 
-    console.log(
-      `[RAG] Embedding batch ${batchNum}/${totalBatches} (${batch.length} chunks)`
-    );
+    let retryCount = 0;
+    let success = false;
 
-    const response = await client.embeddings.create({
-      model: EMBEDDING_MODEL,
-      inputs: batch,
-    });
+    while (!success && retryCount < MAX_RETRIES) {
+      try {
+        console.log(
+          `[RAG] Embedding batch ${batchNum}/${totalBatches} (${batch.length} chunks)`
+        );
 
-    if (!response.data || response.data.length !== batch.length) {
-      throw new Error(
-        `Embedding batch ${batchNum} returned ${response.data?.length ?? 0} results, expected ${batch.length}`
-      );
+        const response = await client.embeddings.create({
+          model: EMBEDDING_MODEL,
+          inputs: batch,
+        });
+
+        if (!response.data || response.data.length !== batch.length) {
+          throw new Error(
+            `Embedding batch ${batchNum} returned ${response.data?.length ?? 0} results, expected ${batch.length}`
+          );
+        }
+
+        for (const item of response.data) {
+          allEmbeddings.push(item.embedding as number[]);
+        }
+        
+        success = true;
+
+        // Small success delay to pace requests (1.1s for safe < 60 RPM)
+        if (i + EMBEDDING_BATCH_SIZE < texts.length) {
+          await new Promise((resolve) => setTimeout(resolve, 1100));
+        }
+      } catch (error: any) {
+        if (error.statusCode === 429 || error.status === 429) {
+          retryCount++;
+          const delay = INITIAL_DELAY * Math.pow(2, retryCount-1) + (Math.random() * 1000);
+          console.warn(`[RAG] Rate limited (429). Retrying batch ${batchNum} in ${Math.round(delay)}ms... (Attempt ${retryCount}/${MAX_RETRIES})`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        } else {
+          throw error;
+        }
+      }
     }
 
-    for (const item of response.data) {
-      allEmbeddings.push(item.embedding as number[]);
-    }
-
-    // Rate limiting: pause 200ms between batches (except the last one)
-    if (i + EMBEDDING_BATCH_SIZE < texts.length) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
+    if (!success) {
+      throw new Error(`Failed to embed batch ${batchNum} after ${MAX_RETRIES} attempts.`);
     }
   }
 
