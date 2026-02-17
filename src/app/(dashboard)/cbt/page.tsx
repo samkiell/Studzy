@@ -59,7 +59,7 @@ export default function CbtLandingPage() {
             <span>Official CSC201 CBT Engine</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            Elevate Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Preparation</span>
+            Introduction to <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Python Programming</span>
           </h1>
           <p className="text-gray-400 text-lg">
             Practice with real questions, timed sessions, and AI-powered explanations.
@@ -79,7 +79,7 @@ export default function CbtLandingPage() {
                 onChange={(e) => setCourseCode(e.target.value)}
                 className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all appearance-none text-white cursor-pointer"
               >
-                <option value="CSC201">CSC201 - Structured Programming</option>
+                <option value="CSC201">CSC201 - Introduction to Python Programming</option>
               </select>
             </div>
 

@@ -5,6 +5,7 @@ import { Clock, MapPin, Calendar, Timer } from "lucide-react";
 
 interface Exam {
   code: string;
+  title: string;
   location: string;
   date: string; // ISO string or parsable date
   time: string; // Display string for time
@@ -15,6 +16,7 @@ interface Exam {
 const EXAM_DATA: Exam[] = [
   {
     code: "CSC 201",
+    title: "Introduction to Python Programming",
     location: "ICT Hall",
     date: "Friday, 20th Feb, 2026",
     time: "5:00pm – 6:00pm",
@@ -23,6 +25,7 @@ const EXAM_DATA: Exam[] = [
   },
   {
     code: "MTH 201",
+    title: "Mathematical Foundations",
     location: "ICT Hall",
     date: "Saturday, 21st Feb, 2026",
     time: "8:00am – 9:00am",
@@ -31,6 +34,7 @@ const EXAM_DATA: Exam[] = [
   },
   {
     code: "STT 201",
+    title: "Statistics & Probability",
     location: "ICT Hall",
     date: "Wednesday, 4th March, 2026",
     time: "1:00pm – 2:00pm",
@@ -39,6 +43,7 @@ const EXAM_DATA: Exam[] = [
   },
   {
     code: "CPE 203",
+    title: "Computer Engineering Foundations",
     location: "Chemical Engineering LT",
     date: "Wednesday, 4th March, 2026",
     time: "4:00pm – 7:00pm",
@@ -47,6 +52,7 @@ const EXAM_DATA: Exam[] = [
   },
   {
     code: "SEN 205",
+    title: "Software Engineering Principles",
     location: "BOO B",
     date: "Saturday, 7th March, 2026",
     time: "12:00pm – 3:00pm",
@@ -55,6 +61,7 @@ const EXAM_DATA: Exam[] = [
   },
   {
     code: "SEN 203",
+    title: "Data Structures & Algorithms",
     location: "Seminar Room (A, B, C, D)",
     date: "Tuesday, 10th March, 2026",
     time: "8:00am – 11:00am",
@@ -63,6 +70,7 @@ const EXAM_DATA: Exam[] = [
   },
   {
     code: "SEN 201",
+    title: "Introduction to Software Engineering",
     location: "Seminar Room (A, B, C, D)",
     date: "Friday, 13th March, 2026",
     time: "4:00pm – 7:00pm",
@@ -138,10 +146,15 @@ function ExamCard({ exam, now }: { exam: Exam; now: Date }) {
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-              {exam.code}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/30 px-1.5 py-0.5 rounded uppercase">
+                {exam.code}
+              </span>
+            </div>
+            <h3 className="mt-1 text-sm font-bold text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-1">
+              {exam.title}
             </h3>
-            <p className="mt-1 text-sm font-medium text-primary-600 dark:text-primary-400">
+            <p className="mt-0.5 text-[11px] font-medium text-primary-600 dark:text-primary-400">
               {timeLeft === "In Progress" ? "EXAM IS ONGOING" : `Starts in ${timeLeft}`}
             </p>
           </div>
