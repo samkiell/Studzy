@@ -57,12 +57,14 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      const name = u.full_name || "";
-      const email = u.email || "";
       const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) || 
                              email.toLowerCase().includes(search.toLowerCase());
       const matchesRole = filterRole === "all" || u.role === filterRole;
-      const matchesStatus = filterStatus === "all" || u.status === filterStatus;
+      const matchesStatus = 
+        filterStatus === "all" || 
+        (filterStatus === "verified" && u.is_verified && u.status === 'active') ||
+        (filterStatus === "unverified" && !u.is_verified && u.status === 'active') ||
+        (filterStatus === "suspended" && u.status === 'suspended');
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, search, filterRole, filterStatus]);
@@ -181,9 +183,9 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
             className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none dark:border-neutral-800 dark:bg-neutral-950"
           >
             <option value="all">All Status</option>
-            <option value="active">Active</option>
+            <option value="verified">Verified</option>
+            <option value="unverified">Unverified</option>
             <option value="suspended">Suspended</option>
-            <option value="deleted">Deleted</option>
           </select>
         </div>
       </div>

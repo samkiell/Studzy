@@ -35,6 +35,12 @@ export default async function AdminUsersPage() {
     ...p,
     courses_enrolled: progressMap.get(p.id)?.size || 0
   }));
+  
+  // Filter out unverified users as requested: "if account is not verified don't display it"
+  // However, we still need to see them to verify them, so we'll only show them if specified or just follow the instruction.
+  // Actually, I'll just filter them out from the initial list passed to the table if they are NOT verified AND NOT admins.
+  const displayUsers = users.filter(u => u.is_verified || u.role === 'admin' || u.status === 'suspended');
+
   const totalUsers = users.length;
   const verifiedUsers = users.filter(u => u.status === 'active' && u.is_verified).length;
   const unverifiedUsers = users.filter(u => u.status === 'active' && !u.is_verified).length;
@@ -77,7 +83,7 @@ export default async function AdminUsersPage() {
         ))}
       </div>
 
-      <AdminUserTable users={users as any} />
+      <AdminUserTable users={displayUsers as any} />
     </div>
   );
 }
