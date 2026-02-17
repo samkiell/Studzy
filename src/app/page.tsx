@@ -80,10 +80,44 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-neutral-200 py-12 text-center dark:border-neutral-800">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          &copy; 2026 Studzy. Built for <strong>DevCore&apos;23</strong> Pioneers.
-        </p>
+      <footer className="mt-auto border-t border-neutral-200 py-12 dark:border-neutral-800">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+            <div className="text-center md:text-left">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                &copy; {new Date().getFullYear()} Studzy. Built for <strong>DevCore&apos;23</strong> Pioneers.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <a 
+                href="https://www.tiktok.com/@dev.core.23?_r=1&_t=ZS-940LRWiewky" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                title="Follow us on TikTok"
+              >
+                <span className="text-sm font-medium">TikTok</span>
+              </a>
+              <a 
+                href="https://www.instagram.com/dev.core.23?utm_source=qr" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                title="Follow us on Instagram"
+              >
+                <span className="text-sm font-medium">Instagram</span>
+              </a>
+              <a 
+                href="mailto:devcore.23.oau@gmail.com"
+                className="text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                title="Email us"
+              >
+                <span className="text-sm font-medium">Email</span>
+              </a>
+            </div>
+          </div>
+        </div>
       </footer>
     </main>
   );

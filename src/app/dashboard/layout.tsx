@@ -85,8 +85,32 @@ export default async function DashboardLayout({
             </div>
           </div>
           
-          <div className="mt-12 text-center text-sm text-neutral-500 dark:text-neutral-500">
+          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-neutral-200 pt-8 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-500 md:flex-row">
             <p>© {new Date().getFullYear()} Studzy • Created with ⚡beans</p>
+            <div className="flex items-center gap-6">
+              <a 
+                href="https://www.tiktok.com/@dev.core.23?_r=1&_t=ZS-940LRWiewky" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-neutral-900 dark:hover:text-white"
+              >
+                TikTok
+              </a>
+              <a 
+                href="https://www.instagram.com/dev.core.23?utm_source=qr" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-neutral-900 dark:hover:text-white"
+              >
+                Instagram
+              </a>
+              <a 
+                href="mailto:devcore.23.oau@gmail.com"
+                className="transition-colors hover:text-neutral-900 dark:hover:text-white"
+              >
+                Email
+              </a>
+            </div>
           </div>
         </div>
       </main>
