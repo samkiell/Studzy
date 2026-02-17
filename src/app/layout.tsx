@@ -65,6 +65,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Footer } from "@/components/ui/Footer";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -99,11 +101,16 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased flex flex-col min-h-screen`} suppressHydrationWarning>
         <UserPresence />
         <LoadingProvider>
-          <AIProvider>{children}</AIProvider>
+          <AIProvider>
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+          </AIProvider>
         </LoadingProvider>
+        <Footer />
         <Analytics />
         <SpeedInsights />
         <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
