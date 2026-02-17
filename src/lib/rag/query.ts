@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText } from "./embeddings";
 import {
   CHAT_MODEL,
+  EMBEDDING_MODEL,
   TOP_K,
   SIMILARITY_THRESHOLD,
 } from "./config";
@@ -44,9 +45,20 @@ async function searchEmbeddings(
   courseCode?: string,
   level?: string,
   topK: number = TOP_K,
-  threshold: number = SIMILARITY_THRESHOLD
+  threshold: number = 0 // Temporarily relaxed threshold (was SIMILARITY_THRESHOLD)
 ): Promise<RetrievedChunk[]> {
   const supabase = createAdminClient();
+
+  // Logging requested by ML Infrastructure
+  const { count: totalVectors } = await supabase
+    .from("study_material_embeddings")
+    .select("*", { count: "exact", head: true });
+
+  console.log(`[RAG Search] Vector Store Info:`);
+  console.log(`- Total indexed vectors: ${totalVectors || 0}`);
+  console.log(`- Namespace (table): study_material_embeddings`);
+  console.log(`- Query Embedding Model: ${EMBEDDING_MODEL}`);
+  console.log(`- Search Parameters: topK=${topK}, threshold=${threshold}`);
 
   const { data, error } = await supabase.rpc("match_embeddings", {
     query_embedding: `[${queryEmbedding.join(",")}]`,
@@ -60,7 +72,7 @@ async function searchEmbeddings(
     throw new Error(`Embedding search failed: ${error.message}`);
   }
 
-  return (data || []).map((row: any) => ({
+  const results = (data || []).map((row: any) => ({
     id: row.id,
     filePath: row.file_path,
     content: row.content,
@@ -68,6 +80,16 @@ async function searchEmbeddings(
     level: row.level,
     similarity: row.similarity,
   }));
+
+  console.log(`[RAG Search] Retrieved results length: ${results.length}`);
+  if (results.length > 0) {
+    console.log(`[RAG Search] Top ${Math.min(5, results.length)} Similarity Scores:`);
+    results.slice(0, 5).forEach((r: RetrievedChunk, i: number) => {
+      console.log(`   ${i + 1}. [Score: ${r.similarity.toFixed(4)}] ID: ${r.id} | File: ${r.filePath}`);
+    });
+  }
+
+  return results;
 }
 
 /**
@@ -105,12 +127,6 @@ INSTRUCTIONS:
 
 /**
  * Execute the full RAG query pipeline (non-streaming).
- *
- * 1. Embed the user's question
- * 2. Search for relevant chunks via pgvector
- * 3. Build system prompt with context
- * 4. Generate response from Mistral
- * 5. Return answer + sources
  */
 export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
   const {
@@ -118,7 +134,7 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
     courseCode,
     level,
     topK = TOP_K,
-    threshold = SIMILARITY_THRESHOLD,
+    threshold = 0, // Relaxed
   } = options;
 
   console.log(`[RAG Query] Question: "${question.substring(0, 80)}..."`);
@@ -137,11 +153,6 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
 
   if (chunks.length === 0) {
     console.log("[RAG Query] ⚠️ No matching study materials found.");
-  } else {
-    console.log(`[RAG Query] ✅ Found ${chunks.length} relevant chunks:`);
-    chunks.forEach((c, i) => {
-      console.log(`   Source ${i + 1}: ${c.filePath} (similarity: ${(c.similarity * 100).toFixed(1)}%)`);
-    });
   }
 
   // Step 3: Build system prompt
@@ -180,9 +191,6 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
 
 /**
  * Execute the RAG query pipeline with streaming response.
- *
- * Returns a ReadableStream that emits SSE-formatted data chunks.
- * The final event includes sources metadata.
  */
 export async function queryRAGStream(
   options: QueryOptions,
@@ -193,7 +201,7 @@ export async function queryRAGStream(
     courseCode,
     level,
     topK = TOP_K,
-    threshold = SIMILARITY_THRESHOLD,
+    threshold = 0, // Relaxed
   } = options;
 
   console.log(
@@ -214,11 +222,6 @@ export async function queryRAGStream(
 
   if (chunks.length === 0) {
     console.log("[RAG Query Stream] ⚠️ No matching study materials found.");
-  } else {
-    console.log(`[RAG Query Stream] ✅ Found ${chunks.length} relevant chunks:`);
-    chunks.forEach((c, i) => {
-      console.log(`   Source ${i + 1}: ${c.filePath} (similarity: ${(c.similarity * 100).toFixed(1)}%)`);
-    });
   }
 
   // Step 3: Build system prompt
@@ -251,7 +254,6 @@ export async function queryRAGStream(
     async start(controller) {
       try {
         for await (const chunk of mistralStream) {
-          // Check if the request was aborted
           if (signal?.aborted) {
             controller.close();
             return;
@@ -270,7 +272,6 @@ export async function queryRAGStream(
           }
         }
 
-        // Send sources as a final event before [DONE]
         controller.enqueue(
           encoder.encode(
             `data: ${JSON.stringify({
@@ -287,7 +288,6 @@ export async function queryRAGStream(
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
         if (signal?.aborted) {
-          // Silently close on abort
           controller.close();
           return;
         }
@@ -297,10 +297,10 @@ export async function queryRAGStream(
       }
     },
     cancel() {
-      // Stream was cancelled by the client
       console.log("[RAG Query Stream] Client cancelled the stream");
     },
   });
 
   return { stream: readableStream, sources: chunks };
 }
+

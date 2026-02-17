@@ -4,7 +4,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText } from "./embeddings";
-import { TOP_K, SIMILARITY_THRESHOLD } from "./config";
+import { TOP_K, SIMILARITY_THRESHOLD, EMBEDDING_MODEL } from "./config";
 
 /**
  * Diagnostic: Check total vector count and confirm table health.
@@ -116,3 +116,71 @@ export async function testRAGSearch(query: string) {
     throw err;
   }
 }
+
+/**
+ * Log total vector count in collection.
+ */
+export async function debugVectorCount() {
+  const supabase = createAdminClient();
+  const { count, error } = await supabase
+    .from("study_material_embeddings")
+    .select("*", { count: "exact", head: true });
+
+  if (error) {
+    console.error(`[RAG DEBUG] ❌ Failed to count vectors: ${error.message}`);
+    return 0;
+  }
+
+  console.log(`[RAG DEBUG] Total vectors in collection: ${count}`);
+  return count || 0;
+}
+
+/**
+ * Detailed search debug for a specific query.
+ */
+export async function debugSearch(query: string) {
+  console.log(`\n[RAG DEBUG] --- DEBUG SEARCH: "${query}" ---`);
+  
+  // 1. Vector Count
+  const totalVectors = await debugVectorCount();
+  
+  // 2. Metadata
+  console.log(`[RAG DEBUG] Namespace: study_material_embeddings`);
+  console.log(`[RAG DEBUG] Embedding Model: ${EMBEDDING_MODEL}`);
+
+  try {
+    // 3. Generate Embedding
+    const embedding = await embedText(query);
+    console.log(`[RAG DEBUG] Query embedding generated (dim: ${embedding.length})`);
+
+    // 4. Search with NO threshold
+    const supabase = createAdminClient();
+    const { data: matches, error } = await supabase.rpc("match_embeddings", {
+      query_embedding: `[${embedding.join(",")}]`,
+      match_threshold: 0, // Remove strict filtering
+      match_count: 5      // Top 5
+    });
+
+    if (error) {
+      console.error(`[RAG DEBUG] ❌ Debug search failed: ${error.message}`);
+      return;
+    }
+
+    // 5. Explicit results logging
+    console.log(`[RAG DEBUG] Retrieved results length: ${matches?.length || 0}`);
+    
+    if (matches && matches.length > 0) {
+      console.log("[RAG DEBUG] Top 5 Similarity Scores & Details:");
+      matches.forEach((m: any, i: number) => {
+        console.log(`   ${i + 1}. [Score: ${m.similarity.toFixed(6)}] ID: ${m.id} | File: ${m.file_path}`);
+      });
+    } else {
+      console.warn("[RAG DEBUG] ⚠️ No results returned even with 0 threshold.");
+    }
+    
+    return matches;
+  } catch (err: any) {
+    console.error("[RAG DEBUG] ❌ Debug search encountered an error:", err.message);
+  }
+}
+
