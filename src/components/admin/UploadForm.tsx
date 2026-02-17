@@ -124,6 +124,7 @@ export function UploadForm({ courses }: UploadFormProps) {
         .upload(fileName, fileUpload.file, {
           cacheControl: "3600",
           upsert: false,
+          contentType: fileExtension === "json" ? "application/json" : fileUpload.file.type || undefined,
         });
 
       if (error) {
