@@ -40,7 +40,6 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Auto-hide controls
   const resetControlsTimeout = useCallback(() => {
@@ -323,30 +322,8 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
         title={title}
         onError={(e) => {
           console.error("Video error:", e);
-          setError("Failed to load video. The format may not be supported or the file is missing.");
-          setIsPlaying(false);
         }}
       />
-
-      {error && (
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-neutral-900/90 gap-3 text-center p-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-            <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-lg font-bold text-white">Video Playback Error</p>
-            <p className="mt-1 text-sm text-neutral-400">{error}</p>
-          </div>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700"
-          >
-            Refresh Player
-          </button>
-        </div>
-      )}
 
       {/* Touch Action Indicators (visual feedback could be added here for double tap) */}
 
