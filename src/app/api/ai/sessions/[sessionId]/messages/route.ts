@@ -187,7 +187,12 @@ export async function POST(
             
             if (content) {
               fullContent += content;
-              controller.enqueue(encoder.encode(content));
+              try {
+                controller.enqueue(encoder.encode(content));
+              } catch (e) {
+                // Controller likely closed by client disconnect
+                return;
+              }
             }
 
             // Log tool calls privately and keep stream alive
