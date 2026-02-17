@@ -3,6 +3,7 @@
 // ============================================
 
 import { Mistral } from "@mistralai/mistralai";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { EMBEDDING_MODEL, EMBEDDING_BATCH_SIZE, EMBEDDING_TOKEN_LIMIT, TOKENS_PER_WORD } from "./config";
 
 const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
