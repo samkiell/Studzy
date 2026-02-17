@@ -335,3 +335,92 @@ export async function deleteCourse(courseId: string): Promise<UploadResult> {
   }
 }
 
+import { validateCBTQuestionList } from "@/lib/cbt/validation";
+import { CBTQuestion } from "@/types/cbt";
+
+export async function uploadCBTQuestions(formData: FormData) {
+  try {
+    const admin = await requireAdmin();
+    const supabase = await createClient();
+
+    const file = formData.get("file") as File | null;
+    const courseCode = formData.get("courseCode") as string;
+
+    if (!file) {
+      return { success: false, message: "No file provided" };
+    }
+
+    if (!courseCode) {
+      return { success: false, message: "Course code is required" };
+    }
+
+    const content = await file.text();
+    let data: unknown;
+    try {
+      data = JSON.parse(content);
+    } catch (e) {
+      return { success: false, message: "Invalid JSON format" };
+    }
+
+    // Validate the questions
+    let validatedQuestions: CBTQuestion[];
+    try {
+      validatedQuestions = validateCBTQuestionList(data);
+    } catch (err: any) {
+      return { success: false, message: `Validation failed: ${err.message}` };
+    }
+
+    // Ensure all questions belong to the selected course code (security check)
+    const mismatched = validatedQuestions.filter(q => q.course_code !== courseCode);
+    if (mismatched.length > 0) {
+      return { 
+        success: false, 
+        message: `Found ${mismatched.length} questions with mismatched course codes. All questions must belong to ${courseCode}.` 
+      };
+    }
+
+    // Bulk Upsert into Supabase
+    // We use upsert so that (course_code, question_id) constraint handles duplicates
+    const { data: upsertedData, error: upsertError } = await supabase
+      .from("questions")
+      .upsert(
+        validatedQuestions.map(q => ({
+          course_code: q.course_code,
+          question_id: q.question_id,
+          difficulty: q.difficulty,
+          topic: q.topic,
+          question_text: q.question_text,
+          options: q.options,
+          correct_option: q.correct_option,
+          explanation: q.explanation,
+        })),
+        { onConflict: "course_code,question_id" }
+      )
+      .select();
+
+    if (upsertError) {
+      console.error("CBT Upsert Error:", upsertError);
+      return { success: false, message: `Database error: ${upsertError.message}` };
+    }
+
+    const totalUploaded = validatedQuestions.length;
+    const inserted = upsertedData?.length || 0;
+
+    revalidatePath("/admin/upload");
+    revalidatePath("/cbt");
+
+    return {
+      success: true,
+      message: `Successfully processed ${totalUploaded} questions.`,
+      summary: {
+        total: totalUploaded,
+        inserted: inserted,
+        skipped: totalUploaded - inserted, // This might be tricky with upsert returning all rows, but in standard Postgres/Supabase upsert, the return count reflects affected rows if configured correctly.
+      }
+    };
+
+  } catch (error: any) {
+    console.error("CBT Upload Error:", error);
+    return { success: false, message: error.message || "An unexpected error occurred" };
+  }
+}
