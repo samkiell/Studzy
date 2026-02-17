@@ -32,29 +32,53 @@ async function getRAGContext(
       filter_level: level || null,
     });
 
+    // 🌍 Fallback: If no course-specific materials, search across the entire "RAG Bucket"
+    if (!error && (!data || data.length === 0) && courseCode) {
+      console.log(`[RAG] 🌍 Course search returned nothing. Retrying with Global wildcard scope...`);
+      const { data: globalData, error: globalError } = await supabase.rpc("match_embeddings", {
+        query_embedding: JSON.stringify(queryEmbedding),
+        match_threshold: SIMILARITY_THRESHOLD,
+        match_count: TOP_K,
+        filter_course_code: null, // Global wildcard search
+        filter_level: null,
+      });
+
+      if (!globalError && globalData && globalData.length > 0) {
+        console.log(`[RAG] ✅ Success! Found ${globalData.length} materials in Global scope.`);
+        return formatRAGPrompt(globalData);
+      }
+    }
+
     if (error) {
       console.error("[RAG] ❌ RPC Error:", error);
       return null;
     }
 
     if (!data || data.length === 0) {
-      console.log("[RAG] ⚠️ No matching study materials found for this query.");
+      console.log("[RAG] ⚠️ No matching study materials found in ANY scope.");
       return null;
     }
 
     console.log(`[RAG] ✅ Found ${data.length} relevant chunks:`);
-    data.forEach((chunk: any, i: number) => {
-      console.log(`   Source ${i + 1}: ${chunk.file_path} (similarity: ${(chunk.similarity * 100).toFixed(1)}%)`);
-    });
+    return formatRAGPrompt(data);
+  } catch (err) {
+    console.error("[RAG] ❌ Context retrieval failed:", err);
+    return null;
+  }
+}
 
-    const contextBlocks = data
-      .map(
-        (chunk: any, i: number) =>
-          `--- Source ${i + 1} (${chunk.file_path}, relevance: ${(chunk.similarity * 100).toFixed(1)}%) ---\n${chunk.content}`
-      )
-      .join("\n\n");
+/**
+ * Helper to format retrieval data into a system prompt.
+ */
+function formatRAGPrompt(data: any[]): string {
+  const contextBlocks = data
+    .map(
+      (chunk: any, i: number) =>
+        `--- Source ${i + 1} (${chunk.file_path}, relevance: ${(chunk.similarity * 100).toFixed(1)}%) ---\n${chunk.content}`
+    )
+    .join("\n\n");
 
-    return `RELEVANT STUDY MATERIALS FOUND:
+  return `RELEVANT STUDY MATERIALS FOUND:
 ${contextBlocks}
 
 INSTRUCTIONS FOR USING STUDY MATERIALS:
@@ -62,11 +86,6 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 - Cite which source the information comes from when possible.
 - If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
 - Format responses with markdown for readability.`;
-  } catch (err) {
-    console.error("[RAG] ❌ Context retrieval failed:", err);
-    return null;
-  }
-}
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
 export async function POST(
@@ -145,7 +164,15 @@ export async function POST(
     }
 
     // 🚀 Call Mistral AI with streaming
-    const stream = await callMistralAIStream(allMessages || [], mode, enable_search || mode === "search", !!(images && images.length > 0), content);
+    const stream = await callMistralAIStream(
+      allMessages || [], 
+      mode, 
+      enable_search || mode === "search", 
+      !!(images && images.length > 0), 
+      content,
+      session.course_code,
+      session.level
+    );
 
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
@@ -160,6 +187,15 @@ export async function POST(
             if (content) {
               fullContent += content;
               controller.enqueue(encoder.encode(content));
+            }
+
+            // Log tool calls privately and keep stream alive
+            const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
+            if (toolCalls && toolCalls.length > 0) {
+              const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
+              console.log(`[API Session] 🛠️ AI requested tools: ${toolNames}`);
+              // Silent keep-alive pulse
+              controller.enqueue(encoder.encode(" "));
             }
           }
 
@@ -194,6 +230,25 @@ export async function POST(
   }
 }
 
+/**
+ * Ensures all messages (especially assistant ones) are valid for Mistral API.
+ */
+function validateMessages(messages: any[]): any[] {
+  return messages.filter((msg, index) => {
+    if (msg.role !== "assistant") return true;
+
+    const hasContent = msg.content && typeof msg.content === "string" && msg.content.trim().length > 0;
+    const hasToolCalls = msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0;
+
+    if (!hasContent && !hasToolCalls) {
+      console.warn(`[API Session] 🧹 Removing invalid assistant message at index ${index}.`);
+      return false;
+    }
+
+    return true;
+  });
+}
+
 interface DBMessage {
   role: string;
   content: string;
@@ -205,7 +260,9 @@ async function callMistralAIStream(
   mode: string,
   enableSearch: boolean,
   hasImageRequest: boolean,
-  latestUserContent?: string
+  latestUserContent?: string,
+  courseCode?: string,
+  level?: string
 ): Promise<AsyncIterable<any>> {
   if (!MISTRAL_API_KEY) {
     throw new Error("Mistral API Key not configured");
@@ -233,9 +290,15 @@ async function callMistralAIStream(
 
   if (latestUserContent) {
     try {
-      const ragContext = await getRAGContext(latestUserContent);
+      const ragContext = await getRAGContext(latestUserContent, courseCode, level);
       if (ragContext) {
         mistralMessages.unshift({ role: "system", content: ragContext });
+      } else {
+        // Fallback instruction
+        mistralMessages.unshift({
+          role: "system",
+          content: "Note: No specific study materials were found in the database. Please answer based on your general knowledge or available web search tools.",
+        });
       }
     } catch (err) {
       console.warn("[RAG] Context search failed:", err);
@@ -255,16 +318,18 @@ async function callMistralAIStream(
 
   const shouldUseWebSearch = enableSearch || mode === "search";
 
+  const finalMessages = validateMessages(mistralMessages);
+
   if (shouldUseWebSearch) {
     return (client.chat.stream as any)({
       model: "mistral-large-latest",
-      messages: mistralMessages,
+      messages: finalMessages,
       web_search: true,
     });
   }
 
   return client.agents.stream({
     agentId: MISTRAL_AI_AGENT_ID,
-    messages: mistralMessages,
+    messages: finalMessages,
   });
 }
