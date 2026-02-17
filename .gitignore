@@ -1,3 +1,4 @@
+.agent/
 # dependencies
 /node_modules
 /.pnp
