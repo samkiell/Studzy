@@ -31,7 +31,7 @@ export async function runRAG(query: string, options: { topK?: number; threshold?
     
     const supabase = createAdminClient();
     const { data: chunks, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: embedding, // Note: passing as raw array, ensure pgvector handles it (standard)
+      query_embedding: JSON.stringify(embedding),
       match_threshold: threshold,
       match_count: topK
     });

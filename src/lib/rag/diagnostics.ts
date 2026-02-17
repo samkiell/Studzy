@@ -37,9 +37,14 @@ export async function checkRAGHealth() {
     if (sampleError) {
       console.error(`[RAG DEBUG] ❌ Failed to fetch sample: ${sampleError.message}`);
     } else if (sample && sample.length > 0) {
-      const hasVector = !!sample[0].embedding;
+      const embeddingValue = sample[0].embedding;
+      const hasVector = !!embeddingValue;
+      const dim = Array.isArray(embeddingValue) ? embeddingValue.length : (typeof embeddingValue === 'string' ? 'string' : 'unknown');
       console.log(`[RAG DEBUG] ✅ Sample found: ${sample[0].file_path} (ID: ${sample[0].id})`);
-      console.log(`[RAG DEBUG] ✅ Embedding exists in record: ${hasVector}`);
+      console.log(`[RAG DEBUG] ✅ Embedding exists: ${hasVector} (Dimension: ${dim})`);
+      if (Array.isArray(embeddingValue)) {
+        console.log(`[RAG DEBUG] 📊 Vector sample: [${embeddingValue.slice(0, 3).join(", ")} ...]`);
+      }
     } else {
       console.warn("[RAG DEBUG] ⚠️ The collection is EMPTY. No documents have been indexed yet.");
     }
@@ -67,7 +72,7 @@ export async function testRAGSearch(query: string) {
     console.log(`[RAG DEBUG] Step 2: Running vector query (match_embeddings RPC)...`);
     const supabase = createAdminClient();
     const { data: matches, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: embedding,
+      query_embedding: JSON.stringify(embedding),
       match_threshold: 0.1, // Uses a lower threshold to confirm connectivity even for weak matches
       match_count: 5
     });
