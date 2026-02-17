@@ -79,12 +79,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-neutral-200 py-12 text-center dark:border-neutral-800">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          &copy; 2026 Studzy. Built for <strong>DevCore&apos;23</strong> Pioneers.
-        </p>
-      </footer>
     </main>
   );
 }

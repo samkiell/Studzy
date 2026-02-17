@@ -179,7 +179,7 @@ export function PDFViewer({ src, title, resourceId, isCompleted = false, onCompl
                   Unable to load PDF
                 </p>
                 <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                  Try opening in a new tab or downloading the file
+                  Try opening in a new tab or downloading the file. The PDF might be missing or the link is invalid.
                 </p>
               </div>
             </div>
