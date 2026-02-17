@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { ResourceStatus } from "@/types/database";
-import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle, Image as ImageIcon, ExternalLink } from "lucide-react";
+import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle, Image as ImageIcon, ExternalLink, FileText } from "lucide-react";
 import { EditResourceModal } from "./EditResourceModal";
 import { Modal, useModal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -122,6 +122,7 @@ export function AdminResourceTable({
     audio: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
     pdf: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
     image: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+    document: "bg-slate-50 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400",
   };
 
   return (
@@ -211,6 +212,8 @@ export function AdminResourceTable({
                                   <ExternalLink className="h-3 w-3 text-white" />
                                 </div>
                               </a>
+                            ) : resource.type === "document" ? (
+                              <FileText className="h-4 w-4" />
                             ) : (
                               <Hash className="h-4 w-4" />
                             )}

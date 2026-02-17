@@ -54,6 +54,16 @@ const typeIcons = {
       />
     </svg>
   ),
+  document: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+  ),
 };
 
 const typeColors = {
@@ -61,6 +71,7 @@ const typeColors = {
   audio: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   pdf: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   image: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  document: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400",
 };
 
 const typeLabels = {
@@ -68,6 +79,7 @@ const typeLabels = {
   audio: "Audio",
   pdf: "PDF",
   image: "Image",
+  document: "Document",
 };
 
 export function ResourceCard({ resource, courseCode, isCompleted = false }: ResourceCardProps) {
