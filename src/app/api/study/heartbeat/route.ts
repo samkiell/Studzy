@@ -51,8 +51,9 @@ export async function POST(req: Request) {
         newLongest = newStreak;
       }
 
-      // Update profile with study time and streak info
-      await supabase
+      console.log(`[Heartbeat] Updating profile for user ${user.id}: streak=${newStreak}, studyTime=${currentSeconds + 10}`);
+      
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           total_study_seconds: currentSeconds + 10,
@@ -61,11 +62,16 @@ export async function POST(req: Request) {
           longest_streak: newLongest
         })
         .eq('id', user.id);
+
+      if (updateError) {
+        console.error(`[Heartbeat] Profile update failed for ${user.id}:`, updateError.message);
+        throw updateError;
+      }
     }
 
     // --- Study Presence (Real-time Buddies) ---
     if (courseId) {
-      await supabase
+      const { error: presenceError } = await supabase
         .from('study_presence')
         .upsert({
           user_id: user.id,
@@ -74,14 +80,19 @@ export async function POST(req: Request) {
         }, {
           onConflict: 'user_id, course_id'
         });
+      
+      if (presenceError) {
+        console.warn(`[Heartbeat] Presence upsert failed for ${user.id}:`, presenceError.message);
+        // Don't throw for presence, it's non-critical
+      }
     }
 
     return NextResponse.json({ success: true, streak: profile?.current_streak });
-  } catch (error) {
-    console.error("Study heartbeat error:", error);
+  } catch (error: any) {
+    console.error(`[RAG/Tracker] CRITICAL Heartbeat error:`, error);
     return NextResponse.json({ 
       success: false, 
-      message: error instanceof Error ? error.message : "Failed to log study time" 
+      message: error?.message || "Failed to log study time" 
     }, { status: 500 });
   }
 }

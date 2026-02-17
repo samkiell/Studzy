@@ -14,11 +14,14 @@ export async function logActivity(actionType: ActivityAction, resourceId?: strin
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const { error } = await supabase.from("user_activity").insert({
+  const { error } = await supabase.from("user_activity").upsert({
     user_id: user.id,
     action_type: actionType,
     resource_id: resourceId || null,
-    metadata
+    metadata,
+    last_accessed: new Date().toISOString()
+  }, {
+    onConflict: 'user_id, action_type, resource_id'
   });
 
   if (error) {
