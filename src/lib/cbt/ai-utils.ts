@@ -58,12 +58,24 @@ export async function createExplanationSession(
 
     const { session } = await response.json();
     
-    // Send the first message (the prompt) to the session
-    const messageResponse = await fetch(`/api/ai/sessions/${session.id}/messages`, {
+    // 1. Send system message with context
+    await fetch(`/api/ai/sessions/${session.id}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         content: prompt,
+        role: "system",
+        mode: "chat",
+      }),
+    });
+
+    // 2. Send user message (short)
+    const messageResponse = await fetch(`/api/ai/sessions/${session.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: "Explain this question.",
+        role: "user",
         mode: "chat",
       }),
     });

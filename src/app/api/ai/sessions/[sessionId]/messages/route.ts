@@ -129,7 +129,7 @@ export async function POST(
       .from("chat_messages")
       .insert({
         session_id: sessionId,
-        role: "user",
+        role: body.role || "user",
         content: content || "",
         mode: mode || "chat",
         image_url: finalImageUrl || null,

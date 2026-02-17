@@ -1,6 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect, notFound } from "next/navigation";
-import { ChatPanel } from "@/components/ai/ChatPanel";
+import { ChatPageClient } from "./client";
 
 export default async function ChatSessionPage({
   params,
@@ -36,23 +34,24 @@ export default async function ChatSessionPage({
 
   const initialMessages = messages?.map(msg => ({
     id: msg.id,
-    role: msg.role as "user" | "assistant",
+    session_id: msg.session_id,
+    role: msg.role as "user" | "assistant" | "system",
     content: msg.content,
-    createdAt: new Date(msg.created_at)
+    created_at: msg.created_at,
+    mode: msg.mode as any,
+    image_url: msg.image_url
   })) || [];
 
   return (
-    <div className="h-[calc(100vh-4rem)] md:h-screen w-full bg-white dark:bg-neutral-950">
-      <ChatPanel 
-        sessionId={sessionId}
-        initialMessages={initialMessages}
-        user={{
-          id: user.id,
-          name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User",
-          image: user.user_metadata?.avatar_url
-        }}
-        sessionTitle={session.title}
-      />
-    </div>
+    <ChatPageClient 
+      sessionId={sessionId}
+      initialMessages={initialMessages}
+      user={{
+        id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User",
+        image: user.user_metadata?.avatar_url
+      }}
+      sessionTitle={session.title}
+    />
   );
 }

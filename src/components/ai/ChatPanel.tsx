@@ -49,6 +49,9 @@ export function ChatPanel({
   sidebarOpen,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  
+  // Hide system messages from view
+  const visibleMessages = messages.filter(m => m.role !== 'system');
   const [mode, setMode] = useState<ChatMode>("chat");
   const [input, setInput] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -390,7 +393,7 @@ export function ChatPanel({
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto pb-[100px] scroll-smooth"
       >
-        {messages.length === 0 ? (
+        {visibleMessages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 shadow-sm dark:from-primary-900/30 dark:to-primary-900/10">
               <NextImage src="/favicon.png" alt="Studzy" width={40} height={40} />
@@ -446,7 +449,7 @@ export function ChatPanel({
           </div>
         ) : (
           <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:px-8">
-            {messages.map((message) => (
+            {visibleMessages.map((message) => (
               <div
                 key={message.id}
                 className={`group relative flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
