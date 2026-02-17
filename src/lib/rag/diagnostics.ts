@@ -49,7 +49,14 @@ export async function checkRAGHealth() {
       console.warn("[RAG DEBUG] ⚠️ The collection is EMPTY. No documents have been indexed yet.");
     }
 
-    return { status: "ok", count };
+    return { 
+      status: "ok", 
+      count,
+      sample: sample && sample.length > 0 ? {
+        file_path: sample[0].file_path,
+        vectorPrefix: Array.isArray(sample[0].embedding) ? sample[0].embedding.slice(0, 5) : "not-an-array"
+      } : null
+    };
   } catch (err: any) {
     console.error("[RAG DEBUG] ❌ Unexpected error during health check:", err);
     throw err;
@@ -95,7 +102,11 @@ export async function testRAGSearch(query: string) {
       console.warn("[RAG DEBUG] ⚠️ NO MATCHES FOUND. Even with a low threshold (0.1). Check if your query is relevant or if embeddings are correctly indexed.");
     }
 
-    return matches;
+    return {
+      queryVectorPrefix: embedding.slice(0, 5),
+      matchCount,
+      matches: matches || []
+    };
   } catch (err: any) {
     console.error("[RAG DEBUG] ❌ Search test FAILED:", err);
     throw err;
