@@ -229,8 +229,8 @@ export function AdminRAGTable({ initialResources }: AdminRAGTableProps) {
         isOpen={deleteModal.isOpen}
         onClose={deleteModal.close}
         type="error"
-        title="Delete Knowledge Sync"
-        description="This will permanently delete ALL semantic chunks and embeddings for this file. The AI will no longer be able to reference this content until it is re-ingested."
+        title="Delete Knowledge & Source File"
+        description="This will permanently delete ALL semantic chunks, embeddings, and the source file from storage. This action cannot be undone."
         footer={
           <div className="flex w-full gap-3">
             <Button
