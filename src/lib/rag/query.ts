@@ -45,20 +45,20 @@ async function searchEmbeddings(
   courseCode?: string,
   level?: string,
   topK: number = TOP_K,
-  threshold: number = 0 // Temporarily relaxed threshold (was SIMILARITY_THRESHOLD)
+  threshold: number = 0 // Temporarily relaxed threshold for ML Infrastructure debug
 ): Promise<RetrievedChunk[]> {
   const supabase = createAdminClient();
 
-  // Logging requested by ML Infrastructure
+  // ML Infrastructure Debug Logging
   const { count: totalVectors } = await supabase
     .from("study_material_embeddings")
     .select("*", { count: "exact", head: true });
 
-  console.log(`[RAG Search] Vector Store Info:`);
-  console.log(`- Total indexed vectors: ${totalVectors || 0}`);
-  console.log(`- Namespace (table): study_material_embeddings`);
-  console.log(`- Query Embedding Model: ${EMBEDDING_MODEL}`);
-  console.log(`- Search Parameters: topK=${topK}, threshold=${threshold}`);
+  console.log(`[RAG Search] --- Search Diagnostics ---`);
+  console.log(`[RAG Search] Total vectors in collection: ${totalVectors || 0}`);
+  console.log(`[RAG Search] Namespace: study_material_embeddings`);
+  console.log(`[RAG Search] Query Embedding Model: ${EMBEDDING_MODEL}`);
+  console.log(`[RAG Search] Parameters: topK=${topK}, threshold=${threshold}`);
 
   const { data, error } = await supabase.rpc("match_embeddings", {
     query_embedding: `[${queryEmbedding.join(",")}]`,
@@ -69,6 +69,7 @@ async function searchEmbeddings(
   });
 
   if (error) {
+    console.error(`[RAG Search] ❌ Embedding search failed: ${error.message}`);
     throw new Error(`Embedding search failed: ${error.message}`);
   }
 
@@ -82,13 +83,22 @@ async function searchEmbeddings(
   }));
 
   console.log(`[RAG Search] Retrieved results length: ${results.length}`);
+  
   if (results.length > 0) {
-    console.log(`[RAG Search] Top ${Math.min(5, results.length)} Similarity Scores:`);
+    console.log(`[RAG Search] --- Top Similarity Scores ---`);
     results.slice(0, 5).forEach((r: RetrievedChunk, i: number) => {
-      console.log(`   ${i + 1}. [Score: ${r.similarity.toFixed(4)}] ID: ${r.id} | File: ${r.filePath}`);
+      console.log(`   ${i + 1}. [Score: ${r.similarity.toFixed(6)}] ID: ${r.id} | File: ${r.filePath}`);
     });
+
+    const ids = results.map((r: RetrievedChunk) => r.id);
+    const scores = results.map((r: RetrievedChunk) => r.similarity.toFixed(6));
+    console.log(`[RAG Search] Document IDs returned: ${JSON.stringify(ids)}`);
+    console.log(`[RAG Search] Scores returned: ${JSON.stringify(scores)}`);
+  } else {
+    console.warn(`[RAG Search] ⚠️ No matching study materials found.`);
   }
 
+  console.log(`[RAG Search] --- Search End ---\n`);
   return results;
 }
 
