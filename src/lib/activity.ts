@@ -25,11 +25,12 @@ export async function logActivity(actionType: ActivityAction, resourceId?: strin
   });
 
   if (error) {
-    console.error("Failed to log activity error details:", {
-      message: error.message,
+    console.error("Failed to log activity:", {
       code: error.code,
-      details: error.details,
-      hint: error.hint
+      message: error.message,
+      details: error.details
     });
   }
+
+  return { error };
 }
