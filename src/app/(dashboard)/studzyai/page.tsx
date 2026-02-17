@@ -1,7 +1,16 @@
-import { Brain, Zap, Sparkles, MessageCircle, FileText, Layout } from "lucide-react";
+"use client";
+
+import { Brain, Zap, Sparkles, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useLoading } from "@/components/providers/LoadingProvider";
 
 export default function StudzyAIPage() {
+  const router = useRouter();
+  const { startLoading, stopLoading } = useLoading();
+  const [error, setError] = useState<string | null>(null);
+
   const tools = [
     {
       title: "AI Exam Predictor",
@@ -26,6 +35,30 @@ export default function StudzyAIPage() {
     }
   ];
 
+  const handleStartChat = async () => {
+    startLoading();
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New Chat" }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/studzyai/chat/${data.session.id}`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Failed to start a new chat session.");
+        stopLoading();
+      }
+    } catch {
+      setError("Network error. Please try again.");
+      stopLoading();
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -36,6 +69,12 @@ export default function StudzyAIPage() {
           Supercharge your learning with our suite of AI-powered study tools. Designed to help you understand better and memorize faster.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {tools.map((tool) => (
@@ -73,7 +112,10 @@ export default function StudzyAIPage() {
               Have a specific question about your 200-level courses? Chat directly with Studzy AI for instant explanations.
             </p>
           </div>
-          <button className="rounded-2xl bg-primary-600 px-8 py-4 font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-lg shadow-primary-500/20">
+          <button 
+            onClick={handleStartChat}
+            className="rounded-2xl bg-primary-600 px-8 py-4 font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-lg shadow-primary-500/20"
+          >
             Open Chat
           </button>
         </div>
