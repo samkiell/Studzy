@@ -3,7 +3,6 @@ import {
   BookOpen, 
   Brain, 
   User, 
-  Settings,
   Zap
 } from "lucide-react";
 
