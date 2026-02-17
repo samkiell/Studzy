@@ -1,4 +1,3 @@
-/.agent/
 # dependencies
 /node_modules
 /.pnp
@@ -35,5 +34,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-nul 
-null
+# agent
+.agent
