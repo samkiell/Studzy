@@ -51,21 +51,36 @@ export async function POST(req: Request) {
         newLongest = newStreak;
       }
 
-      console.log(`[Heartbeat] Updating profile for user ${user.id}: streak=${newStreak}, studyTime=${currentSeconds + 10}`);
+      console.log(`[Heartbeat] Updating profile for user ${user.id}: streak=${newStreak}`);
       
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          total_study_seconds: currentSeconds + 10,
-          current_streak: newStreak,
-          last_login_date: newLastLogin,
-          longest_streak: newLongest
-        })
-        .eq('id', user.id);
+      // Use RPC for atomic increment of study time to prevent race conditions
+      // This is safer than the fetch-calculate-update pattern
+      const { error: updateError } = await supabase.rpc('increment_study_time', {
+        increment_seconds: 10
+      });
 
       if (updateError) {
-        console.error(`[Heartbeat] Profile update failed for ${user.id}:`, updateError.message);
-        throw updateError;
+        console.error(`[Heartbeat] SQL Increment failed for ${user.id}, falling back to manual update:`, updateError.message);
+        // Fallback to manual if RPC fails (e.g. if not defined)
+        await supabase
+          .from('profiles')
+          .update({
+            total_study_seconds: (profile.total_study_seconds || 0) + 10,
+            current_streak: newStreak,
+            last_login_date: newLastLogin,
+            longest_streak: newLongest
+          })
+          .eq('id', user.id);
+      } else {
+        // If atomic increment succeeded, still update the streak and metadata
+        await supabase
+          .from('profiles')
+          .update({
+            current_streak: newStreak,
+            last_login_date: newLastLogin,
+            longest_streak: newLongest
+          })
+          .eq('id', user.id);
       }
     }
 

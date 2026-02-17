@@ -23,14 +23,10 @@ export function StudyTimeTracker({ courseId }: StudyTimeTrackerProps) {
       }
     };
 
-    // Initial heartbeat after 5 seconds to ensure user is actually reading
-    const initialTimer = setTimeout(sendHeartbeat, 5000);
-
     // Setup interval for subsequent heartbeats
     intervalRef.current = setInterval(sendHeartbeat, 10000);
 
     return () => {
-      if (initialTimer) clearTimeout(initialTimer);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
+import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
 import { StreakCounter } from "@/components/dashboard/StreakCounter";
 import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
@@ -141,6 +142,7 @@ export default async function DashboardPage() {
 
       <div className="mt-10 grid gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-10 min-w-0 overflow-hidden">
+          <ExamCountdown />
           <ContinueStudying />
           
           <div>
