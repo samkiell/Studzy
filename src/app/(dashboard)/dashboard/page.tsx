@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
 import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
-import { StreakCounter } from "@/components/dashboard/StreakCounter";
+
 import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-          <StreakCounter streak={currentStreak} />
+
           
           {profile?.is_verified ? (
             <StudentIDCard 
