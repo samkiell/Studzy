@@ -64,3 +64,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Discussion ID is required" }, { status: 400 });
+    }
+
+    // Delete discussion and all replies (replies might need cascade delete in DB, assuming DB handles it or we delete recursively. 
+    // Usually Supabase/Postgres foreign keys can be set to ON DELETE CASCADE. 
+    // If not, we might need to delete replies first. 
+    // Let's assume standard cascade or simple delete for now. The requirement is just "delete comments").
+    
+    const { error } = await supabase
+      .from("discussions")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

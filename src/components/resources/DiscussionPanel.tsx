@@ -11,6 +11,11 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface UserProfile {
+  id: string;
+  role: string;
+}
+
 interface Discussion {
   id: string;
   resource_id: string;
@@ -31,6 +36,23 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyTo, setReplyTo] = useState<Discussion | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("id", user.id)
+          .single();
+        setCurrentUser(data);
+      }
+    }
+    fetchUser();
+  }, []);
 
   const fetchDiscussions = async () => {
     const res = await fetch(`/api/discussions?resourceId=${resourceId}`);
@@ -66,6 +88,27 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
       fetchDiscussions();
     }
     setIsSubmitting(false);
+  };
+
+  const handleDelete = async (discussionId: string) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+
+    try {
+      const res = await fetch("/api/discussions", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: discussionId }),
+      });
+
+      if (res.ok) {
+        fetchDiscussions();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to delete comment");
+      }
+    } catch (e) {
+      alert("Failed to delete comment");
+    }
   };
 
   const rootDiscussions = discussions.filter(d => !d.parent_id);
@@ -124,6 +167,8 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
                   setReplyTo(d);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
+                isAdmin={currentUser?.role === 'admin'}
+                onDelete={handleDelete}
               />
             ))
           )}
@@ -133,7 +178,13 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
   );
 }
 
-function DiscussionItem({ discussion, allDiscussions, onReply }: { discussion: Discussion, allDiscussions: Discussion[], onReply: (d: Discussion) => void }) {
+function DiscussionItem({ discussion, allDiscussions, onReply, isAdmin, onDelete }: { 
+  discussion: Discussion, 
+  allDiscussions: Discussion[], 
+  onReply: (d: Discussion) => void,
+  isAdmin: boolean,
+  onDelete: (id: string) => void
+}) {
   const replies = allDiscussions.filter(d => d.parent_id === discussion.id);
 
   return (
@@ -167,13 +218,29 @@ function DiscussionItem({ discussion, allDiscussions, onReply }: { discussion: D
             <Reply className="h-3 w-3" />
             Reply
           </button>
+          {isAdmin && (
+            <button 
+              onClick={() => onDelete(discussion.id)}
+              className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-700 ml-4"
+            >
+              <Loader2 className="h-3 w-3" />
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
       {replies.length > 0 && (
         <div className="ml-14 space-y-6 border-l-2 border-neutral-100 pl-6 dark:border-neutral-800">
           {replies.map(reply => (
-            <DiscussionItem key={reply.id} discussion={reply} allDiscussions={allDiscussions} onReply={onReply} />
+            <DiscussionItem 
+              key={reply.id} 
+              discussion={reply} 
+              allDiscussions={allDiscussions} 
+              onReply={onReply} 
+              isAdmin={isAdmin}
+              onDelete={onDelete}
+            />
           ))}
         </div>
       )}
