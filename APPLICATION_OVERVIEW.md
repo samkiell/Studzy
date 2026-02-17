@@ -1,6 +1,6 @@
 # Studzy Application Overview
 
-**Studzy** is a modern, AI-powered study companion designed to streamline the academic journey for students. It combines resource management, AI-driven study tools, and institutional features into a unified, high-performance web application.
+**Studzy** is a modern, AI-powered study companion designed to streamline the academic journey for SWE students at oau. It combines resource management, AI-driven study tools, and institutional features into a unified, high-performance web application.
 
 ## 🚀 Mission
 To empower students by providing smart tools that make studying more efficient, organized, and personalized.
@@ -10,7 +10,7 @@ To empower students by providing smart tools that make studying more efficient, 
 ## 🛠 Technical Stack
 
 ### Frontend
-- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
+- **Framework**: [Next.js 16+](https://nextjs.org/) (App Router)
 - **Library**: [React 19](https://react.dev/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
