@@ -117,10 +117,6 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
           // If message says "Too many tokens", let's try an invasive split if we haven't already
           if (error.message?.includes("tokens") && batch.length > 2) {
              console.error("[RAG] API reported token overflow despite extraction. Performing emergency split.");
-             // Break inner retry loop to trigger a smaller batch in the outer loop
-             // By NOT incrementing currentIdx, it will re-process with the same idx in a smaller batch
-             // But we need to force batch.length smaller
-             // (Easier: throw specific error to break out and restart batch loop smaller)
           }
           throw error;
         }
@@ -134,3 +130,44 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
 
   return allEmbeddings;
 }
+
+/**
+ * Flush all existing RAG embeddings safely from the database.
+ * Use with caution.
+ */
+export async function deleteAllEmbeddings() {
+  console.log("[RAG] ⚠️ Request to FLUSH ALL EMBEDDINGS received.");
+  const supabase = createAdminClient();
+
+  try {
+    // 1. Get total count first for logging
+    const { count, error: countError } = await supabase
+      .from("study_material_embeddings")
+      .select("*", { count: "exact", head: true });
+
+    if (countError) throw countError;
+    const totalToDelete = count || 0;
+
+    if (totalToDelete === 0) {
+      console.log("[RAG] Collection is already empty. Nothing to delete.");
+      return { success: true, deletedCount: 0 };
+    }
+
+    console.log(`[RAG] Found ${totalToDelete} vectors. Proceeding with deletion...`);
+
+    // 2. Perform global delete
+    const { error: deleteError } = await supabase
+      .from("study_material_embeddings")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000"); // Standard way to delete all in Supabase/PostgREST if safety is on
+
+    if (deleteError) throw deleteError;
+
+    console.log(`[RAG] ✅ Successfully deleted ${totalToDelete} vectors.`);
+    return { success: true, deletedCount: totalToDelete };
+  } catch (error: any) {
+    console.error("[RAG] ❌ Failed to flush embeddings:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+

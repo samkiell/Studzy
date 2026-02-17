@@ -4,7 +4,6 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractPDFFromStorage } from "./pdf-extractor";
-import { extractTextFromStorage } from "./text-extractor";
 import { cleanText, hasSubstantialContent } from "./text-cleaner";
 import { chunkText, type TextChunk } from "./chunker";
 import { embedBatch } from "./embeddings";
@@ -101,13 +100,13 @@ async function storeChunksWithEmbeddings(
  * Run the full ingestion pipeline for a single PDF file.
  *
  * Pipeline steps:
- * 1. Deduplication check (skip if already ingested)
- * 2. Fetch PDF from Supabase Storage
- * 3. Extract text using pdf-parse
- * 4. Clean the text
- * 5. Chunk into 300–500 token overlapping segments
- * 6. Generate embeddings via Mistral API (batched)
- * 7. Store chunks + embeddings into Supabase
+ * 1. Filter: ONLY process .pdf files
+ * 2. Deduplication check (skip if already ingested unless force=true)
+ * 3. Fetch PDF from Supabase Storage & Extract text
+ * 4. Clean and Chunk the text
+ * 5. Generate embeddings via Mistral API
+ * 6. (If forced) Clear existing embeddings for this file
+ * 7. Store new chunks + embeddings into Supabase
  */
 export async function ingestFile(
   options: IngestionOptions
@@ -118,7 +117,23 @@ export async function ingestFile(
   console.log(`[RAG] Starting ingestion for: ${filePath}`);
 
   try {
-    // Step 1: Deduplication check
+    // Step 1: Filter - PDF ONLY
+    const extension = filePath.split(".").pop()?.toLowerCase();
+    if (extension !== "pdf") {
+      console.log(`[RAG] Skipping unsupported file type: ${extension || "unknown"}`);
+      return {
+        success: true,
+        filePath,
+        chunksProcessed: 0,
+        chunksStored: 0,
+        pageCount: 0,
+        skipped: true,
+        skipReason: `RAG ingestion is restricted to PDF files. Found: .${extension || "none"}`,
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    // Step 2: Deduplication check
     if (!force) {
       const alreadyDone = await isAlreadyIngested(filePath);
       if (alreadyDone) {
@@ -134,62 +149,21 @@ export async function ingestFile(
           durationMs: Date.now() - startTime,
         };
       }
-    } else {
-      // If forcing, delete existing embeddings for this file first
-      const supabase = createAdminClient();
-      const { error: deleteError } = await supabase
-        .from("study_material_embeddings")
-        .delete()
-        .eq("file_path", filePath);
-
-      if (deleteError) {
-        console.warn(
-          `[RAG] Failed to delete existing embeddings for re-ingestion:`,
-          deleteError.message
-        );
-      }
     }
 
-    // Step 2: Fetch and extract content based on file type
-    const extension = filePath.split(".").pop()?.toLowerCase();
-    let rawText = "";
-    let pageCount = 0;
-    let fileName = "";
-
-    if (extension === "pdf") {
-      console.log(`[RAG] Extracting text from PDF...`);
-      const result = await extractPDFFromStorage(filePath);
-      rawText = result.text;
-      pageCount = result.pageCount;
-      fileName = result.fileName;
-    } else if (["txt", "md", "json", "csv", "ts", "js", "tsx", "jsx"].includes(extension || "")) {
-      console.log(`[RAG] Extracting text from file...`);
-      const result = await extractTextFromStorage(filePath);
-      rawText = result.text;
-      pageCount = result.pageCount;
-      fileName = result.fileName;
-    } else {
-      console.log(`[RAG] Skipping unsupported file type for ingestion: ${extension}`);
-      return {
-        success: true,
-        filePath,
-        chunksProcessed: 0,
-        chunksStored: 0,
-        pageCount: 0,
-        skipped: true,
-        skipReason: `Unsupported file type for RAG: ${extension}`,
-        durationMs: Date.now() - startTime,
-      };
-    }
-
+    // Step 3: Fetch and extract PDF content
+    console.log(`[RAG] Extracting text from PDF...`);
+    const { text: rawText, pageCount, fileName } = await extractPDFFromStorage(filePath);
+    
     console.log(
-      `[RAG] Extracted ${rawText.length} chars from ${pageCount} pages/sections (${fileName})`
+      `[RAG] Extracted ${rawText.length} chars from ${pageCount} pages (${fileName})`
     );
 
-    // Step 3: Clean text
+    // Step 4: Clean and Chunk text
     const cleanedText = cleanText(rawText);
 
     if (!hasSubstantialContent(cleanedText)) {
+      console.warn(`[RAG] PDF has insufficient text content: ${filePath}`);
       return {
         success: true,
         filePath,
@@ -197,13 +171,11 @@ export async function ingestFile(
         chunksStored: 0,
         pageCount,
         skipped: true,
-        skipReason:
-          "PDF has insufficient text content (too few words after cleaning).",
+        skipReason: "PDF has insufficient text content (too few readable words).",
         durationMs: Date.now() - startTime,
       };
     }
 
-    // Step 4: Chunk text
     console.log(`[RAG] Chunking text...`);
     const chunks = chunkText(cleanedText);
     console.log(`[RAG] Created ${chunks.length} chunks`);
@@ -216,7 +188,7 @@ export async function ingestFile(
         chunksStored: 0,
         pageCount,
         skipped: true,
-        skipReason: "No chunks generated from the text.",
+        skipReason: "No chunks generated from the text content.",
         durationMs: Date.now() - startTime,
       };
     }
@@ -226,7 +198,22 @@ export async function ingestFile(
     const texts = chunks.map((c) => c.content);
     const embeddings = await embedBatch(texts);
 
-    // Step 6: Store in Supabase
+    // Step 6: If forcing, delete OLD embeddings ONLY now that we have successful extraction/embeddings
+    if (force) {
+      console.log(`[RAG] Clearing existing embeddings for ${filePath} (forced re-ingestion)`);
+      const supabase = createAdminClient();
+      const { error: deleteError } = await supabase
+        .from("study_material_embeddings")
+        .delete()
+        .eq("file_path", filePath);
+
+      if (deleteError) {
+        console.warn(`[RAG] Failed to clear old embeddings during force re-ingest:`, deleteError.message);
+        // We continue anyway to insert new ones, which might cause duplicates but ensures we don't block
+      }
+    }
+
+    // Step 7: Store in Supabase
     console.log(`[RAG] Storing chunks in database...`);
     const stored = await storeChunksWithEmbeddings(
       chunks,
@@ -270,7 +257,6 @@ export async function ingestFile(
 
 /**
  * Ingest multiple files sequentially.
- * Useful for batch processing or webhook-triggered bulk ingestion.
  */
 export async function ingestMultipleFiles(
   files: IngestionOptions[]
@@ -284,3 +270,4 @@ export async function ingestMultipleFiles(
 
   return results;
 }
+
