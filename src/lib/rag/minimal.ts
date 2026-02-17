@@ -30,8 +30,10 @@ export async function runRAG(query: string, options: { topK?: number; threshold?
     console.log(`[RAG] FETCHING from collection: study_material_embeddings (threshold: ${threshold}, top-k: ${topK})`);
     
     const supabase = createAdminClient();
+    const vectorStr = `[${embedding.join(',')}]`;
+    
     const { data: chunks, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: JSON.stringify(embedding),
+      query_embedding: vectorStr,
       match_threshold: threshold,
       match_count: topK
     });

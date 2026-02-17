@@ -78,9 +78,13 @@ export async function testRAGSearch(query: string) {
     // 2. Run vector query
     console.log(`[RAG DEBUG] Step 2: Running vector query (match_embeddings RPC)...`);
     const supabase = createAdminClient();
+    
+    // Explicitly format vector for pgvector
+    const vectorStr = `[${embedding.join(',')}]`;
+    
     const { data: matches, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: JSON.stringify(embedding),
-      match_threshold: 0.1, // Uses a lower threshold to confirm connectivity even for weak matches
+      query_embedding: vectorStr,
+      match_threshold: 0.1, 
       match_count: 5
     });
 
