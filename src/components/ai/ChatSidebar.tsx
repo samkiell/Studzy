@@ -220,10 +220,10 @@ function SessionGroup({
       </p>
       <div className="space-y-0.5">
         {sessions.map((session) => (
-          <button
+          <div
             key={session.id}
             onClick={() => onSelect(session.id)}
-            className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+            className={`group flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
               session.id === activeSessionId
                 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400"
                 : "text-neutral-700 hover:bg-neutral-200 dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -239,7 +239,7 @@ function SessionGroup({
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
-          </button>
+          </div>
         ))}
       </div>
     </div>
