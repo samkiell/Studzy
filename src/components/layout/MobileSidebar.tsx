@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, GraduationCap, LogOut } from "lucide-react";
+import { X, LogOut } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { NAVIGATION_ITEMS } from "@/config/navigation";
 import { NavItem } from "./NavItem";
@@ -50,8 +51,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           >
             <div className="flex items-center justify-between mb-8">
               <Link href="/dashboard" className="flex items-center gap-3" onClick={onClose}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
-                  <GraduationCap className="h-5 w-5" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-600/10 p-2">
+                  <Image 
+                    src="/favicon.png" 
+                    alt="Studzy" 
+                    width={24} 
+                    height={24} 
+                  />
                 </div>
                 <span className="text-lg font-black text-neutral-900 dark:text-white">
                   Studzy

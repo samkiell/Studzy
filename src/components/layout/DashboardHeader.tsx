@@ -1,6 +1,7 @@
 "use client";
 
-import { Menu, GraduationCap, Bell } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { MobileSidebar } from "./MobileSidebar";
@@ -19,8 +20,13 @@ export function DashboardHeader() {
             <Menu className="h-6 w-6" />
           </button>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white">
-              <GraduationCap className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600/10 p-1.5">
+              <Image 
+                src="/favicon.png" 
+                alt="Studzy" 
+                width={20} 
+                height={20} 
+              />
             </div>
             <span className="text-lg font-bold text-neutral-900 dark:text-white">
               Studzy

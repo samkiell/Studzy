@@ -36,13 +36,13 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       {/* Logo Section */}
       <div className={`mb-10 flex items-center ${isCollapsed ? "justify-center" : "gap-3 px-2"}`}>
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-500/20">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-600/10 p-2 shadow-sm">
             <Image 
               src="/favicon.png" 
               alt="Studzy" 
               width={24} 
               height={24} 
-              className="invert brightness-0" // Make it white for the primary background
+              className="h-auto w-full object-contain"
             />
           </div>
           {!isCollapsed && (
