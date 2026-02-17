@@ -17,23 +17,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Resource ID required" }, { status: 400 });
     }
 
-    // Upsert activity record (insert or update if exists)
-    const { error } = await supabase
-      .from("user_activity")
-      .upsert(
-        {
-          user_id: user.id,
-          resource_id: resourceId,
-          last_accessed: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id,resource_id",
-        }
-      );
+    // Log activity using centralized function
+    const { error } = await logActivity("view_resource", resourceId);
 
     if (error) {
       console.error("Error tracking activity:", error);
-      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Failed to log activity" }, { status: 500 });
     }
 
     // Also increment view_count on the resource
