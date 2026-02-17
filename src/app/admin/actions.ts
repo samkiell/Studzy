@@ -133,8 +133,8 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
       };
     }
 
-    // 🎓 RAG: If this is a PDF, trigger ingestion automatically
-    if (type === "pdf") {
+    // 🎓 RAG: Trigger ingestion automatically for searchable types
+    if (type === "pdf" || type === "document") {
       try {
         const { ingestFile } = await import("@/lib/rag/ingestion");
         console.log(`[Admin Upload] Triggering auto-ingestion for: ${uploadData.path}`);

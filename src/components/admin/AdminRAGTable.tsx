@@ -23,6 +23,7 @@ interface RAGResource {
   course_code?: string;
   level?: string;
   chunk_count: number;
+  status?: "pending" | "synced";
 }
 
 interface AdminRAGTableProps {
@@ -151,9 +152,16 @@ export function AdminRAGTable({ initialResources }: AdminRAGTableProps) {
                             <FileText className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[300px]" title={resource.file_path}>
-                              {resource.file_path.split('/').pop()}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[300px]" title={resource.file_path}>
+                                {resource.file_path.split('/').pop()}
+                              </p>
+                              {resource.status === "pending" && (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                                  Not Synced
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[10px] text-neutral-400 truncate max-w-[300px]">
                               {resource.file_path}
                             </p>
