@@ -284,35 +284,55 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                          user.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          user.status === 'suspended' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
-                        }`}>
-                          {user.status}
-                        </span>
+                        {(() => {
+                          const isSuspended = user.status === 'suspended';
+                          const isVerified = user.is_verified;
+                          
+                          if (isSuspended) {
+                            return (
+                              <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                Suspended
+                              </span>
+                            );
+                          }
+                          
+                          if (isVerified) {
+                            return (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                Verified
+                              </span>
+                            );
+                          }
+                          
+                          return (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                              Unverified
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-center gap-2">
                           <div className="relative group/actions">
                             <button className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
                               <MoreHorizontal className="h-4 w-4" />
                             </button>
-                            <div className="absolute right-0 bottom-full mb-2 w-48 invisible group-hover/actions:visible bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 overflow-hidden">
+                            {/* Actions Dropdown */}
+                            <div className="absolute right-0 top-full mt-1 w-48 invisible group-hover/actions:visible bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 overflow-hidden">
                               <div className="p-1">
-                                {user.is_verified ? (
-                                  <button
-                                    onClick={() => openModal("demote", user.id)}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                                  >
-                                    <XCircle className="h-3.5 w-3.5" /> Demote Verification
-                                  </button>
-                                ) : (
+                                {!user.is_verified ? (
                                   <button
                                     onClick={() => openModal("verify", user.id)}
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5" /> Verify Student
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => openModal("demote", user.id)}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg"
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" /> Demote Verification
                                   </button>
                                 )}
                                 

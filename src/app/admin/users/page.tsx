@@ -36,7 +36,8 @@ export default async function AdminUsersPage() {
     courses_enrolled: progressMap.get(p.id)?.size || 0
   }));
   const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.status === 'active').length;
+  const verifiedUsers = users.filter(u => u.status === 'active' && u.is_verified).length;
+  const unverifiedUsers = users.filter(u => u.status === 'active' && !u.is_verified).length;
   const suspendedUsers = users.filter(u => u.status === 'suspended').length;
   const admins = users.filter(u => u.role === 'admin').length;
 
@@ -57,10 +58,10 @@ export default async function AdminUsersPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { label: "Total Students", value: totalUsers - admins, icon: Users, color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30" },
-          { label: "Active Now", value: activeUsers, icon: UserCheck, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
+          { label: "Total Users", value: totalUsers, icon: Users, color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30" },
+          { label: "Verified", value: verifiedUsers, icon: UserCheck, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
+          { label: "Unverified", value: unverifiedUsers, icon: UserPlus, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
           { label: "Suspended", value: suspendedUsers, icon: Activity, color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30" },
-          { label: "Admins", value: admins, icon: ShieldCheck, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
         ].map((stat, i) => (
           <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex items-center justify-between">
