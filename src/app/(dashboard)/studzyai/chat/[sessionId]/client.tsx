@@ -1,3 +1,5 @@
+"use client";
+
 import { ChatSidebar } from "@/components/ai/ChatSidebar";
 import { ChatPanel } from "@/components/ai/ChatPanel";
 import { ChatSession, ChatMessage } from "@/types/database";
