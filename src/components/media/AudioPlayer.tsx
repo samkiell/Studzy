@@ -24,6 +24,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
   const [copied, setCopied] = useState(false);
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Mark as complete when 90% listened
   const markComplete = useCallback(async () => {
@@ -200,7 +201,31 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         <span className="text-[10px] font-bold text-purple-300/60 dark:text-purple-700/60 sm:text-sm">Studzy</span>
       </div>
 
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio 
+        ref={audioRef} 
+        src={src} 
+        preload="metadata" 
+        onError={(e) => {
+          console.error("Audio error:", e);
+          setError("Failed to load audio. The format may not be supported or the file is missing.");
+          setIsPlaying(false);
+        }}
+      />
+
+      {error && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-neutral-50/90 dark:bg-neutral-900/90 backdrop-blur-sm gap-2 text-center p-4">
+          <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-sm font-semibold text-neutral-900 dark:text-white">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Title */}
       <div className="mb-3 flex items-center gap-3 sm:mb-6 sm:gap-4">

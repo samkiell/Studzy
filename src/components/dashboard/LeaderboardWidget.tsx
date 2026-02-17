@@ -20,7 +20,8 @@ export function LeaderboardWidget() {
     const fetchLeaderboard = async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, total_study_seconds, avatar_url")
+        .select("id, username, total_study_seconds, avatar_url, role")
+        .neq("role", "admin")
         .order("total_study_seconds", { ascending: false })
         .limit(5);
 
