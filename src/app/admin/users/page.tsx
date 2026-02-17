@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AdminUserTable } from "@/components/admin/AdminUserTable";
-import { Users, UserPlus, UserCheck, Activity } from "lucide-react";
+import { Users, UserPlus, UserCheck, Activity, ShieldCheck } from "lucide-react";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -88,5 +88,3 @@ export default async function AdminUsersPage() {
   );
 }
 
-// Missing icon import in mapped array
-import { ShieldCheck } from "lucide-react";
