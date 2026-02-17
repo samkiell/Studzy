@@ -1,4 +1,6 @@
 import { ChatPageClient } from "./client";
+import { createClient } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
 
 export default async function ChatSessionPage({
   params,

@@ -3,7 +3,7 @@ export type ResourceStatus = "draft" | "published";
 export type UserRole = "student" | "admin";
 export type UserStatus = "active" | "suspended" | "deleted";
 export type ChatMode = "chat" | "image" | "search" | "code";
-export type ChatRole = "user" | "assistant";
+export type ChatRole = "user" | "assistant" | "system";
 
 export interface Profile {
   id: string;
