@@ -14,6 +14,9 @@ interface LeaderboardEntry {
 export function LeaderboardWidget() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [limit, setLimit] = useState(5);
+  const [hasMore, setHasMore] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
@@ -23,16 +26,24 @@ export function LeaderboardWidget() {
         .select("id, username, total_study_seconds, avatar_url, role")
         .neq("role", "admin")
         .order("total_study_seconds", { ascending: false })
-        .limit(5);
+        .limit(limit);
 
       if (!error && data) {
         setEntries(data as LeaderboardEntry[]);
+        // If we got fewer results than the limit, there's no more data
+        setHasMore(data.length === limit);
       }
       setLoading(false);
+      setIsFetchingMore(false);
     };
 
     fetchLeaderboard();
-  }, [supabase]);
+  }, [supabase, limit]);
+
+  const handleSeeMore = () => {
+    setIsFetchingMore(true);
+    setLimit(prev => prev + 10);
+  };
 
   if (loading) return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 animate-pulse">
@@ -85,6 +96,16 @@ export function LeaderboardWidget() {
           </div>
         ))}
       </div>
+
+      {hasMore && (
+        <button
+          onClick={handleSeeMore}
+          disabled={isFetchingMore}
+          className="mt-6 w-full rounded-lg border border-neutral-200 py-2 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white disabled:opacity-50"
+        >
+          {isFetchingMore ? "Loading..." : "See More"}
+        </button>
+      )}
     </div>
   );
 }
