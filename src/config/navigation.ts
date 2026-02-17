@@ -39,9 +39,4 @@ export const NAVIGATION_ITEMS: NavItemConfig[] = [
     href: "/profile",
     icon: User,
   },
-  {
-    label: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
 ];
