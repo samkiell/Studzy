@@ -86,6 +86,7 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 - Cite which source the information comes from when possible.
 - If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
 - Format responses with markdown for readability.`;
+}
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
 export async function POST(
