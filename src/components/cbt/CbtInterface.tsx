@@ -104,13 +104,13 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     if (isCreatingAiSession) return;
     setIsCreatingAiSession(true);
     try {
-      const { sessionId, prompt } = await createExplanationSession(
+      const { sessionId } = await createExplanationSession(
         currentQuestion,
         answers[currentQuestion.id]
       );
       
-      // Navigate to chat with the pre-filled session and prompt
-      router.push(`/dashboard/chat?session=${sessionId}&q=${encodeURIComponent(prompt)}`);
+      // Navigate to chat with the created session
+      router.push(`/studzyai/chat/${sessionId}`);
     } catch (error) {
       console.error("Failed to create AI session:", error);
     } finally {

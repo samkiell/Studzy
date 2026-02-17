@@ -58,10 +58,22 @@ export async function createExplanationSession(
 
     const { session } = await response.json();
     
-    // Return both the session ID and the prompt to be sent as the first message
+    // Send the first message (the prompt) to the session
+    const messageResponse = await fetch(`/api/ai/sessions/${session.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: prompt,
+        mode: "chat",
+      }),
+    });
+
+    if (!messageResponse.ok) {
+      console.warn("Failed to send initial AI prompt, session created though.");
+    }
+
     return {
       sessionId: session.id,
-      prompt,
     };
   } catch (error) {
     console.error("Error in createExplanationSession:", error);
