@@ -140,7 +140,7 @@ export default function ChatSessionPage() {
       "Abhraham dropping ‘it’s common sense’ like we all live in his head...",
       "Pii protecting answers like it’s classified government data...",
       "Deamon revising while we’re still panicking...",
-      "Robert zooming into Renowned’s screen with 4K vision...",
+      "Robert zooming into Renowned’s script with 4K vision...",
       "Thessy pretending not to know the answer again...",
       "Dr. Gambo increasing course units just because he can...",
       "Cambridge correcting the lecturer politely...",
