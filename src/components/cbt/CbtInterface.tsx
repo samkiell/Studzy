@@ -14,7 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Question, Attempt, SubmitAnswer } from "@/types/cbt";
-import { submitCbtAttempt } from "@/app/cbt/actions";
+import { submitCbtAttempt } from "@/app/(dashboard)/cbt/actions";
 import { createExplanationSession } from "@/lib/cbt/ai-utils";
 import { useRouter } from "next/navigation";
 

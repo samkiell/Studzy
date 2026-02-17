@@ -11,7 +11,7 @@ export function generateExplanationPrompt(
     .map(([key, val]) => `${key.toUpperCase()}: ${val}`)
     .join("\n");
 
-  return `Explain this CSC201 question.
+  return `Explain this CSC201 (Introduction to Python Programming) question.
 
 Question:
 ${question.question_text}
@@ -42,7 +42,7 @@ export async function createExplanationSession(
   selectedOption: string
 ) {
   const prompt = generateExplanationPrompt(question, selectedOption);
-  const title = `CSC201: ${question.question_text.substring(0, 30)}...`;
+  const title = `Intro to Python: ${question.question_text.substring(0, 30)}...`;
 
   try {
     // We call our internal API to create a session
