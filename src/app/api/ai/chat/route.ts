@@ -143,6 +143,12 @@ export async function POST(request: NextRequest) {
             role: "system",
             content: ragContext,
           });
+        } else {
+          // 💡 FALLBACK: Inform the AI that no local context was found so it answers normally
+          mistralMessages.unshift({
+            role: "system",
+            content: "Note: No specific study materials were found in the database for this query. Please answer based on your general knowledge or available web search tools. If the user is asking about their course, mention that no materials for this specific query have been uploaded yet.",
+          });
         }
       }
     }
@@ -223,12 +229,19 @@ async function streamResponse(response: any, mode: string) {
             })}\n\n`));
           }
 
-          // Log tool calls privately in server console for debugging
+          // Log tool calls privately in server console
           const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
-          if (toolCalls && toolCalls.length > 0 && !hasEmittedContent) {
+          if (toolCalls && toolCalls.length > 0) {
             const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
-            console.log(`[API] 🛠️ AI requested tools: ${toolNames}`);
-            // No longer emitting "Thinking" to user as per request
+            if (!hasEmittedContent) {
+              console.log(`[API] 🛠️ AI requested tools: ${toolNames}`);
+              // We send a small invisible whitespace to keep the stream "alive" for the browser
+              // without showing "Thinking" or "Searching" to the user.
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                choices: [{ delta: { content: " " } }]
+              })}\n\n`));
+              hasEmittedContent = true;
+            }
           }
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
