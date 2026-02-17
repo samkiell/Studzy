@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { UploadForm } from "@/components/admin";
+import { UploadForm } from "@/components/admin/UploadForm";
 import type { Course } from "@/types/database";
 
 export default async function AdminUploadPage() {
