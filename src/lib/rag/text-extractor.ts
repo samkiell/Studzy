@@ -41,6 +41,35 @@ export async function extractTextFromStorage(
 
   const fileName = filePath.split("/").pop() || filePath;
 
+  if (filePath.endsWith(".json")) {
+    try {
+      const jsonData = JSON.parse(text);
+      
+      // Check if it matches the Devcore_group schema (list of messages with sender/message)
+      if (Array.isArray(jsonData) && jsonData.length > 0 && "sender" in jsonData[0] && "message" in jsonData[0]) {
+        console.log(`[RAG] Detected chat log JSON format. Converting to transcript...`);
+        
+        // Filter out system messages and format as transcript
+        const transcript = jsonData
+          .filter((msg: any) => !msg.is_system && msg.message) // Exclude system messages & empty
+          .map((msg: any) => {
+            const time = msg.timestamp ? `[${msg.timestamp}] ` : "";
+            const sender = msg.sender || "Unknown";
+            return `${time}${sender}: ${msg.message}`;
+          })
+          .join("\n\n");
+
+        return {
+          text: transcript,
+          pageCount: 1,
+          fileName,
+        };
+      }
+    } catch (e) {
+      console.warn(`[RAG] Failed to parse JSON for special handling, treating as raw text:`, e);
+    }
+  }
+
   return {
     text,
     pageCount: 1, // Treat as single page
