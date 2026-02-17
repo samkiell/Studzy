@@ -11,10 +11,16 @@ import {
   FileStack,
   Trash2,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Info
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Course, ResourceType, ResourceStatus } from "@/types/database";
+import { uploadCBTQuestions } from "@/app/admin/actions";
+import { CBTUploadToggle } from "./cbt/CBTUploadToggle";
+import { CourseSelector } from "./cbt/CourseSelector";
+import { JSONFileInput } from "./cbt/JSONFileInput";
+import { UploadSummary } from "./cbt/UploadSummary";
 
 interface UploadFormProps {
   courses: Course[];
@@ -67,6 +73,9 @@ export function UploadForm({ courses }: UploadFormProps) {
   const router = useRouter();
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [isRAG, setIsRAG] = useState(false);
+  const [isCbtMode, setIsCbtMode] = useState(false);
+  const [cbtFile, setCbtFile] = useState<File | null>(null);
+  const [cbtSummary, setCbtSummary] = useState<any>(null);
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -303,6 +312,38 @@ export function UploadForm({ courses }: UploadFormProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isCbtMode) {
+      if (!cbtFile || !selectedCourseId) {
+        setGlobalMessage({ type: "error", text: "Please select a course and a JSON file" });
+        return;
+      }
+      setIsSaving(true);
+      setGlobalMessage(null);
+      
+      try {
+        const course = courses.find(c => c.id === selectedCourseId);
+        const formData = new FormData();
+        formData.append("file", cbtFile);
+        formData.append("courseCode", course?.code || "");
+        
+        const result = await uploadCBTQuestions(formData);
+        
+        if (result.success) {
+          setCbtSummary(result.summary);
+          setGlobalMessage({ type: "success", text: result.message });
+          // Reset file after success
+          setCbtFile(null);
+        } else {
+          setGlobalMessage({ type: "error", text: result.message });
+        }
+      } catch (err: any) {
+        setGlobalMessage({ type: "error", text: err.message || "CBT Upload failed" });
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
     if (isRAG) {
       setGlobalMessage({
         type: "success",
@@ -416,34 +457,61 @@ export function UploadForm({ courses }: UploadFormProps) {
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
-      {/* Course Selection */}
-      <div>
-        <label
-          htmlFor="courseId"
-          className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-        >
-          Course <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="courseId"
-          value={selectedCourseId}
-          onChange={(e) => setSelectedCourseId(e.target.value)}
-          required={!isRAG}
-          disabled={isRAG}
-          className={`w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-neutral-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white ${
-            isRAG ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          <option value="">Select a course</option>
-          {courses.map((course) => (
-            <option key={course.id} value={course.id}>
-              {course.code} - {course.title}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* CBT Upload Mode Toggle */}
+      <CBTUploadToggle 
+        enabled={isCbtMode} 
+        onToggle={(enabled) => {
+          setIsCbtMode(enabled);
+          if (enabled) {
+            setIsRAG(false);
+            setFiles([]); // Clear other files when switching to CBT
+            setGlobalMessage(null);
+          }
+        }} 
+      />
 
-      {/* RAG Dump Toggle */}
+      {/* Course Selection */}
+      <CourseSelector 
+        courses={courses} 
+        selectedId={selectedCourseId} 
+        onSelect={(id) => {
+          setSelectedCourseId(id);
+          setCbtSummary(null); // Reset summary when course changes
+        }}
+        disabled={isRAG && !isCbtMode}
+      />
+
+      {isCbtMode ? (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <JSONFileInput 
+            file={cbtFile} 
+            onFileSelect={setCbtFile} 
+            disabled={isSaving}
+          />
+          
+          {cbtSummary && (
+            <UploadSummary 
+              summary={cbtSummary} 
+              courseCode={courses.find(c => c.id === selectedCourseId)?.code || ""} 
+            />
+          )}
+
+          <div className="rounded-xl bg-amber-50 p-4 border border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30">
+            <div className="flex gap-3">
+              <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800 dark:text-amber-400">
+                <p className="font-semibold">CBT Mode Requirements</p>
+                <ul className="mt-1 list-inside list-disc opacity-80">
+                  <li>File must be a valid JSON array</li>
+                  <li>Required fields: course_code, question_id, question_text, options, correct_option</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* RAG Dump Toggle */}
       <div className="rounded-lg border border-primary-200 bg-primary-50/50 p-4 dark:border-primary-900/50 dark:bg-primary-900/10">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
@@ -731,27 +799,24 @@ export function UploadForm({ courses }: UploadFormProps) {
           </div>
         </div>
       )}
+    </>
+  )}
 
       {/* Save Button */}
       <button
         type="submit"
-        disabled={isSaving || uploadedCount === 0 || pendingOrUploadingCount > 0}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={isSaving || (isCbtMode ? !cbtFile : uploadedCount === 0) || pendingOrUploadingCount > 0 || !selectedCourseId}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-4 font-bold text-white shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-700 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSaving ? (
           <>
             <Loader2 className="h-5 w-5 animate-spin" />
-            Saving...
-          </>
-        ) : pendingOrUploadingCount > 0 ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Uploading files...
+            {isCbtMode ? "Processing JSON..." : "Saving..."}
           </>
         ) : (
           <>
             <Check className="h-5 w-5" />
-            Save {uploadedCount > 0 ? `${uploadedCount} Resource${uploadedCount > 1 ? "s" : ""}` : "Resources"}
+            {isCbtMode ? "Bulk Upload Questions" : `Save ${uploadedCount > 0 ? `${uploadedCount} Resource${uploadedCount > 1 ? "s" : ""}` : "Resources"}`}
           </>
         )}
       </button>
