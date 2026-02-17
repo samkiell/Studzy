@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Check admin status
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, username")
       .eq("id", user.id)
       .single();
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!type || !["audio", "video", "pdf", "image"].includes(type)) {
+    if (!type || !["audio", "video", "pdf", "image", "document"].includes(type)) {
       return NextResponse.json(
         { success: false, message: "Please select a valid resource type" },
         { status: 400 }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type
     const allowedMimeTypes = ALLOWED_TYPES[type];
-    if (!allowedMimeTypes.includes(file.type)) {
+    if (allowedMimeTypes && !allowedMimeTypes.includes(file.type)) {
       return NextResponse.json(
         {
           success: false,
@@ -165,6 +165,25 @@ export async function POST(request: NextRequest) {
         { success: false, message: `Failed to save resource: ${insertError.message}` },
         { status: 500 }
       );
+    }
+
+    // 🎓 RAG: Trigger ingestion automatically for searchable types
+    if (type === "pdf" || type === "document") {
+      try {
+        const { ingestFile } = await import("@/lib/rag/ingestion");
+        console.log(`[API Upload] Triggering auto-ingestion for: ${uploadData.path}`);
+        
+        ingestFile({
+          filePath: uploadData.path,
+          courseCode: courseId,
+          force: true,
+          username: profile.username || user.email || "admin",
+        }).catch(err => {
+          console.error(`[API Upload] Ingestion failed for ${uploadData.path}:`, err);
+        });
+      } catch (err) {
+        console.error(`[API Upload] Failed to trigger ingestion:`, err);
+      }
     }
 
     return NextResponse.json({

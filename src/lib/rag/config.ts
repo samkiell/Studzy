@@ -14,8 +14,8 @@ export const CHUNK_SIZE_TOKENS = 400;
 /** Overlap between chunks in tokens (approx) */
 export const CHUNK_OVERLAP_TOKENS = 50;
 
-/** Max chunks to embed in a single Mistral API call */
-export const EMBEDDING_BATCH_SIZE = 10;
+/** Max chunks to embed in a single Mistral API call (max 500) */
+export const EMBEDDING_BATCH_SIZE = 50;
 
 /** Default number of results from similarity search */
 export const TOP_K = 5;
