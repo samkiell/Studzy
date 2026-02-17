@@ -48,6 +48,23 @@ async function getRAGContext(
       filter_course_code: courseCode || null,
       filter_level: level || null,
     });
+    
+    // 🌍 Fallback: If no course-specific materials, search across the entire "RAG Bucket"
+    if (!error && (!data || data.length === 0) && courseCode) {
+      console.log(`[RAG] 🌍 Course search returned nothing. Retrying with Global wildcard scope...`);
+      const { data: globalData, error: globalError } = await supabase.rpc("match_embeddings", {
+        query_embedding: JSON.stringify(queryEmbedding),
+        match_threshold: SIMILARITY_THRESHOLD,
+        match_count: TOP_K,
+        filter_course_code: null, // Global wildcard search
+        filter_level: null,
+      });
+
+      if (!globalError && globalData && globalData.length > 0) {
+        console.log(`[RAG] ✅ Success! Found ${globalData.length} materials in Global scope.`);
+        return formatRAGPrompt(globalData);
+      }
+    }
 
     if (error) {
       console.error("[RAG] ❌ RPC Error:", error);
@@ -55,23 +72,30 @@ async function getRAGContext(
     }
 
     if (!data || data.length === 0) {
-      console.log("[RAG] ⚠️ No matching study materials found for this query.");
+      console.log("[RAG] ⚠️ No matching study materials found in ANY scope.");
       return null;
     }
 
     console.log(`[RAG] ✅ Found ${data.length} relevant chunks:`);
-    data.forEach((chunk: any, i: number) => {
-      console.log(`   Source ${i + 1}: ${chunk.file_path} (similarity: ${(chunk.similarity * 100).toFixed(1)}%)`);
-    });
+    return formatRAGPrompt(data);
+  } catch (err) {
+    console.error("[RAG] ❌ Context retrieval failed:", err);
+    return null;
+  }
+}
 
-    const contextBlocks = data
-      .map(
-        (chunk: any, i: number) =>
-          `--- Source ${i + 1} (${chunk.file_path}, relevance: ${(chunk.similarity * 100).toFixed(1)}%) ---\n${chunk.content}`
-      )
-      .join("\n\n");
+/**
+ * Helper to format retrieval data into a system prompt.
+ */
+function formatRAGPrompt(data: any[]): string {
+  const contextBlocks = data
+    .map(
+      (chunk: any, i: number) =>
+        `--- Source ${i + 1} (${chunk.file_path}, relevance: ${(chunk.similarity * 100).toFixed(1)}%) ---\n${chunk.content}`
+    )
+    .join("\n\n");
 
-    return `RELEVANT STUDY MATERIALS FOUND:
+  return `RELEVANT STUDY MATERIALS FOUND:
 ${contextBlocks}
 
 INSTRUCTIONS FOR USING STUDY MATERIALS:
@@ -79,10 +103,6 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 - Cite which source the information comes from when possible.
 - If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
 - Format responses with markdown for readability.`;
-  } catch (err) {
-    console.error("[RAG] ❌ Context retrieval failed:", err);
-    return null;
-  }
 }
 
 export async function POST(request: NextRequest) {
