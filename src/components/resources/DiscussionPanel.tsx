@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Send, Reply, User as UserIcon, Loader2 } from "lucide-react";
+import { MessageSquare, Send, Reply, User as UserIcon, Loader2, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
@@ -223,7 +223,7 @@ function DiscussionItem({ discussion, allDiscussions, onReply, isAdmin, onDelete
               onClick={() => onDelete(discussion.id)}
               className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-700 ml-4"
             >
-              <Loader2 className="h-3 w-3" />
+              <Trash2 className="h-3 w-3" />
               Delete
             </button>
           )}
