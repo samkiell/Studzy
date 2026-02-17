@@ -42,6 +42,13 @@ export default async function ChatSessionPage({
     image_url: msg.image_url
   })) || [];
 
+  // Fetch all sessions for sidebar
+  const { data: sessions } = await supabase
+    .from("chat_sessions")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
   return (
     <ChatPageClient 
       sessionId={sessionId}
@@ -52,6 +59,7 @@ export default async function ChatSessionPage({
         image: user.user_metadata?.avatar_url
       }}
       sessionTitle={session.title}
+      sessions={sessions || []}
     />
   );
 }

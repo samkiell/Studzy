@@ -1,9 +1,5 @@
-"use client";
-
-import { ChatPanel } from "@/components/ai/ChatPanel";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ChatMessage } from "@/types/database";
+import { ChatSidebar } from "@/components/ai/ChatSidebar";
+import { ChatSession } from "@/types/database";
 
 interface ChatPageClientProps {
   sessionId: string;
@@ -14,13 +10,15 @@ interface ChatPageClientProps {
     image?: string;
   };
   sessionTitle: string;
+  sessions: ChatSession[];
 }
 
 export function ChatPageClient({ 
   sessionId, 
   initialMessages, 
   user,
-  sessionTitle 
+  sessionTitle,
+  sessions
 }: ChatPageClientProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(!sessionTitle.startsWith("Intro to Python"));
@@ -42,13 +40,34 @@ export function ChatPageClient({
     }
   };
 
+  const handleDeleteSession = async (id: string) => {
+    try {
+      await fetch(`/api/ai/sessions/${id}`, { method: "DELETE" });
+      router.refresh();
+      if (id === sessionId) {
+        router.push("/studzyai");
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+    }
+  };
+
   return (
-    <div className="h-[calc(100vh-4rem)] md:h-screen w-full bg-white dark:bg-neutral-950">
+    <div className="flex h-[calc(100vh-4rem)] md:h-screen w-full bg-white dark:bg-neutral-950 overflow-hidden relative">
+      <ChatSidebar 
+        sessions={sessions}
+        activeSessionId={sessionId}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(false)}
+        onNewChat={handleNewChat}
+        onDeleteSession={handleDeleteSession}
+      />
+      
       <ChatPanel 
         sessionId={sessionId}
         initialMessages={initialMessages}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        onSessionUpdate={() => {}} // Optional: handle title updates
+        onSessionUpdate={() => {}} 
         onNewChat={handleNewChat}
         sidebarOpen={sidebarOpen}
       />
