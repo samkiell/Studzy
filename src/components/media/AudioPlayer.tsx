@@ -200,11 +200,22 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         <span className="text-[10px] font-bold text-purple-300/60 dark:text-purple-700/60 sm:text-sm">Studzy</span>
       </div>
 
-      <audio 
-        ref={audioRef} 
-        src={src} 
-        preload="metadata" 
-      />
+      {src ? (
+        <audio 
+          key={src}
+          ref={audioRef} 
+          src={src} 
+          preload="metadata" 
+          onError={() => {
+            // Silently handle error to prevent Next.js crash overlay
+            console.warn("Audio failed to load:", src);
+          }}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center py-4 text-neutral-500 italic text-sm">
+          No audio source provided
+        </div>
+      )}
 
       {/* Title */}
       <div className="mb-3 flex items-center gap-3 sm:mb-6 sm:gap-4">

@@ -309,18 +309,32 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
         <span className="text-sm font-bold text-white/40 drop-shadow-lg sm:text-lg">Studzy</span>
       </div>
 
-      <video
-        ref={videoRef}
-        src={src}
-        className="aspect-video w-full cursor-pointer"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => { setIsPlaying(false); setShowControls(true); }}
-        onClick={handleVideoClick}
-        title={title}
-      />
+      {src ? (
+        <video
+          key={src}
+          ref={videoRef}
+          src={src}
+          className="aspect-video w-full cursor-pointer"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => { setIsPlaying(false); setShowControls(true); }}
+          onClick={handleVideoClick}
+          title={title}
+          onError={() => {
+            // Silently handle to avoid crash overlay
+            console.warn("Video failed to load:", src);
+          }}
+        />
+      ) : (
+        <div className="aspect-video w-full flex flex-col items-center justify-center bg-neutral-900 text-neutral-400 gap-2">
+           <svg className="h-10 w-10 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+           </svg>
+           <p className="text-sm font-medium">No video source provided</p>
+        </div>
+      )}
 
       {/* Touch Action Indicators (visual feedback could be added here for double tap) */}
 
