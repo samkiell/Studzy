@@ -57,6 +57,8 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
+      const name = u.full_name || "";
+      const email = u.email || "";
       const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) || 
                              email.toLowerCase().includes(search.toLowerCase());
       const matchesRole = filterRole === "all" || u.role === filterRole;
