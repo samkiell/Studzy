@@ -50,3 +50,20 @@ export interface SubmitAttemptRequest {
   answers: SubmitAnswer[];
   duration_seconds: number;
 }
+
+export interface CBTQuestion {
+  course_code: string;
+  question_id: number;
+  difficulty: Difficulty;
+  topic: string;
+  question_text: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+    [key: string]: string; // Allow for flexible number of options if needed
+  };
+  correct_option: string;
+  explanation: string;
+}
