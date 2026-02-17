@@ -139,45 +139,54 @@ export async function debugVectorCount() {
  * Detailed search debug for a specific query.
  */
 export async function debugSearch(query: string) {
-  console.log(`\n[RAG DEBUG] --- DEBUG SEARCH: "${query}" ---`);
+  console.log(`\n[RAG DEBUG] --- DEBUG SEARCH START ---`);
   
-  // 1. Vector Count
+  // 1. Vector Count Before Search
   const totalVectors = await debugVectorCount();
   
-  // 2. Metadata
+  // 2. Metadata (Namespace and Model)
   console.log(`[RAG DEBUG] Namespace: study_material_embeddings`);
-  console.log(`[RAG DEBUG] Embedding Model: ${EMBEDDING_MODEL}`);
+  console.log(`[RAG DEBUG] Query Embedding Model: ${EMBEDDING_MODEL}`);
 
   try {
-    // 3. Generate Embedding
+    // 3. Generate Embedding (Ensure match with ingestion)
+    console.log(`[RAG DEBUG] Generating embedding for query...`);
     const embedding = await embedText(query);
-    console.log(`[RAG DEBUG] Query embedding generated (dim: ${embedding.length})`);
+    console.log(`[RAG DEBUG] ✅ Embedding generated (Dimension: ${embedding.length})`);
 
     // 4. Search with NO threshold
+    console.log(`[RAG DEBUG] Executing vector search (match_threshold = 0)...`);
     const supabase = createAdminClient();
     const { data: matches, error } = await supabase.rpc("match_embeddings", {
       query_embedding: `[${embedding.join(",")}]`,
-      match_threshold: 0, // Remove strict filtering
+      match_threshold: 0, // Temporarily remove strict similarity threshold
       match_count: 5      // Top 5
     });
 
     if (error) {
-      console.error(`[RAG DEBUG] ❌ Debug search failed: ${error.message}`);
+      console.error(`[RAG DEBUG] ❌ RPC match_embeddings failed: ${error.message}`);
       return;
     }
 
     // 5. Explicit results logging
-    console.log(`[RAG DEBUG] Retrieved results length: ${matches?.length || 0}`);
+    const resultsLength = matches?.length || 0;
+    console.log(`[RAG DEBUG] Retrieved results length: ${resultsLength}`);
     
     if (matches && matches.length > 0) {
-      console.log("[RAG DEBUG] Top 5 Similarity Scores & Details:");
+      console.log("[RAG DEBUG] --- Top 5 Similarity Results ---");
       matches.forEach((m: any, i: number) => {
         console.log(`   ${i + 1}. [Score: ${m.similarity.toFixed(6)}] ID: ${m.id} | File: ${m.file_path}`);
       });
+      
+      const ids = matches.map((m: any) => m.id);
+      const scores = matches.map((m: any) => m.similarity.toFixed(6));
+      console.log(`[RAG DEBUG] Document IDs returned: ${JSON.stringify(ids)}`);
+      console.log(`[RAG DEBUG] Scores returned: ${JSON.stringify(scores)}`);
     } else {
       console.warn("[RAG DEBUG] ⚠️ No results returned even with 0 threshold.");
     }
     
+    console.log(`[RAG DEBUG] --- DEBUG SEARCH END ---\n`);
     return matches;
   } catch (err: any) {
     console.error("[RAG DEBUG] ❌ Debug search encountered an error:", err.message);
