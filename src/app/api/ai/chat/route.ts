@@ -173,12 +173,15 @@ export async function POST(request: NextRequest) {
     const shouldUseWebSearch = enable_search || mode === "search";
     console.log(`[API] AI Request - Mode: ${mode}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
     
+    // 🛡️ SECURITY: Validate and filter messages before sending to API
+    const finalMessages = validateMessages(mistralMessages);
+
     try {
       if (shouldUseWebSearch) {
         console.log("[API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
         const response = await (client.chat.stream as any)({
           model: "mistral-large-latest",
-          messages: mistralMessages,
+          messages: finalMessages,
           web_search: true,
         });
         return streamResponse(response, mode);
@@ -187,7 +190,7 @@ export async function POST(request: NextRequest) {
       // ✅ Standard Agent Logic
       const response = await client.agents.stream({
         agentId: MISTRAL_AI_AGENT_ID,
-        messages: mistralMessages,
+        messages: finalMessages,
       });
       return streamResponse(response, mode);
     } catch (apiError: any) {
@@ -204,6 +207,26 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Ensures all messages (especially assistant ones) are valid for Mistral API.
+ * Mistral requires assistant messages to have EITHER content OR tool_calls.
+ */
+function validateMessages(messages: any[]): any[] {
+  return messages.filter((msg, index) => {
+    if (msg.role !== "assistant") return true;
+
+    const hasContent = msg.content && typeof msg.content === "string" && msg.content.trim().length > 0;
+    const hasToolCalls = msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0;
+
+    if (!hasContent && !hasToolCalls) {
+      console.warn(`[API] 🧹 Removing invalid assistant message at index ${index}: No content and no tool_calls.`);
+      return false;
+    }
+
+    return true;
+  });
 }
 
 /**
