@@ -49,7 +49,7 @@ async function searchEmbeddings(
   const supabase = createAdminClient();
 
   const { data, error } = await supabase.rpc("match_embeddings", {
-    query_embedding: JSON.stringify(queryEmbedding),
+    query_embedding: `[${queryEmbedding.join(",")}]`,
     match_threshold: threshold,
     match_count: topK,
     filter_course_code: courseCode || null,
