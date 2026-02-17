@@ -9,13 +9,16 @@ export const EMBEDDING_MODEL = "mistral-embed";
 export const CHAT_MODEL = "mistral-large-latest";
 
 /** Target chunk size in tokens (approx) */
-export const CHUNK_SIZE_TOKENS = 400;
+export const CHUNK_SIZE_TOKENS = 650;
 
 /** Overlap between chunks in tokens (approx) */
-export const CHUNK_OVERLAP_TOKENS = 50;
+export const CHUNK_OVERLAP_TOKENS = 100;
 
-/** Max chunks to embed in a single Mistral API call (max 500) */
-export const EMBEDDING_BATCH_SIZE = 50;
+/** Max chunks to embed in a single Mistral API call */
+export const EMBEDDING_BATCH_SIZE = 15;
+
+/** Max tokens per embedding API request (Mistral safety limit) */
+export const EMBEDDING_TOKEN_LIMIT = 16000;
 
 /** Default number of results from similarity search */
 export const TOP_K = 5;
