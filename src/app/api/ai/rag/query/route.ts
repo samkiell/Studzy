@@ -56,7 +56,11 @@ export async function POST(request: NextRequest) {
 
     // Non-streaming response
     if (!stream) {
-      const result = await queryRAG(queryOptions);
+      const { runRAG } = await import("@/lib/rag/minimal");
+      const result = await runRAG(queryOptions.question, {
+        topK: queryOptions.topK,
+        threshold: queryOptions.threshold
+      });
       return NextResponse.json(result);
     }
 
