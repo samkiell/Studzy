@@ -1,5 +1,8 @@
 import { ChatSidebar } from "@/components/ai/ChatSidebar";
-import { ChatSession } from "@/types/database";
+import { ChatPanel } from "@/components/ai/ChatPanel";
+import { ChatSession, ChatMessage } from "@/types/database";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface ChatPageClientProps {
   sessionId: string;
