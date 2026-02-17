@@ -204,11 +204,6 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
         ref={audioRef} 
         src={src} 
         preload="metadata" 
-        onError={(e) => {
-          console.error("Audio error:", e);
-          // Only log the error, don't block the player UI as it may be a false positive
-          // or non-fatal in some browser environments (e.g. Turbopack dev mode).
-        }}
       />
 
       {/* Title */}

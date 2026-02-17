@@ -320,9 +320,6 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
         onEnded={() => { setIsPlaying(false); setShowControls(true); }}
         onClick={handleVideoClick}
         title={title}
-        onError={(e) => {
-          console.error("Video error:", e);
-        }}
       />
 
       {/* Touch Action Indicators (visual feedback could be added here for double tap) */}
