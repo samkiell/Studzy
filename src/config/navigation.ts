@@ -3,7 +3,8 @@ import {
   BookOpen, 
   Brain, 
   User, 
-  Settings 
+  Settings,
+  Zap
 } from "lucide-react";
 
 export interface NavItemConfig {
@@ -27,6 +28,11 @@ export const NAVIGATION_ITEMS: NavItemConfig[] = [
     label: "CBT",
     href: "/cbt",
     icon: Brain,
+  },
+  {
+    label: "StudzyAI",
+    href: "/studzyai",
+    icon: Zap,
   },
   {
     label: "Profile",
