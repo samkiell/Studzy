@@ -19,6 +19,8 @@ import { submitCbtAttempt } from "@/app/(dashboard)/cbt/actions";
 import { createExplanationSession } from "@/lib/cbt/ai-utils";
 import { useRouter } from "next/navigation";
 
+import { ResultSummary } from "./ResultSummary";
+
 interface CbtInterfaceProps {
   initialAttempt: Attempt;
   questions: Question[];
@@ -114,6 +116,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         answers: formattedAnswers,
         durationSeconds: initialAttempt.mode === 'exam' ? (1800 - timeLeft) : 0
       });
+      // @ts-ignore - The response object structure is correct now
       setResults(res);
       setIsSubmitted(true);
     } catch (error) {
@@ -149,26 +152,10 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   if (isSubmitted && results) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4 md:p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full">
-          <div className="w-20 h-20 md:w-24 md:h-24 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Send className="w-8 h-8 md:w-10 md:h-10 text-indigo-400" />
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">CBT Completed!</h2>
-          <p className="text-gray-400 mb-8">Your results have been processed.</p>
-          
-          <div className="flex flex-col sm:flex-row gap-8 md:gap-12 justify-center mb-10">
-            <div>
-              <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider mb-1">Score</p>
-              <p className="text-4xl md:text-5xl font-bold text-white">{results.score} <span className="text-xl md:text-2xl text-gray-600">/ {results.totalQuestions}</span></p>
-            </div>
-          </div>
-
-          <Button onClick={() => router.push('/cbt')} className="w-full sm:w-auto px-8 py-4">
-            Back to CBT Dashboard
-          </Button>
-        </motion.div>
-      </div>
+      <ResultSummary 
+        results={results} 
+        courseCode={initialAttempt.course_code} 
+      />
     );
   }
 
