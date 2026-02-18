@@ -3,6 +3,7 @@ import Link from "next/link";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { Footer } from "@/components/ui/Footer";
 
 export default async function AdminLayout({
   children,
@@ -71,15 +72,16 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
       <AdminHeader />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {children}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
