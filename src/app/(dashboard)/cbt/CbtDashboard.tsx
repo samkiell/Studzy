@@ -56,28 +56,28 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-white p-6 md:p-12 lg:p-24 flex flex-col items-center">
+    <div className="min-h-screen bg-[#0A0A0B] text-white p-4 md:p-12 lg:p-24 flex flex-col items-center">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl relative z-10"
       >
-        <header className="text-center mb-12">
+        <header className="text-center mb-8 md:mb-12">
           {courseCode && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-4">
-              <ShieldCheck className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs md:text-sm font-medium mb-4">
+              <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span>Official {courseCode} CBT Engine</span>
             </div>
           )}
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-white">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight text-white">
             {courseTitle}
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-400 text-sm md:text-lg">
             Practice with real questions, timed sessions, and AI-powered explanations.
           </p>
         </header>
 
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">
+        <section className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-8 backdrop-blur-xl shadow-2xl">
           <div className="space-y-8">
             {/* Course Selector */}
             <div>
@@ -112,28 +112,28 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                 <Settings className="w-4 h-4 text-indigo-400" />
                 Select Mode
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <button
                   onClick={() => setMode("study")}
-                  className={`p-4 rounded-xl border transition-all text-left ${
+                  className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
                     mode === "study" 
                     ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
                     : "bg-white/5 border-white/10 hover:border-white/20"
                   }`}
                 >
-                  <h3 className={`font-semibold ${mode === "study" ? "text-indigo-400" : "text-white"}`}>Study Mode</h3>
-                  <p className="text-xs text-gray-400 mt-1">Instant feedback & AI explanations</p>
+                  <h3 className={`font-semibold text-sm md:text-base ${mode === "study" ? "text-indigo-400" : "text-white"}`}>Study Mode</h3>
+                  <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Instant feedback & AI explanations</p>
                 </button>
                 <button
                   onClick={() => setMode("exam")}
-                  className={`p-4 rounded-xl border transition-all text-left ${
+                  className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
                     mode === "exam" 
                     ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
                     : "bg-white/5 border-white/10 hover:border-white/20"
                   }`}
                 >
-                  <h3 className={`font-semibold ${mode === "exam" ? "text-indigo-400" : "text-white"}`}>Exam Mode</h3>
-                  <p className="text-xs text-gray-400 mt-1">Real-time pressure with a timer</p>
+                  <h3 className={`font-semibold text-sm md:text-base ${mode === "exam" ? "text-indigo-400" : "text-white"}`}>Exam Mode</h3>
+                  <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Real-time pressure with a timer</p>
                 </button>
               </div>
             </div>
