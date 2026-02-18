@@ -40,7 +40,10 @@ export default async function ProfilePage() {
 
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <ProfileEditor user={user} profile={profile} />
+          <ProfileEditor 
+            initialBio={profile?.bio} 
+            initialGoal={profile?.learning_goal} 
+          />
         </div>
         
         <div className="lg:col-span-5 space-y-6">
