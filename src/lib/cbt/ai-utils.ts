@@ -57,23 +57,23 @@ export async function createExplanationSession(
 
     const { session } = await response.json();
     
-    // 1. Send system message with context
+    // 1. Send system message with generic persona
     await fetch(`/api/ai/sessions/${session.id}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        content: prompt,
+        content: "You are an expert tutor for OAU software engineering students. Your goal is to explain concepts clearly and help students learn from their mistakes.",
         role: "system",
         mode: "chat",
       }),
     });
 
-    // 2. Send user message (short)
+    // 2. Send user message with full context
     const messageResponse = await fetch(`/api/ai/sessions/${session.id}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        content: "Explain this question.",
+        content: prompt, // The full question details go here
         role: "user",
         mode: "chat",
       }),

@@ -176,7 +176,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           disabled={isSubmitting}
           className="bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
         >
-          {isSubmitting ? "Submitting..." : "Finish Attempt"}
+          {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
       </div>
 
