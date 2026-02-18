@@ -153,6 +153,90 @@ export function ChatPanel({
     reader.readAsDataURL(file);
   };
 
+  // Auto-trigger response if last message was from user (e.g. from "Explain with AI")
+  const triggerAIResponse = useCallback(async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`/api/ai/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trigger_only: true,
+          mode,
+          enable_search: enableSearch || mode === "search",
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to get response");
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      
+      const assistantMsgId = `assistant-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          session_id: sessionId,
+          role: "assistant",
+          content: "",
+          mode,
+          image_url: null,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantContent += chunk;
+
+        setMessages((prev) => {
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg.id === assistantMsgId) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMsg, content: assistantContent }
+            ];
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error("Auto-trigger Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          session_id: sessionId,
+          role: "assistant", // Using assistant role for error message
+          content: "Sorry, I encountered an error responding to your request.",
+          mode,
+          image_url: null,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sessionId, mode, enableSearch]); // removed isLoading to avoid loops if state updates fast, but actually safe.
+
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      const lastMsg = initialMessages[initialMessages.length - 1];
+      if (lastMsg.role === 'user') {
+        triggerAIResponse();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
