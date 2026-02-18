@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminQuestionBankTable } from "@/components/admin/AdminQuestionBankTable";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { Database } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -49,9 +50,7 @@ export default async function AdminQuestionsPage() {
     created_at: r.created_at,
   }));
 
-import { Database } from "lucide-react";
 
-// ... imports
 
   return (
     <div className="space-y-8">
