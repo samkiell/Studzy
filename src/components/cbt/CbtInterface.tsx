@@ -183,7 +183,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           </div>
 
           <div className="flex items-center gap-4 md:gap-8">
-            <div className="flex flex-col items-end sm:items-center">
+            <div className="flex flex-col items-center">
               <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Accuracy</span>
               <div className="flex items-center gap-1.5 text-green-400">
                 <Target className="w-3.5 h-3.5" />
@@ -194,9 +194,9 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
             <div className="h-8 w-px bg-white/10 hidden sm:block" />
 
             {initialAttempt.mode === 'exam' && (
-              <div className="flex flex-col items-end sm:items-center">
+              <div className="flex flex-col items-center">
                 <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Timer</span>
-                <div className={`flex items-center gap-1.5 font-mono text-sm font-bold ${initialAttempt.mode === 'exam' && timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
+                <div className={`flex items-center gap-1.5 font-mono text-sm font-bold ${timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
                   <Clock className="w-3.5 h-3.5" />
                   {formatTime(timeLeft)}
                 </div>
@@ -229,13 +229,25 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
               className="space-y-8"
             >
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Question {currentIndex + 1} of {questions.length}
-                  </span>
-                  <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest leading-none">
-                    {currentQuestion.topic || "General"}
-                  </span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Question {currentIndex + 1} of {questions.length}
+                    </span>
+                    <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest leading-none">
+                      {currentQuestion.topic || "General"}
+                    </span>
+                  </div>
+                  
+                  {initialAttempt.mode === 'exam' && (
+                    <button 
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="text-[10px] font-bold uppercase tracking-widest text-red-500/80 hover:text-red-400 transition-colors"
+                    >
+                      {isSubmitting ? "..." : "Submit Exam"}
+                    </button>
+                  )}
                 </div>
                 <h2 className="text-xl md:text-3xl font-medium leading-tight text-white/90">
                   {currentQuestion.question_text}
@@ -317,7 +329,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                         )}
                         <div>
                           <h4 className="font-bold text-lg text-white">
-                            {answers[currentQuestion.id] === currentQuestion.correct_option ? "Correct!" : "Not quite"}
+                            {answers[currentQuestion.id] === currentQuestion.correct_option ? "Correct!" : "U dey wrong"}
                           </h4>
                           <p className="text-xs text-gray-400">
                             {answers[currentQuestion.id] === currentQuestion.correct_option 
