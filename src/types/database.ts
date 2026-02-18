@@ -40,6 +40,7 @@ export interface Course {
   title: string;
   description: string | null;
   created_at: string;
+  is_cbt: boolean;
 }
 
 export interface Resource {
@@ -202,6 +203,90 @@ export interface Database {
           course_code: string | null;
           level: string | null;
           username: string | null;
+        }>;
+      };
+      questions: {
+        Row: {
+          id: string;
+          course_id: string;
+          question_text: string;
+          options: Record<string, string>;
+          correct_option: string;
+          explanation: string | null;
+          topic: string | null;
+          difficulty: 'easy' | 'medium' | 'hard';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          question_text: string;
+          options: Record<string, string>;
+          correct_option: string;
+          explanation?: string | null;
+          topic?: string | null;
+          difficulty?: 'easy' | 'medium' | 'hard';
+          created_at?: string;
+        };
+        Update: Partial<{
+          course_id: string;
+          question_text: string;
+          options: Record<string, string>;
+          correct_option: string;
+          explanation: string | null;
+          topic: string | null;
+          difficulty: 'easy' | 'medium' | 'hard';
+        }>;
+      };
+      attempts: {
+        Row: {
+          id: string;
+          user_id: string;
+          course_id: string;
+          mode: 'study' | 'exam';
+          total_questions: number;
+          score: number;
+          duration_seconds: number;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          course_id: string;
+          mode: 'study' | 'exam';
+          total_questions: number;
+          score?: number;
+          duration_seconds?: number;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          score: number;
+          duration_seconds: number;
+          completed_at: string | null;
+        }>;
+      };
+      attempt_answers: {
+        Row: {
+          id: string;
+          attempt_id: string;
+          question_id: string;
+          selected_option: string;
+          is_correct: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          attempt_id: string;
+          question_id: string;
+          selected_option: string;
+          is_correct: boolean;
+          created_at?: string;
+        };
+        Update: Partial<{
+          selected_option: string;
+          is_correct: boolean;
         }>;
       };
     };
