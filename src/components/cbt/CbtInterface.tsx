@@ -170,7 +170,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   return (
     <div className="flex flex-col min-h-screen -mt-4 -mx-4 md:-mt-8 md:-mx-8 lg:-mt-10 lg:-mx-10 bg-[#0A0A0B]">
       {/* Top Header - Sticky below global header */}
-      <div className="sticky top-0 z-30 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+      <div className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0A0B] shadow-lg">
         <div className="max-w-5xl mx-auto px-4 py-2.5 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
              <div className="p-1.5 md:p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
