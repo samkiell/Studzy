@@ -243,6 +243,7 @@ export interface Database {
           id: string;
           user_id: string;
           course_id: string;
+          course_code: string; // Legacy support or required by DB
           mode: 'study' | 'exam';
           total_questions: number;
           score: number;
@@ -254,6 +255,7 @@ export interface Database {
           id?: string;
           user_id: string;
           course_id: string;
+          course_code: string; // Legacy support or required by DB
           mode: 'study' | 'exam';
           total_questions: number;
           score?: number;
