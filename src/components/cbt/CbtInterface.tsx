@@ -295,26 +295,24 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
       {/* Navigation Controls */}
       <div className="mt-16 flex items-center justify-between">
-        <div className="flex gap-4">
-          <Button 
-            variant="outline" 
-            onClick={prevQuestion} 
-            disabled={currentIndex === 0}
-            className="gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={nextQuestion} 
-            disabled={isLastQuestion}
-            className="gap-2"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          onClick={prevQuestion} 
+          disabled={currentIndex === 0}
+          className="gap-2"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Previous
+        </Button>
+        <Button 
+          variant="outline" 
+          onClick={nextQuestion} 
+          disabled={isLastQuestion}
+          className="gap-2 ml-auto"
+        >
+          Next
+          <ChevronRight className="w-4 h-4" />
+        </Button>
 
       </div>
     </div>

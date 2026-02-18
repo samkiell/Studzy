@@ -28,7 +28,7 @@ Correct Answer:
 Instructions:
 1. Confirm if the student's answer is correct or incorrect.
 2. Explain clearly WHY the correct answer is correct.
-3. Explain WHY the student's selected answer is wrong (if they missed it) and why other options are incorrect.
+3. Explain WHY the other options (including the student's choice if wrong) are incorrect.
 4. Keep the tone encouraging and educational.`;
 }
 
