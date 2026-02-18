@@ -66,7 +66,8 @@ export function LoginForm() {
 
       router.push("/dashboard");
       router.refresh();
-    } catch {
+    } catch (err) {
+      console.error("Login catch error:", err);
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }

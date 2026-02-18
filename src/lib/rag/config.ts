@@ -30,7 +30,7 @@ export const SIMILARITY_THRESHOLD = 0.3;
 export const STORAGE_BUCKET = "RAG";
 
 /** Supabase Storage bucket name for Study Materials (Audio, video, PDF) */
-export const MATERIALS_BUCKET = "studzy";
+export const MATERIALS_BUCKET = "studzy-materials";
 
 /** Approximate tokens per word (English text) */
 export const TOKENS_PER_WORD = 1.33;
