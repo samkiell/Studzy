@@ -168,23 +168,23 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     : 0;
 
   return (
-    <div className="flex flex-col min-h-screen -mt-4 -mx-4 md:-mt-8 md:-mx-8 lg:-mt-10 lg:-mx-10 bg-[#0A0A0B]">
-      {/* Top Header - Sticky below global header */}
-      <div className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0A0B] shadow-lg">
-        <div className="max-w-5xl mx-auto px-4 py-2.5 md:py-4 flex items-center justify-between">
+    <div className="flex flex-col min-h-screen bg-[#0A0A0B] relative">
+      {/* Top Header - Truly fixed below global navbar on mobile, top of content on desktop */}
+      <div className="fixed top-16 left-0 right-0 md:absolute md:top-0 z-40 border-b border-white/5 bg-[#0A0A0B]/95 backdrop-blur-md">
+        <div className="w-full px-4 py-2.5 md:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-             <div className="p-1.5 md:p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-              <BrainCircuit className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-400" />
+             <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-xs md:text-sm font-bold text-white truncate max-w-[120px] sm:max-w-none">
+              <h2 className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-none">
                 {initialAttempt.course_title || "CBT Session"}
               </h2>
-              <p className="text-[9px] md:text-[10px] text-gray-500 font-mono uppercase tracking-wider">{initialAttempt.course_code}</p>
+              <p className="text-[9px] text-gray-500 font-mono uppercase tracking-wider">{initialAttempt.course_code}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
               <Target className="w-3 h-3 text-green-400" />
               <span className="text-[11px] md:text-sm font-bold font-mono text-green-400">{currentAccuracy}%</span>
@@ -205,8 +205,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           </div>
         </div>
         
-        {/* Progress Bar */}
-        <div className="w-full h-1 bg-white/5">
+        {/* Progress Bar - Attached to header */}
+        <div className="w-full h-0.5 bg-white/5">
           <motion.div 
             className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"
             initial={{ width: 0 }}
@@ -216,8 +216,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         </div>
       </div>
 
-      {/* Main Question Area */}
-      <div className="flex-1 pt-8 pb-32">
+      {/* Main Question Area - Balanced Padding to account for fixed header */}
+      <div className="flex-1 pt-24 md:pt-20 pb-32">
         <div className="max-w-3xl mx-auto px-4">
           <AnimatePresence mode="wait">
             <motion.div
