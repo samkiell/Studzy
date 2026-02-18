@@ -168,38 +168,38 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     : 0;
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0B] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-[#0A0A0B] flex flex-col overflow-hidden z-[70]">
       {/* Top Header - Fixed */}
       <div className="border-b border-white/5 bg-black/20 backdrop-blur-xl z-20">
-        <div className="max-w-5xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-              <BrainCircuit className="w-4 h-4 text-indigo-400" />
+        <div className="max-w-5xl mx-auto px-4 py-2.5 md:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+             <div className="p-1.5 md:p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              <BrainCircuit className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-400" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-white hidden sm:block">{initialAttempt.course_title || "CBT Session"}</h2>
-              <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">{initialAttempt.course_code} • {initialAttempt.mode} mode</p>
+            <div className="min-w-0">
+              <h2 className="text-xs md:text-sm font-bold text-white truncate max-w-[120px] sm:max-w-none">
+                {initialAttempt.course_title || "CBT Session"}
+              </h2>
+              <p className="text-[9px] md:text-[10px] text-gray-500 font-mono uppercase tracking-wider">{initialAttempt.course_code}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-6">
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Accuracy</span>
-              <div className="flex items-center gap-1 text-green-400">
-                <Target className="w-3.5 h-3.5" />
-                <span className="text-xs md:text-sm font-bold font-mono">{currentAccuracy}%</span>
-              </div>
+          <div className="flex items-center gap-2.5 md:gap-6">
+            <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+              <Target className="w-3 h-3 text-green-400" />
+              <span className="text-[11px] md:text-sm font-bold font-mono text-green-400">{currentAccuracy}%</span>
             </div>
 
-            <div className="h-6 w-px bg-white/10" />
-
             {initialAttempt.mode === 'exam' && (
-              <div className="flex flex-col items-center min-w-[60px]">
-                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Timer</span>
-                <div className={`flex items-center gap-1 font-mono text-xs md:text-sm font-bold ${timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
-                  <Clock className="w-3.5 h-3.5" />
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${
+                timeLeft < 300 
+                  ? 'bg-red-500/10 border-red-500/20 text-red-400 animate-pulse' 
+                  : 'bg-white/5 border-white/5 text-gray-300'
+              }`}>
+                <Clock className="w-3 h-3" />
+                <span className="text-[11px] md:text-sm font-bold font-mono">
                   {formatTime(timeLeft)}
-                </div>
+                </span>
               </div>
             )}
           </div>

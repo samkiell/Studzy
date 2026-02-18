@@ -108,7 +108,7 @@ export function StudzyAIButton() {
     setMoveMode(true);
   };
 
-  if (!isAuthenticated || pathname.startsWith("/studzyai")) return null;
+  if (!isAuthenticated || pathname.startsWith("/studzyai") || pathname.includes("/cbt/")) return null;
 
   return (
     <>
