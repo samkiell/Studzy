@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { recordLogin } from "@/app/auth/actions";
 
 export function LoginForm() {
   const router = useRouter();
@@ -61,8 +62,12 @@ export function LoginForm() {
         return;
       }
 
-      // Record last login
-      await import("@/app/auth/actions").then(mod => mod.recordLogin());
+      // Record last login (non-critical, don't let it block redirect)
+      try {
+        await recordLogin();
+      } catch (recordError) {
+        console.error("Failed to record login:", recordError);
+      }
 
       router.push("/dashboard");
       router.refresh();
