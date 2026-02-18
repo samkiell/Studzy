@@ -206,7 +206,9 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
 
     // Extract file path from URL
     const url = new URL(resource.file_url);
-    const pathParts = url.pathname.split(`/storage/v1/object/public/${STORAGE_BUCKET}/`);
+    // Find where the object path starts (after the bucket name)
+    const bucketInUrl = resource.file_url.includes(`/${MATERIALS_BUCKET}/`) ? MATERIALS_BUCKET : STORAGE_BUCKET;
+    const pathParts = url.pathname.split(`/storage/v1/object/public/${bucketInUrl}/`);
     const filePath = pathParts[1];
 
     if (filePath) {
