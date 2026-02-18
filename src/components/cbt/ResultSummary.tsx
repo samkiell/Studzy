@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRef } from "react";
 import { 
   BarChart3, 
   Clock, 
@@ -42,7 +43,12 @@ interface ResultSummaryProps {
 
 export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
   const router = useRouter();
+  const reviewRef = useRef<HTMLDivElement>(null);
   const percentage = Math.round((results.score / results.totalQuestions) * 100);
+
+  const scrollToReview = () => {
+    reviewRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const getPercentageColor = (pct: number) => {
     if (pct >= 70) return "text-green-400";
@@ -55,45 +61,43 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12 px-2 md:px-0">
       {/* Header Summary Card */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 md:p-12 text-center backdrop-blur-md"
+        className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-6 md:p-10 text-center"
       >
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500" />
-        
-        <div className="mx-auto w-24 h-24 mb-6 rounded-full bg-indigo-500/10 flex items-center justify-center ring-4 ring-indigo-500/20">
-          <Trophy className="w-12 h-12 text-indigo-400" />
+        <div className="mx-auto w-16 h-16 mb-4 rounded-full bg-indigo-500/10 flex items-center justify-center">
+          <Trophy className="w-8 h-8 text-indigo-400" />
         </div>
 
-        <h2 className="text-3xl md:text-4xl font-bold mb-2">Exam Results</h2>
-        <p className="text-gray-400 mb-8 font-mono">{courseCode || "CBT"} Session Completed</p>
+        <h2 className="text-2xl md:text-3xl font-bold mb-1">Exam Results</h2>
+        <p className="text-xs text-gray-500 mb-6 font-mono uppercase tracking-wider">{courseCode || "CBT"} Session Completed</p>
 
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 mb-10">
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Total Score</p>
-            <p className={`text-5xl font-black ${getPercentageColor(percentage)}`}>
-              {results.score} <span className="text-2xl text-gray-600">/ {results.totalQuestions}</span>
+        <div className="flex flex-row items-center justify-center gap-6 md:gap-12 mb-8">
+          <div className="text-center">
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Score</p>
+            <p className={`text-3xl md:text-4xl font-bold ${getPercentageColor(percentage)}`}>
+              {results.score}<span className="text-xl text-gray-600">/{results.totalQuestions}</span>
             </p>
           </div>
           
-          <div className="w-px h-12 bg-white/10 hidden md:block" />
+          <div className="w-px h-8 bg-white/10" />
 
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Accuracy</p>
-            <p className={`text-5xl font-black ${getPercentageColor(percentage)}`}>
+          <div className="text-center">
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Accuracy</p>
+            <p className={`text-3xl md:text-4xl font-bold ${getPercentageColor(percentage)}`}>
               {percentage}%
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4">
-          <Button onClick={() => router.push('/cbt')} className="bg-indigo-600 hover:bg-indigo-700">
-            Back to Dashboard
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button onClick={() => router.push('/cbt')} size="sm" className="bg-indigo-600 hover:bg-indigo-700 h-10 px-6">
+            Dashboard
           </Button>
-          <Button variant="outline" onClick={() => window.scrollTo({ top: 800, behavior: 'smooth' })}>
+          <Button variant="outline" size="sm" onClick={scrollToReview} className="border-white/10 hover:bg-white/5 h-10 px-6">
             Review Questions
           </Button>
         </div>
@@ -175,8 +179,8 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
       </div>
 
       {/* Questions Review */}
-      <div id="review" className="space-y-6">
-        <h3 className="text-xl font-bold flex items-center gap-2">
+      <div ref={reviewRef} id="review" className="space-y-6 pt-4">
+        <h3 className="text-lg font-bold flex items-center gap-2">
           <BrainCircuit className="w-6 h-6 text-indigo-400" />
           Detailed Question Review
         </h3>

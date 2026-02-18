@@ -182,21 +182,21 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-8">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="flex flex-col items-center">
               <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Accuracy</span>
-              <div className="flex items-center gap-1.5 text-green-400">
+              <div className="flex items-center gap-1 text-green-400">
                 <Target className="w-3.5 h-3.5" />
-                <span className="text-sm font-bold font-mono">{currentAccuracy}%</span>
+                <span className="text-xs md:text-sm font-bold font-mono">{currentAccuracy}%</span>
               </div>
             </div>
 
-            <div className="h-8 w-px bg-white/10 hidden sm:block" />
+            <div className="h-6 w-px bg-white/10" />
 
             {initialAttempt.mode === 'exam' && (
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center min-w-[60px]">
                 <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Timer</span>
-                <div className={`flex items-center gap-1.5 font-mono text-sm font-bold ${timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
+                <div className={`flex items-center gap-1 font-mono text-xs md:text-sm font-bold ${timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
                   <Clock className="w-3.5 h-3.5" />
                   {formatTime(timeLeft)}
                 </div>

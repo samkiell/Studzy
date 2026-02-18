@@ -430,7 +430,7 @@ export function ChatPanel({
 
   return (
     <div ref={containerRef} className={`flex h-screen flex-1 flex-col overflow-hidden transition-all duration-300 ${
-      sidebarOpen ? "md:ml-[280px]" : "ml-0"
+      sidebarOpen ? "md:ml-[300px]" : "ml-0"
     }`}>
       {/* Header */}
       <div 
