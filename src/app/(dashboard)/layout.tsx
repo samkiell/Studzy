@@ -37,8 +37,8 @@ export default async function AuthenticatedLayout({
     await supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
     await logActivity("login");
   } else {
-    // Keep timestamp fresh for presence
-    supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id).then();
+    // Keep timestamp fresh for presence - but wait for it to ensure it completes
+    await supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
   }
 
   return (
