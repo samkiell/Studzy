@@ -155,6 +155,11 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       {/* Top Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
+          {initialAttempt.course_title && (
+            <span className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-sm font-medium">
+              {initialAttempt.course_title}
+            </span>
+          )}
           <span className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm font-medium">
             Question {currentIndex + 1} of {questions.length}
           </span>
@@ -311,15 +316,6 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           </Button>
         </div>
 
-        <Button 
-          variant="outline" 
-          onClick={nextQuestion} 
-          disabled={isLastQuestion}
-          className="gap-2 border-dashed border-white/20 text-gray-400"
-        >
-          Skip Question
-          <SkipForward className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );
