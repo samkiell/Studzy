@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminQuestionBankTable } from "@/components/admin/AdminQuestionBankTable";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
@@ -50,16 +49,30 @@ export default async function AdminQuestionsPage() {
     created_at: r.created_at,
   }));
 
+import { Database } from "lucide-react";
+
+// ... imports
+
   return (
     <div className="space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+            <Database className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white md:text-3xl">
+              Question Banks
+            </h1>
             <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-              View and manage uploaded CBT questions
+              Manage uploaded CBT Question Bank files.
             </p>
           </div>
         </div>
       </div>
 
-      <AdminQuestionTable questions={formattedQuestions} />
+      <AdminQuestionBankTable files={files} />
     </div>
   );
 }
