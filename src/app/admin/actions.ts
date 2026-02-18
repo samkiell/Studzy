@@ -387,15 +387,20 @@ export async function uploadCBTQuestions(formData: FormData) {
        return { success: false, message: `Course not found for code: ${courseCode}` };
     }
 
+    // Generate slug from filename
+    const sanitizedTitle = file.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const slug = `${courseCode.toLowerCase()}-${sanitizedTitle}-${Date.now()}`;
+
     const { error: resourceError } = await supabase
       .from("resources")
       .insert({
         course_id: courseData.id,
         title: file.name,
+        slug: slug, // Add slug
         type: "question_bank",
         file_url: urlData.publicUrl,
         description: `Uploaded at ${new Date().toLocaleString()}`,
-        status: "published", // Default to published or maybe internal?
+        status: "published", 
       });
 
     if (resourceError) {
