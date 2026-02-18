@@ -231,7 +231,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Question {currentIndex + 1}
+                    Question {currentIndex + 1} of {questions.length}
                   </span>
                   <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest leading-none">
                     {currentQuestion.topic || "General"}
@@ -374,7 +374,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
             variant="ghost" 
             onClick={prevQuestion} 
             disabled={currentIndex === 0}
-            className="gap-2 h-12 px-6 rounded-2xl text-gray-400 hover:text-white"
+            className="gap-2 h-12 px-6 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Previous</span>
@@ -384,7 +384,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
             {!isLastQuestion ? (
               <Button 
                 onClick={nextQuestion} 
-                className="h-12 px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 gap-2"
+                className="h-12 px-8 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all gap-2"
               >
                 Next
                 <ChevronRight className="w-5 h-5" />

@@ -430,11 +430,11 @@ export function ChatPanel({
 
   return (
     <div ref={containerRef} className={`flex h-screen flex-1 flex-col overflow-hidden transition-all duration-300 ${
-      sidebarOpen ? "lg:ml-[280px]" : "ml-0"
+      sidebarOpen ? "md:ml-[280px]" : "ml-0"
     }`}>
       {/* Header */}
       <div 
-        className="sticky top-0 z-40 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 lg:px-6 lg:pt-8 lg:pb-6"
+        className="sticky top-0 z-40 flex items-center gap-3 border-b border-neutral-200 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80 md:px-6 md:pt-8 md:pb-6"
       >
         <button
           onClick={onToggleSidebar}
@@ -532,7 +532,7 @@ export function ChatPanel({
             </div>
           </div>
         ) : (
-          <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:px-8">
+          <div className="mx-auto max-w-5xl space-y-4 px-4 py-6 md:px-8 lg:px-12">
             {visibleMessages.map((message) => (
               <div
                 key={message.id}
