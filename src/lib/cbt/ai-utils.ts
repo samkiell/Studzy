@@ -11,26 +11,25 @@ export function generateExplanationPrompt(
     .map(([key, val]) => `${key.toUpperCase()}: ${val}`)
     .join("\n");
 
-  return `Explain this CSC201 (Introduction to Python Programming) question.
+  return `You are an expert tutor. Explain the following question clearly.
 
 Question:
-${question.question_text}
+"${question.question_text}"
 
 Options:
 ${optionsText}
 
-Student selected:
-${selectedOption.toUpperCase()}
+Student's Selected Answer:
+"${selectedOption.toUpperCase()}"
 
-Correct answer:
-${question.correct_option.toUpperCase()}
+Correct Answer:
+"${question.correct_option.toUpperCase()}"
 
-Explain clearly:
-1. Why the selected answer is correct or incorrect.
-2. Why the correct answer is correct.
-3. Why other options are wrong.
-
-Use a helpful, educational tone.`;
+Instructions:
+1. Confirm if the student's answer is correct or incorrect.
+2. Explain clearly WHY the correct answer is correct.
+3. Explain WHY the student's selected answer is wrong (if they missed it) and why other options are incorrect.
+4. Keep the tone encouraging and educational.`;
 }
 
 /**
