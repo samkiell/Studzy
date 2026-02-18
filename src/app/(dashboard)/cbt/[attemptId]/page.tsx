@@ -33,7 +33,7 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   // 2. Fetch the course title
   const { data: course, error: courseError } = await supabase
     .from("courses")
-    .select("title")
+    .select("title, code")
     .eq("id", attemptData.course_id)
     .single();
 
@@ -44,7 +44,8 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   // Hydrate attempt with title
   const attempt: Attempt = {
     ...attemptData,
-    course_title: course?.title || "Unknown Course"
+    course_title: course?.title || "Unknown Course",
+    course_code: course?.code || "CBT"
   } as Attempt;
 
   if (attempt.completed_at) {

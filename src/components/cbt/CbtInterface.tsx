@@ -153,31 +153,54 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4">
       {/* Top Header */}
-      <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          {initialAttempt.course_title && (
-            <span className="px-3 py-1 md:px-4 md:py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-xs md:text-sm font-medium truncate max-w-[150px] md:max-w-none">
-              {initialAttempt.course_title}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 md:mb-8">
+        <div className="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {initialAttempt.course_code && (
+              <span className="px-3 py-1.5 md:px-4 md:py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-xs md:text-sm font-medium font-mono">
+                {initialAttempt.course_code}
+              </span>
+            )}
+            <span className="px-3 py-1.5 md:px-4 md:py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap">
+              Q {currentIndex + 1}/{questions.length}
             </span>
-          )}
-          <span className="px-3 py-1 md:px-4 md:py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap">
-            Q {currentIndex + 1} / {questions.length}
-          </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:hidden">
+             {initialAttempt.mode === 'exam' && (
+              <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border font-mono text-xs ${timeLeft < 300 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-gray-300'}`}>
+                <Clock className="w-3 h-3" />
+                {formatTime(timeLeft)}
+              </div>
+            )}
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20 px-3 h-8 text-xs"
+            >
+              {isSubmitting ? "..." : "Submit"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop Timer & Submit */}
+        <div className="hidden sm:flex items-center gap-4 ml-auto">
           {initialAttempt.mode === 'exam' && (
-            <div className={`flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-lg border font-mono text-xs md:text-sm ${timeLeft < 300 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-gray-300'}`}>
-              <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-lg border font-mono text-sm ${timeLeft < 300 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-gray-300'}`}>
+              <Clock className="w-4 h-4" />
               {formatTime(timeLeft)}
             </div>
           )}
+          
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+          >
+            {isSubmitting ? "Submitting..." : "Submit"}
+          </Button>
         </div>
-        
-        <Button 
-          onClick={handleSubmit} 
-          disabled={isSubmitting}
-          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
-        >
-          {isSubmitting ? "Submitting..." : "Submit"}
-        </Button>
       </div>
 
       {/* Progress Bar */}

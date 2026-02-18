@@ -19,6 +19,7 @@ export interface Attempt {
   user_id: string;
   course_id: string;
   course_title?: string; // Hydrated for UI
+  course_code?: string; // Hydrated for UI
   mode: CbtMode;
   total_questions: number;
   score: number;
