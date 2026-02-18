@@ -371,13 +371,12 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       <div className="border-t border-white/5 bg-black/40 backdrop-blur-2xl px-4 py-4 md:py-6 z-20">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <Button 
-            variant="ghost" 
             onClick={prevQuestion} 
             disabled={currentIndex === 0}
-            className="gap-2 h-12 px-6 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all gap-2"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Previous</span>
+            <span>Previous</span>
           </Button>
 
           <div className="flex items-center gap-2">
