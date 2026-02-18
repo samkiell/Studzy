@@ -130,6 +130,7 @@ export async function startCbtAttempt({
     .single();
 
   if (attemptError || !attempt) {
+    console.error("Failed to create attempt. Error:", attemptError);
     throw new Error("Failed to create attempt");
   }
 
