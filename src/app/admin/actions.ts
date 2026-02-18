@@ -449,7 +449,11 @@ export async function uploadCBTQuestions(formData: FormData) {
 
     // 4. Calculate Offset for Additive Uploads
     // Fetch the current maximum question_id for this course to append new questions instead of overwriting.
-    const { data: maxIdData, error: maxIdError } = await supabase
+    // CRITICAL: Use admin client to bypass RLS and see ALL questions, otherwise we might see 0 and overwrite.
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabaseAdmin = createAdminClient();
+
+    const { data: maxIdData, error: maxIdError } = await supabaseAdmin
       .from("questions")
       .select("question_id")
       .eq("course_id", courseData.id)
@@ -462,7 +466,7 @@ export async function uploadCBTQuestions(formData: FormData) {
       currentMaxId = maxIdData.question_id;
     }
     
-    console.log(`[CBT Upload] Found existing max question_id: ${currentMaxId}. Applying offset.`);
+    console.log(`[CBT Upload] Found existing max question_id: ${currentMaxId} (via Admin Client). Applying offset.`);
 
     // Bulk Upsert into Supabase with Offset
     // We use upsert so that (course_code, question_id) constraint handles duplicates if they still exist,
