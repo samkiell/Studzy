@@ -60,7 +60,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       {/* Toggle Button */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500 shadow-md transition-all hover:bg-white hover:scale-110 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+        className="absolute -right-3 top-20 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-lg transition-all hover:bg-neutral-50 hover:scale-110 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
       >
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>

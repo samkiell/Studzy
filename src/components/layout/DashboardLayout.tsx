@@ -6,9 +6,15 @@ import { DashboardHeader } from "./DashboardHeader";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  user: {
+    username?: string;
+    full_name?: string;
+    avatar_url?: string;
+    email?: string;
+  };
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -23,7 +29,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }`}
       >
         {/* Mobile Header */}
-        <DashboardHeader />
+        <DashboardHeader user={user} />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10">
           <div className="mx-auto max-w-7xl">

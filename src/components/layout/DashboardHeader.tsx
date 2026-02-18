@@ -1,13 +1,25 @@
 "use client";
 
-import { Menu, Bell } from "lucide-react";
+import { Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { MobileSidebar } from "./MobileSidebar";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  user: {
+    username?: string;
+    full_name?: string;
+    avatar_url?: string;
+    email?: string;
+  };
+}
+
+export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  const displayName = user.full_name || user.username || user.email?.split("@")[0] || "User";
+  const initial = displayName[0]?.toUpperCase() || "U";
 
   return (
     <>
@@ -35,12 +47,22 @@ export function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900">
-            <Bell className="h-5 w-5" />
-          </button>
-          <div className="h-8 w-8 rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 flex items-center justify-center text-xs font-bold">
-            S
-          </div>
+          <Link href="/profile">
+            {user.avatar_url ? (
+               <div className="relative h-9 w-9 overflow-hidden rounded-full border border-neutral-200 dark:border-neutral-800">
+                 <Image
+                   src={user.avatar_url}
+                   alt="Profile"
+                   fill
+                   className="object-cover"
+                 />
+               </div>
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+                {initial}
+              </div>
+            )}
+          </Link>
         </div>
       </header>
 
