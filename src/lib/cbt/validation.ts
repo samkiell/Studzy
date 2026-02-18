@@ -4,7 +4,7 @@ import { CBTQuestion, Difficulty } from "@/types/cbt";
  * Validates a single question from a CBT JSON upload.
  * Throws a descriptive error if validation fails.
  */
-export function validateCBTQuestion(question: any, defaultCourseCode?: string): CBTQuestion {
+export function validateCBTQuestion(question: any, index: number, defaultCourseCode?: string): CBTQuestion {
   if (typeof question !== "object" || question === null) {
     throw new Error("Invalid question format: must be an object");
   }
@@ -19,13 +19,20 @@ export function validateCBTQuestion(question: any, defaultCourseCode?: string): 
   // Use provided course_code or fallback to default
   const course_code = question.course_code || defaultCourseCode;
 
-  // Robust question_id parsing: handle numbers or numeric strings
-  let question_id = question.question_id;
+  // Robust question_id parsing: check aliases (id, questionId) and handle numeric strings
+  // Fallback to index + 1 if completely missing
+  let question_id = question.question_id ?? question.id ?? question.questionId ?? question.Id;
+  
   if (typeof question_id === 'string') {
     const parsed = parseInt(question_id, 10);
     if (!isNaN(parsed)) {
       question_id = parsed;
     }
+  }
+
+  // Final fallback to index if still not a valid number
+  if (question_id === undefined || question_id === null || typeof question_id !== 'number' || isNaN(question_id)) {
+    question_id = index + 1;
   }
 
   // Robust correct_option: ensure it's uppercase to match standard keys (A, B, C, D)
@@ -46,7 +53,6 @@ export function validateCBTQuestion(question: any, defaultCourseCode?: string): 
 
   // Required Field Checks
   if (!course_code) throw new Error("Missing 'course_code'");
-  if (typeof question_id !== 'number') throw new Error(`'question_id' must be a number (got ${typeof question.question_id})`);
   if (!question_text) throw new Error(`Missing 'question_text' at ID ${question_id}`);
   if (!options || typeof options !== 'object') throw new Error(`Missing or invalid 'options' at ID ${question_id}`);
   if (!correct_option) throw new Error(`Missing 'correct_option' at ID ${question_id}`);
@@ -91,7 +97,7 @@ export function validateCBTQuestionList(data: unknown, defaultCourseCode?: strin
 
   return data.map((item, index) => {
     try {
-      return validateCBTQuestion(item, defaultCourseCode);
+      return validateCBTQuestion(item, index, defaultCourseCode);
     } catch (err: any) {
       throw new Error(`Item at index ${index}: ${err.message}`);
     }

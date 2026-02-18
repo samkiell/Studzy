@@ -233,20 +233,41 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {[10, 20, 50, 100].map((count) => (
-                      <button
-                        key={count}
-                        onClick={() => setNumQuestions(count)}
-                        className={`py-3 rounded-xl border text-sm font-medium transition-all ${
-                          numQuestions === count 
-                          ? "bg-white/10 border-white/20 text-white" 
-                          : "bg-transparent border-white/5 text-gray-500 hover:border-white/10"
-                        }`}
-                      >
-                        {count} Questions
-                      </button>
-                    ))}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-gray-300">
+                        Number of Questions
+                      </label>
+                      <span className="text-xs text-indigo-400 font-medium">
+                        Up to {metadata?.totalQuestions || 0} available
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        max={metadata?.totalQuestions || 100}
+                        value={numQuestions}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (isNaN(val)) setNumQuestions(0);
+                          else setNumQuestions(Math.min(val, metadata?.totalQuestions || 100));
+                        }}
+                        className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white font-semibold"
+                        placeholder="Enter amount..."
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                        {[10, 20, 50].map((preset) => (
+                          <button
+                            key={preset}
+                            onClick={() => setNumQuestions(Math.min(preset, metadata?.totalQuestions || preset))}
+                            className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all uppercase"
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
