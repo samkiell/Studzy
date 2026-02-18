@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { revalidatePath } from "next/cache";
 import type { ResourceType } from "@/types/database";
+import { STORAGE_BUCKET } from "@/lib/rag/config";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
@@ -89,7 +90,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("RAG")
+      .from(STORAGE_BUCKET)
       .upload(fileName, file, {
         cacheControl: "3600",
         upsert: false,
@@ -125,7 +126,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     if (insertError) {
       // Try to clean up the uploaded file
-      await supabase.storage.from("RAG").remove([uploadData.path]);
+      await supabase.storage.from(STORAGE_BUCKET).remove([uploadData.path]);
 
       console.error("Database insert error:", insertError);
       return {
@@ -199,13 +200,13 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
 
     // Extract file path from URL
     const url = new URL(resource.file_url);
-    const pathParts = url.pathname.split("/storage/v1/object/public/RAG/");
+    const pathParts = url.pathname.split(`/storage/v1/object/public/${STORAGE_BUCKET}/`);
     const filePath = pathParts[1];
 
     if (filePath) {
       // Delete from storage
       const { error: storageError } = await supabase.storage
-        .from("RAG")
+        .from(STORAGE_BUCKET)
         .remove([filePath]);
 
       if (storageError) {
@@ -359,7 +360,7 @@ export async function uploadCBTQuestions(formData: FormData) {
     const timestamp = Date.now();
     const fileName = `question-banks/${courseCode}/${timestamp}-${file.name}`;
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("RAG")
+      .from(STORAGE_BUCKET)
       .upload(fileName, file, {
         cacheControl: "3600",
         upsert: false,
