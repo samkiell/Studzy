@@ -32,10 +32,10 @@ export async function startCbtAttempt({
     throw new Error("Unauthorized");
   }
 
-  // 0. Validate Course and get Title
+  // 0. Validate Course and get Title & Code (legacy support)
   const { data: course, error: courseError } = await supabase
     .from("courses")
-    .select("title, is_cbt")
+    .select("title, code, is_cbt")
     .eq("id", courseId)
     .single();
 
@@ -77,12 +77,13 @@ export async function startCbtAttempt({
     throw new Error("Failed to fetch questions");
   }
 
-  // 2. Create attempt record with course_id
+  // 2. Create attempt record with course_id and course_code (legacy)
   const { data: attempt, error: attemptError } = await supabase
     .from("attempts")
     .insert({
       user_id: user.id,
       course_id: courseId,
+      course_code: course.code, // Required by DB constraint
       mode,
       total_questions: questions.length,
       score: 0,
