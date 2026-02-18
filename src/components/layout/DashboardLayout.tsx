@@ -13,15 +13,20 @@ interface DashboardLayoutProps {
     avatar_url?: string;
     email?: string;
   };
+  role?: string;
 }
 
-export function DashboardLayout({ children, user }: DashboardLayoutProps) {
+export function DashboardLayout({ children, user, role }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Desktop Sidebar */}
-      <Sidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        onToggle={() => setIsCollapsed(!isCollapsed)} 
+        role={role}
+      />
 
       {/* Main Content Area */}
       <div 
@@ -30,7 +35,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         }`}
       >
         {/* Mobile Header */}
-        <DashboardHeader user={user} />
+        <DashboardHeader user={user} role={role} />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10">
           <div className="mx-auto max-w-7xl min-h-[calc(100vh-8rem)]">

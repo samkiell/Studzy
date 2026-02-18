@@ -13,9 +13,10 @@ interface DashboardHeaderProps {
     avatar_url?: string;
     email?: string;
   };
+  role?: string;
 }
 
-export function DashboardHeader({ user }: DashboardHeaderProps) {
+export function DashboardHeader({ user, role }: DashboardHeaderProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const displayName = user.full_name || user.username || user.email?.split("@")[0] || "User";
@@ -69,6 +70,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       <MobileSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        role={role}
       />
     </>
   );

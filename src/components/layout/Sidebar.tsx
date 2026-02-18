@@ -13,9 +13,10 @@ import { motion } from "framer-motion";
 interface SidebarProps {
   isCollapsed?: boolean;
   onToggle?: () => void;
+  role?: string;
 }
 
-export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
+export function Sidebar({ isCollapsed, onToggle, role }: SidebarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -72,7 +73,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             Main Menu
           </p>
         )}
-        {NAVIGATION_ITEMS.map((item) => (
+        {NAVIGATION_ITEMS.filter(item => !item.adminOnly || role === 'admin').map((item) => (
           <NavItem key={item.href} {...item} isCollapsed={isCollapsed} />
         ))}
       </div>

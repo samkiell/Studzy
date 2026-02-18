@@ -13,9 +13,10 @@ import { useState } from "react";
 interface MobileSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  role?: string;
 }
 
-export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
+export function MobileSidebar({ isOpen, onClose, role }: MobileSidebarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -72,7 +73,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
 
             <nav className="flex flex-1 flex-col gap-1">
-              {NAVIGATION_ITEMS.map((item) => (
+              {NAVIGATION_ITEMS.filter(item => !item.adminOnly || role === 'admin').map((item) => (
                 <NavItem key={item.href} {...item} onClick={onClose} />
               ))}
             </nav>

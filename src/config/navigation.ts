@@ -3,13 +3,15 @@ import {
   BookOpen, 
   Brain, 
   User, 
-  Zap
+  Zap,
+  ShieldCheck
 } from "lucide-react";
 
 export interface NavItemConfig {
   label: string;
   href: string;
   icon: any; // Lucide icon component
+  adminOnly?: boolean;
 }
 
 export const NAVIGATION_ITEMS: NavItemConfig[] = [
@@ -37,5 +39,11 @@ export const NAVIGATION_ITEMS: NavItemConfig[] = [
     label: "Profile",
     href: "/profile",
     icon: User,
+  },
+  {
+    label: "Admin",
+    href: "/admin",
+    icon: ShieldCheck,
+    adminOnly: true,
   },
 ];

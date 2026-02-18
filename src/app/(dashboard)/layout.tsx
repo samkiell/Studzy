@@ -45,12 +45,15 @@ export default async function AuthenticatedLayout({
   }
 
   return (
-    <DashboardLayout user={{
-      username: profile?.username || user.user_metadata?.username,
-      full_name: profile?.full_name || user.user_metadata?.full_name,
-      avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
-      email: user.email
-    }}>
+    <DashboardLayout 
+      role={profile?.role || 'student'}
+      user={{
+        username: profile?.username || user.user_metadata?.username,
+        full_name: profile?.full_name || user.user_metadata?.full_name,
+        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
+        email: user.email
+      }}
+    >
       {children}
     </DashboardLayout>
   );
