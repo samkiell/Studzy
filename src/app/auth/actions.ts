@@ -176,11 +176,12 @@ export async function signout() {
 }
 
 export async function recordLogin() {
-  const supabase = await createClient();
+  const adminClient = createAdminClient();
+  const supabase = await createClient(); // Need standard client to get current user
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    await supabase
+    await adminClient
       .from("profiles")
       .update({ last_login: new Date().toISOString() })
       .eq("id", user.id);

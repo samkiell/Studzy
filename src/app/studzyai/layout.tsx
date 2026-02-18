@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity";
 
 export default async function StudzyAILayout({
@@ -33,11 +34,13 @@ export default async function StudzyAILayout({
   
   // Throttle updates: every 30 minutes for activity logs, but always update profile timestamp
   if (timeSinceLogin > 30 * 60 * 1000) {
-    await supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
+    const adminClient = createAdminClient();
+    await adminClient.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
     await logActivity("login");
   } else {
     // Keep timestamp fresh for presence
-    supabase.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id).then();
+    const adminClient = createAdminClient();
+    await adminClient.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
   }
 
   return (
