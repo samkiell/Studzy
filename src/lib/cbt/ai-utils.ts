@@ -24,12 +24,9 @@ Student's Selected Answer:
 
 Correct Answer:
 "${question.correct_option.toUpperCase()}"
-
-Instructions:
-1. Confirm if the student's answer is correct or incorrect.
-2. Explain clearly WHY the correct answer is correct.
-3. Explain WHY the other options (including the student's choice if wrong) are incorrect.
-4. Keep the tone encouraging and educational.`;
+ Explain clearly WHY the correct answer is correct.
+ Explain WHY the other options (including the student's choice if wrong) are incorrect.
+ Keep the tone encouraging and educational.`;
 }
 
 /**

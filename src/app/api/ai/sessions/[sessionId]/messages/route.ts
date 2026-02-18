@@ -115,31 +115,33 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { content, mode, image, images, enable_search } = body;
+    const { content, mode, image, images, enable_search, trigger_only } = body;
     
     // If multiple images are provided, join them or store as JSON string
     const finalImageUrl = images && images.length > 0 ? JSON.stringify(images) : image;
 
-    if (!content && !finalImageUrl) {
+    if (!content && !finalImageUrl && !trigger_only) {
       return NextResponse.json({ error: "Message content required" }, { status: 400 });
     }
 
-    // Save user message
-    const { data: userMsg, error: userMsgError } = await supabase
-      .from("chat_messages")
-      .insert({
-        session_id: sessionId,
-        role: body.role || "user",
-        content: content || "",
-        mode: mode || "chat",
-        image_url: finalImageUrl || null,
-      })
-      .select()
-      .single();
+    // Save user message (SKIP if trigger_only is true)
+    if (!trigger_only) {
+      const { data: userMsg, error: userMsgError } = await supabase
+        .from("chat_messages")
+        .insert({
+          session_id: sessionId,
+          role: body.role || "user",
+          content: content || "",
+          mode: mode || "chat",
+          image_url: finalImageUrl || null,
+        })
+        .select()
+        .single();
 
-    if (userMsgError) {
-      console.error("Error saving user message:", userMsgError);
-      return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
+      if (userMsgError) {
+        console.error("Error saving user message:", userMsgError);
+        return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
+      }
     }
 
     // Fetch all messages for context
