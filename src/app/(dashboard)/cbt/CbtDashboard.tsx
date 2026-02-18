@@ -271,6 +271,46 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                       </div>
                     </div>
                   </div>
+
+                  {mode === "exam" && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+                          <Clock className="w-4 h-4 text-indigo-400" />
+                          Exam Time Limit (Minutes)
+                        </label>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          max="180"
+                          value={timeLimit}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (isNaN(val)) setTimeLimit(0);
+                            else setTimeLimit(Math.min(val, 180));
+                          }}
+                          className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white font-semibold"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                          {[30, 45, 60].map((preset) => (
+                            <button
+                              key={preset}
+                              onClick={() => setTimeLimit(preset)}
+                              className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all uppercase"
+                            >
+                              {preset}m
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             )}
