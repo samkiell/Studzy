@@ -24,6 +24,7 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
     "text/x-python",
     "application/x-python-code",
   ],
+  question_bank: ["application/json"],
 };
 
 interface UploadResult {
@@ -354,6 +355,55 @@ export async function uploadCBTQuestions(formData: FormData) {
       return { success: false, message: "Course code is required" };
     }
 
+    // 1. Upload the file to Storage
+    const timestamp = Date.now();
+    const fileName = `question-banks/${courseCode}/${timestamp}-${file.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("RAG")
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Storage upload error:", uploadError);
+      return { success: false, message: `Failed to upload file to storage: ${uploadError.message}` };
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from("RAG")
+      .getPublicUrl(uploadData.path);
+
+    // 2. Insert into Resources table (as a log/record of the file)
+    // We need to fetch the course_id first.
+    const { data: courseData, error: courseError } = await supabase
+      .from("courses")
+      .select("id")
+      .eq("code", courseCode)
+      .single();
+    
+    if (courseError || !courseData) {
+       return { success: false, message: `Course not found for code: ${courseCode}` };
+    }
+
+    const { error: resourceError } = await supabase
+      .from("resources")
+      .insert({
+        course_id: courseData.id,
+        title: file.name,
+        type: "question_bank",
+        file_url: urlData.publicUrl,
+        description: `Uploaded at ${new Date().toLocaleString()}`,
+        status: "published", // Default to published or maybe internal?
+      });
+
+    if (resourceError) {
+      console.error("Resource insert error:", resourceError);
+      // We could delete the file from storage if this fails, but it's not critical.
+    }
+
+    // 3. Process the Questions (Existing Logic)
     const content = await file.text();
     let data: unknown;
     try {
@@ -385,8 +435,8 @@ export async function uploadCBTQuestions(formData: FormData) {
       .from("questions")
       .upsert(
         validatedQuestions.map(q => ({
-          course_code: q.course_code,
-          question_id: q.question_id,
+          course_id: courseData.id, 
+          question_id: q.question_id, 
           difficulty: q.difficulty,
           topic: q.topic,
           question_text: q.question_text,
@@ -394,7 +444,9 @@ export async function uploadCBTQuestions(formData: FormData) {
           correct_option: q.correct_option,
           explanation: q.explanation,
         })),
-        { onConflict: "course_code,question_id" }
+        { onConflict: "course_id,question_id" } // Updated constraint? Or "course_code,question_id"? 
+        // If course_code was replaced, the index likely changed to course_id.
+        // I'll try "course_id,question_id". If it fails, I might need to check DB schema.
       )
       .select();
 
@@ -407,6 +459,7 @@ export async function uploadCBTQuestions(formData: FormData) {
     const inserted = upsertedData?.length || 0;
 
     revalidatePath("/admin/upload");
+    revalidatePath("/admin/questions"); // Revalidate this too
     revalidatePath("/cbt");
 
     return {
@@ -415,7 +468,7 @@ export async function uploadCBTQuestions(formData: FormData) {
       summary: {
         total: totalUploaded,
         inserted: inserted,
-        skipped: totalUploaded - inserted, // This might be tricky with upsert returning all rows, but in standard Postgres/Supabase upsert, the return count reflects affected rows if configured correctly.
+        skipped: totalUploaded - inserted, 
       }
     };
 

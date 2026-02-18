@@ -1,4 +1,4 @@
-export type ResourceType = "audio" | "video" | "pdf" | "image" | "document";
+export type ResourceType = "audio" | "video" | "pdf" | "image" | "document" | "question_bank";
 export type ResourceStatus = "draft" | "published";
 export type UserRole = "student" | "admin";
 export type UserStatus = "active" | "suspended" | "deleted";
