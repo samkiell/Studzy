@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { Attempt, CbtMode, Question, SubmitAnswer } from "@/types/cbt";
+import { Attempt, CbtMode, Difficulty, Question, SubmitAnswer } from "@/types/cbt";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -18,6 +18,7 @@ export async function startCbtAttempt({
   numberOfQuestions,
   topic,
   difficulty,
+  timeLimitMinutes = 30,
   isWeakAreasOnly = false,
 }: {
   courseId: string;
@@ -25,6 +26,7 @@ export async function startCbtAttempt({
   numberOfQuestions: number;
   topic?: string;
   difficulty?: Difficulty;
+  timeLimitMinutes?: number;
   isWeakAreasOnly?: boolean;
 }) {
   const supabase = await createClient();
@@ -125,6 +127,7 @@ export async function startCbtAttempt({
       total_questions: questions.length,
       score: 0,
       duration_seconds: 0,
+      time_limit_seconds: timeLimitMinutes * 60,
     })
     .select()
     .single();

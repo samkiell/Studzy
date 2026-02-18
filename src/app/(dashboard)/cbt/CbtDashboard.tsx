@@ -33,6 +33,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
   const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number } | null>(null);
+  const [timeLimit, setTimeLimit] = useState(30);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch metadata when course changes
@@ -72,6 +73,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
         numberOfQuestions: numQuestions,
         topic: topic === "all" ? undefined : topic,
         difficulty: difficulty === "all" ? undefined : difficulty,
+        timeLimitMinutes: mode === "exam" ? timeLimit : 30,
         isWeakAreasOnly,
       });
       

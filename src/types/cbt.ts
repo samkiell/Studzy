@@ -24,6 +24,7 @@ export interface Attempt {
   total_questions: number;
   score: number;
   duration_seconds: number;
+  time_limit_seconds: number;
   started_at: string;
   completed_at: string | null;
 }

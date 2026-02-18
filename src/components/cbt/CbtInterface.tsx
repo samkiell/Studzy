@@ -35,7 +35,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(initialAttempt.mode === 'exam' ? 1800 : 0); // 30 mins default
+  const [timeLeft, setTimeLeft] = useState(initialAttempt.time_limit_seconds || (initialAttempt.mode === 'exam' ? 1800 : 0)); 
   const [results, setResults] = useState<{ 
     score: number; 
     totalQuestions: number;
@@ -117,7 +117,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       const res = await submitCbtAttempt({
         attemptId: initialAttempt.id,
         answers: formattedAnswers,
-        durationSeconds: initialAttempt.mode === 'exam' ? (1800 - timeLeft) : 0
+        durationSeconds: initialAttempt.mode === 'exam' ? ((initialAttempt.time_limit_seconds || 1800) - timeLeft) : 0
       });
       // @ts-ignore - The response object structure is correct now
       setResults(res);
