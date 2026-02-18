@@ -72,6 +72,14 @@ export function UploadSummary({ summary, courseCode }: UploadSummaryProps) {
           </p>
         </div>
       </div>
+      <div className="mt-6 flex justify-end">
+        <a 
+          href="/admin/questions" 
+          className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+        >
+          View Question Banks
+        </a>
+      </div>
     </div>
   );
 }
