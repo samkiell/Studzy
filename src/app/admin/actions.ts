@@ -433,7 +433,7 @@ export async function uploadCBTQuestions(formData: FormData) {
     // Validate the questions
     let validatedQuestions: CBTQuestion[];
     try {
-      validatedQuestions = validateCBTQuestionList(data);
+      validatedQuestions = validateCBTQuestionList(data, courseCode);
     } catch (err: any) {
       return { success: false, message: `Validation failed: ${err.message}` };
     }
