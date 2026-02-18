@@ -447,15 +447,39 @@ export async function uploadCBTQuestions(formData: FormData) {
       };
     }
 
-    // Bulk Upsert into Supabase
-    // We use upsert so that (course_code, question_id) constraint handles duplicates
+    // 4. Calculate Offset for Additive Uploads
+    // Fetch the current maximum question_id for this course to append new questions instead of overwriting.
+    const { data: maxIdData, error: maxIdError } = await supabase
+      .from("questions")
+      .select("question_id")
+      .eq("course_id", courseData.id)
+      .order("question_id", { ascending: false })
+      .limit(1)
+      .single();
+
+    let currentMaxId = 0;
+    if (!maxIdError && maxIdData) {
+      currentMaxId = maxIdData.question_id;
+    }
+    
+    console.log(`[CBT Upload] Found existing max question_id: ${currentMaxId}. Applying offset.`);
+
+    // Bulk Upsert into Supabase with Offset
+    // We use upsert so that (course_code, question_id) constraint handles duplicates if they still exist,
+    // but the offset should prevent collisions for new batches.
     const { data: upsertedData, error: upsertError } = await supabase
       .from("questions")
       .upsert(
-        validatedQuestions.map(q => ({
+        validatedQuestions.map((q, idx) => ({
           course_id: courseData.id, 
           course_code: courseCode, // Required for unique constraint
-          question_id: q.question_id, 
+          // If the JSON provided a specific ID, we try to respect relative ordering but shift it.
+          // However, simple 1-based indexing from the file + maxId is the safest additive strategy.
+          // We'll use the validated question_id (which falls back to index+1) and add the offset.
+          // BUT: If the user provides specific IDs (e.g. 101, 102), we might want to keep them if they don't collide.
+          // The safest approach for "appending" is strictly: (index + 1) + currentMaxId.
+          // This ignores gaps in the uploaded file's IDs but guarantees uniqueness and continuity.
+          question_id: currentMaxId + (idx + 1), 
           difficulty: q.difficulty,
           topic: q.topic,
           question_text: q.question_text,
@@ -463,9 +487,7 @@ export async function uploadCBTQuestions(formData: FormData) {
           correct_option: q.correct_option,
           explanation: q.explanation,
         })),
-        { onConflict: "course_code,question_id" } // Updated constraint? Or "course_code,question_id"? 
-        // If course_code was replaced, the index likely changed to course_id.
-        // I'll try "course_id,question_id". If it fails, I might need to check DB schema.
+        { onConflict: "course_code,question_id" } 
       )
       .select();
 
