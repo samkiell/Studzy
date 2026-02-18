@@ -383,7 +383,7 @@ export async function uploadCBTQuestions(formData: FormData) {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from(bucket)
+      .from(STORAGE_BUCKET)
       .getPublicUrl(uploadData.path);
 
     // 2. Insert into Resources table (as a log/record of the file)
