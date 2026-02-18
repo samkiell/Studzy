@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import CbtInterface from "@/components/cbt/CbtInterface";
 import { Question, Attempt } from "@/types/cbt";
+import { shuffle } from "@/lib/utils";
 
 interface CbtAttemptPageProps {
   params: Promise<{ attemptId: string }>;
@@ -52,14 +53,22 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   }
 
   // 3. Fetch questions using course_id
+  // 3. Fetch questions using course_id
   // NOTE: In a production environment, we should persistently store the list of question IDs 
   // assigned to this attempt to ensure the user sees the *exact same* questions on refresh.
-  // For now, we fetch N random questions from the course.
-  const { data: questions, error: questError } = await supabase
+  // For now, we fetch ALL questions from the course and randomize them.
+  const { data: allQuestions, error: questError } = await supabase
     .from("questions")
     .select("*")
-    .eq("course_id", attemptData.course_id)
-    .limit(attempt.total_questions);
+    .eq("course_id", attemptData.course_id);
+
+  if (questError || !allQuestions) {
+    console.error("Questions fetch error:", questError);
+    throw new Error("Failed to load questions");
+  }
+
+  // Randomize and select N questions
+  const questions = shuffle(allQuestions as Question[]).slice(0, attempt.total_questions);
 
   if (questError || !questions) {
     console.error("Questions fetch error:", questError);
