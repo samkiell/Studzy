@@ -84,7 +84,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const handleSelectOption = (option: string) => {
     if (isSubmitted) return;
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: option }));
-    if (initialAttempt.mode === 'practice') {
+    if (initialAttempt.mode === 'study') {
       setShowExplanation(true);
     }
   };
@@ -193,13 +193,15 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
             <div className="h-8 w-px bg-white/10 hidden sm:block" />
 
-            <div className="flex flex-col items-end sm:items-center">
-              <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Timer</span>
-              <div className={`flex items-center gap-1.5 font-mono text-sm font-bold ${initialAttempt.mode === 'exam' && timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
-                <Clock className="w-3.5 h-3.5" />
-                {formatTime(timeLeft)}
+            {initialAttempt.mode === 'exam' && (
+              <div className="flex flex-col items-end sm:items-center">
+                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Timer</span>
+                <div className={`flex items-center gap-1.5 font-mono text-sm font-bold ${initialAttempt.mode === 'exam' && timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
+                  <Clock className="w-3.5 h-3.5" />
+                  {formatTime(timeLeft)}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
         
@@ -251,7 +253,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                     buttonStyles = "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50";
                   }
                   
-                  if (initialAttempt.mode === 'practice' && hasAnswered) {
+                  if (initialAttempt.mode === 'study' && hasAnswered) {
                     if (isCorrect) {
                       buttonStyles = "bg-green-500/10 border-green-500/30 ring-1 ring-green-500/20";
                     } else if (isSelected) {
@@ -263,7 +265,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                     <button
                       key={key}
                       onClick={() => handleSelectOption(key)}
-                      disabled={(initialAttempt.mode === 'practice' && hasAnswered) || isSubmitted}
+                      disabled={(initialAttempt.mode === 'study' && hasAnswered) || isSubmitted}
                       className={`group p-4 md:p-5 rounded-2xl border transition-all text-left flex items-start gap-4 ${buttonStyles}`}
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform group-active:scale-95 ${
@@ -273,7 +275,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                       </div>
                       <div className="flex-1 py-1">
                         <span className="text-gray-200 text-sm md:text-base leading-relaxed">{value}</span>
-                        {initialAttempt.mode === 'practice' && hasAnswered && isCorrect && (
+                        {initialAttempt.mode === 'study' && hasAnswered && isCorrect && (
                           <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-green-400 uppercase tracking-wider">
                             <CheckCircle2 className="w-3 h-3" />
                             Correct Answer
@@ -285,8 +287,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                 })}
               </div>
 
-              {/* Practice Mode Feedback */}
-              {initialAttempt.mode === 'practice' && answers[currentQuestion.id] && (
+              {/* Study Mode Feedback */}
+              {initialAttempt.mode === 'study' && answers[currentQuestion.id] && (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
