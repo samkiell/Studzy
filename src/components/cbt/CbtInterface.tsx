@@ -127,22 +127,22 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   if (isSubmitted && results) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <div className="w-24 h-24 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Send className="w-10 h-10 text-indigo-400" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4 md:p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full">
+          <div className="w-20 h-20 md:w-24 md:h-24 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Send className="w-8 h-8 md:w-10 md:h-10 text-indigo-400" />
           </div>
-          <h2 className="text-3xl font-bold mb-2">CBT Completed!</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">CBT Completed!</h2>
           <p className="text-gray-400 mb-8">Your results have been processed.</p>
           
-          <div className="flex gap-12 justify-center mb-10">
+          <div className="flex flex-col sm:flex-row gap-8 md:gap-12 justify-center mb-10">
             <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wider mb-1">Score</p>
-              <p className="text-5xl font-bold text-white">{results.score} <span className="text-2xl text-gray-600">/ {results.totalQuestions}</span></p>
+              <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider mb-1">Score</p>
+              <p className="text-4xl md:text-5xl font-bold text-white">{results.score} <span className="text-xl md:text-2xl text-gray-600">/ {results.totalQuestions}</span></p>
             </div>
           </div>
 
-          <Button onClick={() => router.push('/cbt')} className="px-8 py-4">
+          <Button onClick={() => router.push('/cbt')} className="w-full sm:w-auto px-8 py-4">
             Back to CBT Dashboard
           </Button>
         </motion.div>
@@ -153,19 +153,19 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4">
       {/* Top Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
           {initialAttempt.course_title && (
-            <span className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-sm font-medium">
+            <span className="px-3 py-1 md:px-4 md:py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-xs md:text-sm font-medium truncate max-w-[150px] md:max-w-none">
               {initialAttempt.course_title}
             </span>
           )}
-          <span className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm font-medium">
-            Question {currentIndex + 1} of {questions.length}
+          <span className="px-3 py-1 md:px-4 md:py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap">
+            Q {currentIndex + 1} / {questions.length}
           </span>
           {initialAttempt.mode === 'exam' && (
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-lg border font-mono ${timeLeft < 300 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-gray-300'}`}>
-              <Clock className="w-4 h-4" />
+            <div className={`flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-lg border font-mono text-xs md:text-sm ${timeLeft < 300 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-gray-300'}`}>
+              <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
               {formatTime(timeLeft)}
             </div>
           )}
@@ -174,14 +174,14 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         <Button 
           onClick={handleSubmit} 
           disabled={isSubmitting}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
         >
           {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-white/5 rounded-full mb-12 overflow-hidden">
+      <div className="w-full h-1.5 bg-white/5 rounded-full mb-8 md:mb-12 overflow-hidden">
         <motion.div 
           className="h-full bg-gradient-to-r from-indigo-500 to-cyan-500"
           initial={{ width: 0 }}
@@ -228,14 +228,14 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                     key={key}
                     onClick={() => handleSelectOption(key)}
                     disabled={initialAttempt.mode === 'study' && !!answers[currentQuestion.id]}
-                    className={`p-6 rounded-2xl border transition-all text-left flex items-start gap-4 group ${buttonStyles}`}
+                    className={`p-4 md:p-6 rounded-2xl border transition-all text-left flex items-start gap-4 group ${buttonStyles}`}
                   >
                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
                       isSelected ? 'bg-indigo-500 text-white' : 'bg-white/5 text-gray-400'
                     }`}>
                       {key.toUpperCase()}
                     </span>
-                    <span className="text-gray-200 mt-1">{value}</span>
+                    <span className="text-gray-200 mt-1 text-sm md:text-base">{value}</span>
                   </button>
                 );
               })}
@@ -252,19 +252,19 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                     : "bg-red-500/5 border-red-500/20"
                 }`}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
                     {answers[currentQuestion.id] === currentQuestion.correct_option ? (
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <ShieldCheck className="w-6 h-6 text-green-500" />
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
                       </div>
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                        <XCircle className="w-6 h-6 text-red-500" />
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+                        <XCircle className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
                       </div>
                     )}
                     <div>
-                      <h4 className="font-bold text-lg">
+                      <h4 className="font-bold text-base md:text-lg">
                         {answers[currentQuestion.id] === currentQuestion.correct_option ? "Correct!" : "Incorrect"}
                       </h4>
                       <p className="text-sm text-gray-400">
@@ -279,7 +279,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                     variant="outline"
                     onClick={handleExplainWithAi}
                     disabled={isCreatingAiSession}
-                    className="gap-2 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                    className="w-full sm:w-auto gap-2 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 justify-center"
                   >
                     {isCreatingAiSession ? (
                       <div className="w-4 h-4 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
@@ -294,7 +294,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       </div>
 
       {/* Navigation Controls */}
-      <div className="mt-16 flex items-center justify-between">
+      <div className="mt-8 md:mt-16 flex items-center justify-between pb-8">
         <Button 
           variant="outline" 
           onClick={prevQuestion} 
