@@ -28,6 +28,16 @@ export async function GET(request: NextRequest) {
         data.user.email?.split("@")[0] ||
         "Scholar";
 
+      // Sync confirmation to profiles table
+      const { error: syncError } = await supabase
+        .from("profiles")
+        .update({ email_confirmed_at: new Date().toISOString() })
+        .eq("id", data.user.id);
+
+      if (syncError) {
+        console.error("Failed to sync email confirmation:", syncError.message);
+      }
+
       if (type === "recovery") {
         return NextResponse.redirect(
           `${origin}/dashboard/settings/password`
@@ -58,6 +68,16 @@ export async function GET(request: NextRequest) {
         data.user.user_metadata?.username ||
         data.user.email?.split("@")[0] ||
         "Scholar";
+
+      // Sync confirmation to profiles table
+      const { error: syncError } = await supabase
+        .from("profiles")
+        .update({ email_confirmed_at: new Date().toISOString() })
+        .eq("id", data.user.id);
+
+      if (syncError) {
+        console.error("Failed to sync email confirmation:", syncError.message);
+      }
 
       if (searchParams.get("type") === "recovery") {
         return NextResponse.redirect(

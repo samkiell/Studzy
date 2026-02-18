@@ -21,6 +21,7 @@ export interface Profile {
   longest_streak: number;
   total_study_seconds: number;
   is_verified: boolean;
+  email_confirmed_at: string | null;
   created_at: string;
   updated_at: string;
 }
