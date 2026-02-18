@@ -18,7 +18,7 @@ export default async function AuthenticatedLayout({
   // Fetch profile for global tracking and role-based logic
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, status, last_login")
+    .select("role, status, last_login, username, full_name, avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -42,7 +42,12 @@ export default async function AuthenticatedLayout({
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout user={{
+      username: profile?.username || user.user_metadata?.username,
+      full_name: profile?.full_name || user.user_metadata?.full_name,
+      avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
+      email: user.email
+    }}>
       {children}
     </DashboardLayout>
   );
