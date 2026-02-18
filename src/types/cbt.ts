@@ -34,6 +34,7 @@ export interface AttemptAnswer {
   question_id: string;
   selected_option: string | null;
   is_correct: boolean | null;
+  duration_seconds: number;
   created_at: string;
 }
 
@@ -45,6 +46,7 @@ export interface CbtSession {
 export interface SubmitAnswer {
   question_id: string;
   selected_option: string;
+  duration_seconds: number;
 }
 
 export interface SubmitAttemptRequest {

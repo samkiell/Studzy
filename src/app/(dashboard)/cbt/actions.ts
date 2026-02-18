@@ -153,26 +153,59 @@ export async function submitCbtAttempt({
   const questionIds = answers.map((a) => a.question_id);
   const { data: questions, error: questError } = await supabase
     .from("questions")
-    .select("id, correct_option")
+    .select("id, question_text, options, correct_option, topic, difficulty, explanation")
     .in("id", questionIds);
 
   if (questError || !questions) {
     throw new Error("Failed to validate answers");
   }
 
-  // 3. Calculate score and prepare attempt_answers
+  // 3. Calculate score and prepare analytics
   let score = 0;
+  const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
+  const difficultyStats: Record<string, { correct: number; total: number }> = {};
+  const questionsWithAnswers: any[] = [];
+
   const attemptAnswersPayload = answers.map((ans) => {
     const question = questions.find((q) => q.id === ans.question_id);
     const isCorrect = question?.correct_option === ans.selected_option;
     if (isCorrect) score++;
+
+    if (question) {
+      const topic = question.topic || "General";
+      const difficulty = question.difficulty || "medium";
+
+      // Topic stats
+      if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
+      topicStats[topic].total++;
+      if (isCorrect) topicStats[topic].correct++;
+      topicStats[topic].avgTime += ans.duration_seconds;
+
+      // Difficulty stats
+      if (!difficultyStats[difficulty]) difficultyStats[difficulty] = { correct: 0, total: 0 };
+      difficultyStats[difficulty].total++;
+      if (isCorrect) difficultyStats[difficulty].correct++;
+
+      questionsWithAnswers.push({
+        ...question,
+        selected_option: ans.selected_option,
+        is_correct: isCorrect,
+        duration_seconds: ans.duration_seconds
+      });
+    }
 
     return {
       attempt_id: attemptId,
       question_id: ans.question_id,
       selected_option: ans.selected_option,
       is_correct: isCorrect,
+      duration_seconds: ans.duration_seconds
     };
+  });
+
+  // Finalize topic average times
+  Object.keys(topicStats).forEach(topic => {
+    topicStats[topic].avgTime = Math.round(topicStats[topic].avgTime / topicStats[topic].total);
   });
 
   // 4. Update attempt record
@@ -197,7 +230,6 @@ export async function submitCbtAttempt({
 
   if (answersError) {
     console.error("Error inserting attempt answers:", answersError);
-    // Even if this fails, the main score is saved, but we should log it.
   }
 
   revalidatePath("/dashboard/cbt");
@@ -207,5 +239,8 @@ export async function submitCbtAttempt({
     score,
     totalQuestions: attempt.total_questions,
     completedAt: new Date().toISOString(),
+    topicStats,
+    difficultyStats,
+    questionsWithAnswers
   };
 }

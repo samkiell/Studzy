@@ -31,12 +31,33 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialAttempt.mode === 'exam' ? 1800 : 0); // 30 mins default
-  const [results, setResults] = useState<{ score: number; totalQuestions: number } | null>(null);
+  const [results, setResults] = useState<{ 
+    score: number; 
+    totalQuestions: number;
+    topicStats: Record<string, { correct: number; total: number; avgTime: number }>;
+    difficultyStats: Record<string, { correct: number; total: number }>;
+    questionsWithAnswers: any[];
+  } | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCreatingAiSession, setIsCreatingAiSession] = useState(false);
+  const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
+
+  // Track time per question
+  useEffect(() => {
+    if (isSubmitted) return;
+    
+    const interval = setInterval(() => {
+      setQuestionDurations(prev => ({
+        ...prev,
+        [currentQuestion.id]: (prev[currentQuestion.id] || 0) + 1
+      }));
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [currentQuestion.id, isSubmitted]);
 
   // Timer logic for exam mode
   useEffect(() => {
@@ -83,7 +104,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     
     const formattedAnswers: SubmitAnswer[] = Object.entries(answers).map(([id, option]) => ({
       question_id: id,
-      selected_option: option
+      selected_option: option,
+      duration_seconds: questionDurations[id] || 0
     }));
 
     try {

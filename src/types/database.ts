@@ -282,6 +282,7 @@ export interface Database {
           question_id: string;
           selected_option: string;
           is_correct: boolean;
+          duration_seconds: number;
           created_at: string;
         };
         Insert: {
@@ -290,6 +291,7 @@ export interface Database {
           question_id: string;
           selected_option: string;
           is_correct: boolean;
+          duration_seconds?: number;
           created_at?: string;
         };
         Update: Partial<{
