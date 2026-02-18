@@ -30,9 +30,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete file from storage
+    // Try to find which bucket it's in or just try both.
+    // PDF, Audio, Video are in studzy-materials, others in RAG.
+    let bucket = "RAG";
+    if (path.startsWith("pdf/") || path.startsWith("audio/") || path.startsWith("video/")) {
+      bucket = "studzy-materials";
+    }
+
     const { error: deleteError } = await supabase.storage
-      .from("RAG")
+      .from(bucket)
       .remove([path]);
+    
+    // Fallback: if delete failed, try the other bucket (legacy or mixed)
+    if (deleteError) {
+        const otherBucket = bucket === "RAG" ? "studzy-materials" : "RAG";
+        await supabase.storage.from(otherBucket).remove([path]);
+    }
 
     if (deleteError) {
       console.error("Storage delete error:", deleteError);

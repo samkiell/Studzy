@@ -21,6 +21,7 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
     "text/x-python",
     "application/x-python-code",
   ],
+  question_bank: ["application/json"],
 };
 
 export async function POST(request: NextRequest) {
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       // Clean up uploaded file if database insert fails
-      await supabase.storage.from("RAG").remove([uploadData.path]);
+      await supabase.storage.from(bucket).remove([uploadData.path]);
       console.error("Database insert error:", insertError);
       return NextResponse.json(
         { success: false, message: `Failed to save resource: ${insertError.message}` },

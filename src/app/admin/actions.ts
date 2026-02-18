@@ -112,7 +112,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from("RAG")
+      .from(bucket)
       .getPublicUrl(uploadData.path);
 
     const fileUrl = urlData.publicUrl;
@@ -383,7 +383,7 @@ export async function uploadCBTQuestions(formData: FormData) {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from("RAG")
+      .from(bucket)
       .getPublicUrl(uploadData.path);
 
     // 2. Insert into Resources table (as a log/record of the file)

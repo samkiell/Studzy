@@ -21,6 +21,7 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
     "text/x-python",
     "application/x-python-code",
   ],
+  question_bank: ["application/json"],
 };
 
 export async function POST(request: NextRequest) {
