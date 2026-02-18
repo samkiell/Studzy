@@ -436,6 +436,7 @@ export async function uploadCBTQuestions(formData: FormData) {
       .upsert(
         validatedQuestions.map(q => ({
           course_id: courseData.id, 
+          course_code: courseCode, // Required for unique constraint
           question_id: q.question_id, 
           difficulty: q.difficulty,
           topic: q.topic,
@@ -444,7 +445,7 @@ export async function uploadCBTQuestions(formData: FormData) {
           correct_option: q.correct_option,
           explanation: q.explanation,
         })),
-        { onConflict: "course_id,question_id" } // Updated constraint? Or "course_code,question_id"? 
+        { onConflict: "course_code,question_id" } // Updated constraint? Or "course_code,question_id"? 
         // If course_code was replaced, the index likely changed to course_id.
         // I'll try "course_id,question_id". If it fails, I might need to check DB schema.
       )

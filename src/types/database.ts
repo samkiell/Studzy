@@ -209,6 +209,8 @@ export interface Database {
         Row: {
           id: string;
           course_id: string;
+          course_code: string; // Required for unique constraint
+          question_id: number; // Required for unique constraint
           question_text: string;
           options: Record<string, string>;
           correct_option: string;
@@ -220,6 +222,8 @@ export interface Database {
         Insert: {
           id?: string;
           course_id: string;
+          course_code: string;
+          question_id: number;
           question_text: string;
           options: Record<string, string>;
           correct_option: string;
@@ -230,6 +234,8 @@ export interface Database {
         };
         Update: Partial<{
           course_id: string;
+          course_code: string;
+          question_id: number;
           question_text: string;
           options: Record<string, string>;
           correct_option: string;
