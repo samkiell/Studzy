@@ -31,7 +31,7 @@ interface AdminUserTableProps {
 export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState<string>("all");
+  const [filterEmail, setFilterEmail] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{
@@ -63,15 +63,17 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
       const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) || 
                              email.toLowerCase().includes(search.toLowerCase()) ||
                              username.toLowerCase().includes(search.toLowerCase());
-      const matchesRole = filterRole === "all" || u.role === filterRole;
+      const matchesEmailFilter = filterEmail === "all" || 
+                                 (filterEmail === "confirmed" && !!u.email_confirmed_at) ||
+                                 (filterEmail === "unconfirmed" && !u.email_confirmed_at);
       const matchesStatus = 
         filterStatus === "all" || 
         (filterStatus === "verified" && u.is_verified && u.status === 'active') ||
         (filterStatus === "unverified" && !u.is_verified && u.status === 'active') ||
         (filterStatus === "suspended" && u.status === 'suspended');
-      return matchesSearch && matchesRole && matchesStatus;
+      return matchesSearch && matchesEmailFilter && matchesStatus;
     });
-  }, [users, search, filterRole, filterStatus]);
+  }, [users, search, filterEmail, filterStatus]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice(
@@ -172,13 +174,13 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-neutral-400" />
             <select
-              value={filterRole}
-              onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1); }}
+              value={filterEmail}
+              onChange={(e) => { setFilterEmail(e.target.value); setCurrentPage(1); }}
               className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none dark:border-neutral-800 dark:bg-neutral-950"
             >
-              <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="student">Student</option>
+              <option value="all">Email Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="unconfirmed">Not Confirmed</option>
             </select>
           </div>
           <select
