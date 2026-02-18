@@ -19,7 +19,7 @@ import { CbtMode } from "@/types/cbt";
 
 export default function CbtLandingPage() {
   const router = useRouter();
-  const [courseCode, setCourseCode] = useState("CSC201");
+  const [courseCode, setCourseCode] = useState("");
   const [mode, setMode] = useState<CbtMode>("study");
   const [numQuestions, setNumQuestions] = useState(20);
   const [timerMinutes, setTimerMinutes] = useState(30);
@@ -27,6 +27,10 @@ export default function CbtLandingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleStart = async () => {
+    if (!courseCode) {
+      setError("Please select a course to continue");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -76,9 +80,13 @@ export default function CbtLandingPage() {
               </label>
               <select 
                 value={courseCode}
-                onChange={(e) => setCourseCode(e.target.value)}
+                onChange={(e) => {
+                  setCourseCode(e.target.value);
+                  if (e.target.value) setError(null);
+                }}
                 className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all appearance-none text-white cursor-pointer"
               >
+                <option value="" disabled>Select a course...</option>
                 <option value="CSC201">CSC201 - Introduction to Python Programming</option>
               </select>
             </div>
@@ -156,8 +164,8 @@ export default function CbtLandingPage() {
 
             <Button
               onClick={handleStart}
-              disabled={isLoading}
-              className="w-full py-6 rounded-xl text-lg font-bold flex items-center justify-center gap-2 group"
+              disabled={isLoading || !courseCode}
+              className="w-full py-6 rounded-xl text-lg font-bold flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
