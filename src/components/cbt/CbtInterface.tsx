@@ -168,9 +168,9 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     : 0;
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0B] flex flex-col overflow-hidden z-[70]">
-      {/* Top Header - Fixed */}
-      <div className="border-b border-white/5 bg-black/20 backdrop-blur-xl z-20">
+    <div className="flex flex-col min-h-screen -mt-4 -mx-4 md:-mt-8 md:-mx-8 lg:-mt-10 lg:-mx-10 bg-[#0A0A0B]">
+      {/* Top Header - Sticky below global header */}
+      <div className="sticky top-0 z-30 border-b border-white/5 bg-black/40 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-4 py-2.5 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
              <div className="p-1.5 md:p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
@@ -216,8 +216,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         </div>
       </div>
 
-      {/* Main Question Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-32">
+      {/* Main Question Area */}
+      <div className="flex-1 pt-8 pb-32">
         <div className="max-w-3xl mx-auto px-4">
           <AnimatePresence mode="wait">
             <motion.div
@@ -379,8 +379,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         </div>
       </div>
 
-      {/* Bottom Navigation - Fixed */}
-      <div className="border-t border-white/5 bg-black/40 backdrop-blur-2xl px-4 py-4 md:py-6 z-20">
+      {/* Bottom Navigation - Sticky */}
+      <div className="sticky bottom-0 border-t border-white/5 bg-black/40 backdrop-blur-2xl px-4 py-4 md:py-6 z-30 -mb-4 -mx-4 md:-mb-8 md:-mx-8 lg:-mb-10 lg:-mx-10">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <Button 
             onClick={prevQuestion} 
