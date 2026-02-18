@@ -25,7 +25,7 @@ interface CbtDashboardProps {
 export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const router = useRouter();
   const [courseId, setCourseId] = useState("");
-  const [mode, setMode] = useState<CbtMode>("practice");
+  const [mode, setMode] = useState<CbtMode>("study");
   const [numQuestions, setNumQuestions] = useState(20);
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [topic, setTopic] = useState<string>("all");
@@ -189,14 +189,14 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                     <button
-                      onClick={() => setMode("practice")}
+                      onClick={() => setMode("study")}
                       className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
-                        mode === "practice" 
+                        mode === "study" 
                         ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
                         : "bg-white/5 border-white/10 hover:border-white/20"
                       }`}
                     >
-                      <h3 className={`font-semibold text-sm md:text-base ${mode === "practice" ? "text-indigo-400" : "text-white"}`}>Practice Mode</h3>
+                      <h3 className={`font-semibold text-sm md:text-base ${mode === "study" ? "text-indigo-400" : "text-white"}`}>Study Mode</h3>
                       <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Instant feedback & explanations</p>
                     </button>
                     <button
