@@ -110,7 +110,6 @@ export default function RootLayout({
             </div>
           </AIProvider>
         </LoadingProvider>
-        <Footer />
         <Analytics />
         <SpeedInsights />
         <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />

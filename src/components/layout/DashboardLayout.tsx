@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { DashboardHeader } from "./DashboardHeader";
+import { Footer } from "@/components/ui/Footer";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -32,9 +33,10 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         <DashboardHeader user={user} />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10">
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-7xl min-h-[calc(100vh-8rem)]">
             {children}
           </div>
+          <Footer />
         </main>
       </div>
     </div>
