@@ -53,7 +53,6 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   }
 
   // 3. Fetch questions using course_id
-  // 3. Fetch questions using course_id
   // NOTE: In a production environment, we should persistently store the list of question IDs 
   // assigned to this attempt to ensure the user sees the *exact same* questions on refresh.
   // For now, we fetch ALL questions from the course and randomize them.
