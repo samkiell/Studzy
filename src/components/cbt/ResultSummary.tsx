@@ -10,7 +10,8 @@ import {
   BrainCircuit,
   CheckCircle2,
   XCircle,
-  Timer
+  Timer,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
