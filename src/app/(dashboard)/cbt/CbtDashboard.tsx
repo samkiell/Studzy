@@ -9,12 +9,13 @@ import {
   Layers, 
   ShieldCheck, 
   ChevronRight,
-  Info
+  Info,
+  BrainCircuit
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { startCbtAttempt } from "./actions";
-import { CbtMode } from "@/types/cbt";
+import { startCbtAttempt, getCbtMetadata } from "./actions";
+import { CbtMode, Difficulty } from "@/types/cbt";
 import { Course } from "@/types/database";
 
 interface CbtDashboardProps {
@@ -24,11 +25,34 @@ interface CbtDashboardProps {
 export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const router = useRouter();
   const [courseId, setCourseId] = useState("");
-  const [mode, setMode] = useState<CbtMode>("study");
+  const [mode, setMode] = useState<CbtMode>("practice");
   const [numQuestions, setNumQuestions] = useState(20);
-  const [timerMinutes, setTimerMinutes] = useState(30);
+  const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
+  const [topic, setTopic] = useState<string>("all");
+  const [isWeakAreasOnly, setIsWeakAreasOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch metadata when course changes
+  const handleCourseChange = async (id: string) => {
+    setCourseId(id);
+    setMetadata(null);
+    setTopic("all");
+    setError(null);
+    if (!id) return;
+
+    setMetadataLoading(true);
+    try {
+      const data = await getCbtMetadata(id);
+      setMetadata(data);
+    } catch (err) {
+      console.error("Failed to fetch metadata:", err);
+    } finally {
+      setMetadataLoading(false);
+    }
+  };
 
   const selectedCourse = courses.find(c => c.id === courseId);
   const courseTitle = selectedCourse ? selectedCourse.title : "Select a Course";
@@ -46,6 +70,9 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
         courseId,
         mode,
         numberOfQuestions: numQuestions,
+        topic: topic === "all" ? undefined : topic,
+        difficulty: difficulty === "all" ? undefined : difficulty,
+        isWeakAreasOnly,
       });
       
       router.push(`/cbt/${attempt.id}`);
@@ -87,10 +114,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
               </label>
               <select 
                 value={courseId}
-                onChange={(e) => {
-                  setCourseId(e.target.value);
-                  if (e.target.value) setError(null);
-                }}
+                onChange={(e) => handleCourseChange(e.target.value)}
                 className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all appearance-none text-white cursor-pointer"
               >
                 <option value="" disabled>Select a course...</option>
@@ -106,70 +130,127 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
               </select>
             </div>
 
-            {/* Mode Selector */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
-                <Settings className="w-4 h-4 text-indigo-400" />
-                Select Mode
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                <button
-                  onClick={() => setMode("study")}
-                  className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
-                    mode === "study" 
-                    ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
-                    : "bg-white/5 border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <h3 className={`font-semibold text-sm md:text-base ${mode === "study" ? "text-indigo-400" : "text-white"}`}>Study Mode</h3>
-                  <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Instant feedback & AI explanations</p>
-                </button>
-                <button
-                  onClick={() => setMode("exam")}
-                  className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
-                    mode === "exam" 
-                    ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
-                    : "bg-white/5 border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <h3 className={`font-semibold text-sm md:text-base ${mode === "exam" ? "text-indigo-400" : "text-white"}`}>Exam Mode</h3>
-                  <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Real-time pressure with a timer</p>
-                </button>
-              </div>
-            </div>
+            {courseId && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-8"
+              >
+                {/* Topic & Difficulty */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                      <Layers className="w-4 h-4 text-indigo-400" />
+                      Study Topic
+                    </label>
+                    <select
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      disabled={metadataLoading || isWeakAreasOnly}
+                      className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-all appearance-none cursor-pointer disabled:opacity-50"
+                    >
+                      <option value="all">All Topics ({metadata?.totalQuestions || 0})</option>
+                      {metadata?.topics.map(t => (
+                        <option key={t.name} value={t.name}>
+                          {t.name} ({t.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Question Count */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
-                  <Layers className="w-4 h-4 text-indigo-400" />
-                  No. of Questions
-                </label>
-                <input 
-                  type="number" 
-                  value={numQuestions}
-                  onChange={(e) => setNumQuestions(Number(e.target.value))}
-                  min={1}
-                  max={100}
-                  className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-all"
-                />
-              </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                      <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                      Difficulty Level
+                    </label>
+                    <div className="flex gap-2">
+                      {['all', 'easy', 'medium', 'hard'].map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setDifficulty(d as any)}
+                          className={`flex-1 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all ${
+                            difficulty === d 
+                            ? "bg-indigo-500 border-indigo-500 text-white" 
+                            : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-              {/* Timer Config */}
-              <div className={`${mode === "exam" ? "opacity-100" : "opacity-30 pointer-events-none"} transition-all`}>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
-                  <Clock className="w-4 h-4 text-indigo-400" />
-                  Time Limit (Mins)
-                </label>
-                <input 
-                  type="number" 
-                  value={timerMinutes}
-                  onChange={(e) => setTimerMinutes(Number(e.target.value))}
-                  min={1}
-                  className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-all"
-                />
-              </div>
-            </div>
+                {/* Mode Selector */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                    <Settings className="w-4 h-4 text-indigo-400" />
+                    Study Mode
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <button
+                      onClick={() => setMode("practice")}
+                      className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
+                        mode === "practice" 
+                        ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
+                        : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <h3 className={`font-semibold text-sm md:text-base ${mode === "practice" ? "text-indigo-400" : "text-white"}`}>Practice Mode</h3>
+                      <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Instant feedback & explanations</p>
+                    </button>
+                    <button
+                      onClick={() => setMode("exam")}
+                      className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
+                        mode === "exam" 
+                        ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
+                        : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <h3 className={`font-semibold text-sm md:text-base ${mode === "exam" ? "text-indigo-400" : "text-white"}`}>Exam Mode</h3>
+                      <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Hide answers until the very end</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Smart study & Count */}
+                <div className="space-y-6">
+                   <div className="flex items-center justify-between p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                        <BrainCircuit className="w-5 h-5 text-indigo-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold">Focus on Weak Areas</h4>
+                        <p className="text-xs text-gray-500">Study topics where you score below 60%</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setIsWeakAreasOnly(!isWeakAreasOnly)}
+                      className={`w-12 h-6 rounded-full transition-all relative ${isWeakAreasOnly ? 'bg-indigo-500' : 'bg-white/10'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isWeakAreasOnly ? 'left-7' : 'left-1'}`} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {[10, 20, 50, 100].map((count) => (
+                      <button
+                        key={count}
+                        onClick={() => setNumQuestions(count)}
+                        className={`py-3 rounded-xl border text-sm font-medium transition-all ${
+                          numQuestions === count 
+                          ? "bg-white/10 border-white/20 text-white" 
+                          : "bg-transparent border-white/5 text-gray-500 hover:border-white/10"
+                        }`}
+                      >
+                        {count} Questions
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">

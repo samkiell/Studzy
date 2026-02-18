@@ -1,5 +1,5 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type CbtMode = 'study' | 'exam';
+export type CbtMode = 'practice' | 'exam';
 
 export interface Question {
   id: string;

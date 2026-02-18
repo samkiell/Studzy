@@ -16,10 +16,16 @@ export async function startCbtAttempt({
   courseId,
   mode,
   numberOfQuestions,
+  topic,
+  difficulty,
+  isWeakAreasOnly = false,
 }: {
   courseId: string;
   mode: CbtMode;
   numberOfQuestions: number;
+  topic?: string;
+  difficulty?: Difficulty;
+  isWeakAreasOnly?: boolean;
 }) {
   const supabase = await createClient();
 
@@ -32,7 +38,7 @@ export async function startCbtAttempt({
     throw new Error("Unauthorized");
   }
 
-  // 0. Validate Course and get Title & Code (legacy support)
+  // 0. Validate Course
   const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("title, code, is_cbt")
@@ -47,19 +53,51 @@ export async function startCbtAttempt({
     throw new Error("This course is not enabled for CBT");
   }
 
-  // 1. Fetch random questions using course_id
-  const { data: questionIds, error: questError } = await supabase
+  // 1. Determine which topics to study if "Weak Areas Only" is enabled
+  let targetTopics = topic ? [topic] : [];
+  
+  if (isWeakAreasOnly) {
+    // Fetch average accuracy per topic for this user and course
+    const { data: stats } = await supabase.rpc('get_user_topic_accuracy', {
+      p_user_id: user.id,
+      p_course_id: courseId
+    });
+    
+    // Filter topics where accuracy < 60%
+    if (stats) {
+      const weakTopics = (stats as any[])
+        .filter(s => s.accuracy < 60)
+        .map(s => s.topic);
+      
+      if (weakTopics.length > 0) {
+        targetTopics = weakTopics;
+      }
+    }
+  }
+
+  // 2. Fetch questions with filters
+  let query = supabase
     .from("questions")
     .select("id")
     .eq("course_id", courseId);
 
+  if (targetTopics.length > 0) {
+    query = query.in("topic", targetTopics);
+  }
+  
+  if (difficulty) {
+    query = query.eq("difficulty", difficulty);
+  }
+
+  const { data: questionIds, error: questError } = await query;
+
   if (questError) {
-    console.error("Error fetching questions:", questError);
+    console.error("Error fetching filtered questions:", questError);
     throw new Error("Failed to fetch questions");
   }
 
   if (!questionIds || questionIds.length === 0) {
-    throw new Error("No questions found for this course");
+    throw new Error("No questions found matching your filters");
   }
 
   const shuffledIds = [...questionIds]
@@ -73,17 +111,16 @@ export async function startCbtAttempt({
     .in("id", shuffledIds);
 
   if (fetchError || !questions) {
-    console.error("Error fetching full questions:", fetchError);
-    throw new Error("Failed to fetch questions");
+    throw new Error("Failed to fetch question details");
   }
 
-  // 2. Create attempt record with course_id and course_code (legacy)
+  // 3. Create attempt record
   const { data: attempt, error: attemptError } = await supabase
     .from("attempts")
     .insert({
       user_id: user.id,
       course_id: courseId,
-      course_code: course.code, // Required by DB constraint
+      course_code: course.code,
       mode,
       total_questions: questions.length,
       score: 0,
@@ -93,19 +130,40 @@ export async function startCbtAttempt({
     .single();
 
   if (attemptError || !attempt) {
-    console.error("Error creating attempt:", attemptError);
     throw new Error("Failed to create attempt");
   }
 
-  // Hydrate attempt with course title for UI
-  const hydratedAttempt: Attempt = {
-    ...attempt,
-    course_title: course.title
-  } as Attempt;
-
   return {
-    attempt: hydratedAttempt,
+    attempt: { ...attempt, course_title: course.title } as Attempt,
     questions: questions as Question[],
+  };
+}
+
+export async function getCbtMetadata(courseId: string) {
+  const supabase = await createClient();
+  
+  // Get unique topics and question counts per topic
+  const { data: topicsData, error } = await supabase
+    .from("questions")
+    .select("topic")
+    .eq("course_id", courseId);
+    
+  if (error) return { topics: [], totalQuestions: 0 };
+  
+  const topicCounts: Record<string, number> = {};
+  topicsData.forEach(q => {
+    const t = q.topic || "General";
+    topicCounts[t] = (topicCounts[t] || 0) + 1;
+  });
+  
+  const topics = Object.entries(topicCounts).map(([name, count]) => ({
+    name,
+    count
+  }));
+  
+  return {
+    topics,
+    totalQuestions: topicsData.length
   };
 }
 
