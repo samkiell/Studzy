@@ -207,7 +207,7 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
     // Extract file path from URL
     const url = new URL(resource.file_url);
     // Find where the object path starts (after the bucket name)
-    const bucketInUrl = resource.file_url.includes(`/${MATERIALS_BUCKET}/`) ? MATERIALS_BUCKET : STORAGE_BUCKET;
+    const bucketInUrl = resource.file_url.includes(`/studzy/`) ? "studzy" : STORAGE_BUCKET;
     const pathParts = url.pathname.split(`/storage/v1/object/public/${bucketInUrl}/`);
     const filePath = pathParts[1];
 
@@ -215,7 +215,7 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
       // Delete from storage
       // Try to find which bucket it's in by checking the URL or just trying both
       // But we can determine it from the URL path.
-      const bucketInUrl = resource.file_url.includes(`/${MATERIALS_BUCKET}/`) ? MATERIALS_BUCKET : STORAGE_BUCKET;
+      const bucketInUrl = resource.file_url.includes(`/studzy/`) ? "studzy" : STORAGE_BUCKET;
       
       const { error: storageError } = await supabase.storage
         .from(bucketInUrl)
