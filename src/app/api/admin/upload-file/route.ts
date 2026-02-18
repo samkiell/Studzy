@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 9);
     const isRAG = formData.get("isRAG") === "true";
-    const bucketName = "RAG";
+    const bucketName = isRAG ? "RAG" : 
+                    (type === "audio" || type === "video" || type === "pdf") 
+                    ? "studzy-materials" : "RAG";
     const fileName = `${type}/${timestamp}-${randomId}.${fileExtension}`;
 
     // Convert file to buffer

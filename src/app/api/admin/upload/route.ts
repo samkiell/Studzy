@@ -120,9 +120,12 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Determine bucket
+    const bucket = (type === "audio" || type === "video" || type === "pdf") ? "studzy-materials" : "RAG";
+
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("RAG")
+      .from(bucket)
       .upload(fileName, buffer, {
         contentType: file.type,
         cacheControl: "3600",
@@ -139,7 +142,7 @@ export async function POST(request: NextRequest) {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from("RAG")
+      .from(bucket)
       .getPublicUrl(uploadData.path);
 
     const fileUrl = urlData.publicUrl;

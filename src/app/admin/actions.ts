@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { revalidatePath } from "next/cache";
 import type { ResourceType } from "@/types/database";
-import { STORAGE_BUCKET } from "@/lib/rag/config";
+import { STORAGE_BUCKET, MATERIALS_BUCKET } from "@/lib/rag/config";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
@@ -88,9 +88,15 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
     const sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "-");
     const fileName = `${type}/${courseId}/${timestamp}-${sanitizedTitle}.${fileExtension}`;
 
+    // Determine bucket: Audio, Video, PDF go to studzy-materials. Documents/Images go to RAG?
+    // The user said: "just make sure that audios and pdf for courses and fecthed from studzymaterials. the way video is being fecthed from studzy bucket."
+    // Wait, the user said "studzy-materials bucket" but refers to it as "studzymaterials" and "studzy bucket".
+    // I defined MATERIALS_BUCKET as "studzy-materials" in config.ts.
+    const bucket = (type === "audio" || type === "video" || type === "pdf") ? MATERIALS_BUCKET : STORAGE_BUCKET;
+
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(STORAGE_BUCKET)
+      .from(bucket)
       .upload(fileName, file, {
         cacheControl: "3600",
         upsert: false,
@@ -126,7 +132,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 
     if (insertError) {
       // Try to clean up the uploaded file
-      await supabase.storage.from(STORAGE_BUCKET).remove([uploadData.path]);
+      await supabase.storage.from(bucket).remove([uploadData.path]);
 
       console.error("Database insert error:", insertError);
       return {
@@ -205,8 +211,12 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
 
     if (filePath) {
       // Delete from storage
+      // Try to find which bucket it's in by checking the URL or just trying both
+      // But we can determine it from the URL path.
+      const bucketInUrl = resource.file_url.includes(`/${MATERIALS_BUCKET}/`) ? MATERIALS_BUCKET : STORAGE_BUCKET;
+      
       const { error: storageError } = await supabase.storage
-        .from(STORAGE_BUCKET)
+        .from(bucketInUrl)
         .remove([filePath]);
 
       if (storageError) {

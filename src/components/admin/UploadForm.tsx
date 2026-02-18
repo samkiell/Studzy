@@ -21,6 +21,7 @@ import { CBTUploadToggle } from "./cbt/CBTUploadToggle";
 import { CourseSelector } from "./cbt/CourseSelector";
 import { JSONFileInput } from "./cbt/JSONFileInput";
 import { UploadSummary } from "./cbt/UploadSummary";
+import { STORAGE_BUCKET, MATERIALS_BUCKET } from "@/lib/rag/config";
 
 interface UploadFormProps {
   courses: Course[];
@@ -127,9 +128,14 @@ export function UploadForm({ courses }: UploadFormProps) {
     );
 
     try {
+      // Determine bucket
+      const bucket = isRAG ? STORAGE_BUCKET : 
+                   (fileUpload.type === "audio" || fileUpload.type === "video" || fileUpload.type === "pdf") 
+                   ? MATERIALS_BUCKET : STORAGE_BUCKET;
+
       // 1. Upload directly to Supabase Storage
       const { data, error } = await supabase.storage
-        .from("RAG")
+        .from(bucket)
         .upload(fileName, fileUpload.file, {
           cacheControl: "3600",
           upsert: false,
@@ -146,7 +152,7 @@ export function UploadForm({ courses }: UploadFormProps) {
 
       // 2. Get Public URL
       const { data: urlData } = supabase.storage
-        .from("RAG")
+        .from(bucket)
         .getPublicUrl(data.path);
 
       const fileUrl = urlData.publicUrl;
