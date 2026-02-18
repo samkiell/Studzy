@@ -3,7 +3,7 @@ export type CbtMode = 'study' | 'exam';
 
 export interface Question {
   id: string;
-  course_code: string;
+  course_id: string;
   question_id: number;
   difficulty: Difficulty;
   topic: string | null;
@@ -17,7 +17,8 @@ export interface Question {
 export interface Attempt {
   id: string;
   user_id: string;
-  course_code: string;
+  course_id: string;
+  course_title?: string; // Hydrated for UI
   mode: CbtMode;
   total_questions: number;
   score: number;

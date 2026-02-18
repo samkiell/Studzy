@@ -8,12 +8,16 @@ import { revalidatePath } from "next/cache";
  * Starts a new CBT attempt.
  * Randomly selects N questions and creates a record in the 'attempts' table.
  */
+/**
+ * Starts a new CBT attempt.
+ * Randomly selects N questions and creates a record in the 'attempts' table.
+ */
 export async function startCbtAttempt({
-  courseCode,
+  courseId,
   mode,
   numberOfQuestions,
 }: {
-  courseCode: string;
+  courseId: string;
   mode: CbtMode;
   numberOfQuestions: number;
 }) {
@@ -28,13 +32,26 @@ export async function startCbtAttempt({
     throw new Error("Unauthorized");
   }
 
-  // 1. Fetch random questions
-  // Note: Using a raw RPC or a custom approach for randomness.
-  // For now, we perform a trick: fetch all matching IDs and pick N random ones.
+  // 0. Validate Course and get Title
+  const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("title, is_cbt")
+    .eq("id", courseId)
+    .single();
+
+  if (courseError || !course) {
+    throw new Error("Course not found");
+  }
+
+  if (!course.is_cbt) {
+    throw new Error("This course is not enabled for CBT");
+  }
+
+  // 1. Fetch random questions using course_id
   const { data: questionIds, error: questError } = await supabase
     .from("questions")
     .select("id")
-    .eq("course_code", courseCode);
+    .eq("course_id", courseId);
 
   if (questError) {
     console.error("Error fetching questions:", questError);
@@ -60,12 +77,12 @@ export async function startCbtAttempt({
     throw new Error("Failed to fetch questions");
   }
 
-  // 2. Create attempt record
+  // 2. Create attempt record with course_id
   const { data: attempt, error: attemptError } = await supabase
     .from("attempts")
     .insert({
       user_id: user.id,
-      course_code: courseCode,
+      course_id: courseId,
       mode,
       total_questions: questions.length,
       score: 0,
@@ -79,8 +96,14 @@ export async function startCbtAttempt({
     throw new Error("Failed to create attempt");
   }
 
+  // Hydrate attempt with course title for UI
+  const hydratedAttempt: Attempt = {
+    ...attempt,
+    course_title: course.title
+  } as Attempt;
+
   return {
-    attempt: attempt as Attempt,
+    attempt: hydratedAttempt,
     questions: questions as Question[],
   };
 }
