@@ -259,12 +259,22 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <span className="text-xs font-medium text-neutral-900 dark:text-white">
-                            {(() => {
-                              const dt = formatDateTime(user.created_at);
-                              return typeof dt === 'string' ? dt : dt.date;
-                            })()}
-                          </span>
+                          {(() => {
+                            const dt = formatDateTime(user.created_at);
+                            if (typeof dt === 'string') {
+                              return <span className="text-xs font-medium text-neutral-900 dark:text-white">{dt}</span>;
+                            }
+                            return (
+                              <>
+                                <span className="text-xs font-medium text-neutral-900 dark:text-white">
+                                  {dt.date}
+                                </span>
+                                <span className="text-[10px] text-neutral-500">
+                                  {dt.time}
+                                </span>
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="px-6 py-4">

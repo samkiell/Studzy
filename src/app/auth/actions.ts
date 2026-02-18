@@ -174,3 +174,15 @@ export async function signout() {
   revalidatePath("/", "layout");
   redirect("/");
 }
+
+export async function recordLogin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    await supabase
+      .from("profiles")
+      .update({ last_login: new Date().toISOString() })
+      .eq("id", user.id);
+  }
+}

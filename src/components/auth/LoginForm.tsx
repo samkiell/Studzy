@@ -61,6 +61,9 @@ export function LoginForm() {
         return;
       }
 
+      // Record last login
+      await import("@/app/auth/actions").then(mod => mod.recordLogin());
+
       router.push("/dashboard");
       router.refresh();
     } catch {
