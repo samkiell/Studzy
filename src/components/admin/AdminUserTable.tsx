@@ -36,7 +36,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    type: "verify" | "demote" | "delete" | null;
+    type: "verify" | "unverify" | "demote" | "delete" | null;
     userId: string | null;
   }>({
     isOpen: false,
@@ -44,7 +44,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     userId: null
   });
 
-  const openModal = (type: "verify" | "demote" | "delete", userId: string) => {
+  const openModal = (type: "verify" | "unverify" | "demote" | "delete", userId: string) => {
     setModalState({ isOpen: true, type, userId });
   };
 
@@ -59,8 +59,10 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     return users.filter((u) => {
       const name = u.full_name || "";
       const email = u.email || "";
+      const username = u.username || "";
       const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) || 
-                             email.toLowerCase().includes(search.toLowerCase());
+                             email.toLowerCase().includes(search.toLowerCase()) ||
+                             username.toLowerCase().includes(search.toLowerCase());
       const matchesRole = filterRole === "all" || u.role === filterRole;
       const matchesStatus = 
         filterStatus === "all" || 
@@ -113,7 +115,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
           body: JSON.stringify({ userId }),
         });
       } else {
-        const endpoint = type === "verify" ? "/api/admin/verify-user" : "/api/admin/demote-user";
+        const endpoint = (type === "verify") ? "/api/admin/verify-user" : "/api/admin/demote-user";
         response = await fetch(endpoint, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -343,10 +345,10 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                   </button>
                                 ) : (
                                   <button
-                                    onClick={() => openModal("demote", user.id)}
+                                    onClick={() => openModal("unverify", user.id)}
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg"
                                   >
-                                    <XCircle className="h-3.5 w-3.5" /> Demote Verification
+                                    <XCircle className="h-3.5 w-3.5" /> Unverify User
                                   </button>
                                 )}
                                 
@@ -419,12 +421,12 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
         type={modalState.type === "delete" ? "error" : modalState.type === "verify" ? "success" : "warning"}
         title={
           modalState.type === "delete" ? "Delete User" :
-          modalState.type === "verify" ? "Verify Student" : "Demote Verification"
+          modalState.type === "verify" ? "Verify Student" : "Unverify User"
         }
         description={
           modalState.type === "delete" ? "Are you sure you want to PERMANENTLY delete this user? This action cannot be undone." :
           modalState.type === "verify" ? "Are you sure you want to verify this student for ID card generation?" :
-          "Are you sure you want to demote this user's verification status? They will lose access to ID card generation."
+          "Are you sure you want to unverify this user? They will lose access to ID card generation."
         }
         footer={
           <div className="flex gap-3">

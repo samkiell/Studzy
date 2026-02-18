@@ -37,9 +37,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: "User demoted successfully" });
+    return NextResponse.json({ success: true, message: "User unverified successfully" });
   } catch (error) {
-    console.error("Admin Demote User Error:", error);
-    return NextResponse.json({ success: false, error: "Failed to demote user" }, { status: 500 });
+    console.error("Admin Unverify User Error:", error);
+    return NextResponse.json({ success: false, error: "Failed to unverify user" }, { status: 500 });
   }
 }
