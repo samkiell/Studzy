@@ -17,6 +17,14 @@ import { Button } from "@/components/ui/Button";
 import { startCbtAttempt } from "./actions";
 import { CbtMode } from "@/types/cbt";
 
+const COURSES: Record<string, string> = {
+  "CSC201": "Introduction to Python Programming",
+  "MTH101": "General Mathematics I",
+  "PHY101": "General Physics I",
+  "CHM101": "General Chemistry I",
+  "GST101": "Use of English I"
+};
+
 export default function CbtLandingPage() {
   const router = useRouter();
   const [courseCode, setCourseCode] = useState("");
@@ -25,6 +33,8 @@ export default function CbtLandingPage() {
   const [timerMinutes, setTimerMinutes] = useState(30);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const courseTitle = courseCode && COURSES[courseCode] ? COURSES[courseCode] : "Select a Course";
 
   const handleStart = async () => {
     if (!courseCode) {
@@ -49,21 +59,22 @@ export default function CbtLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white p-6 md:p-12 lg:p-24 flex flex-col items-center">
-      {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-indigo-500/10 blur-[120px] pointer-events-none" />
-
+      {/* Background Glow - Removed for cleaner look */}
+      
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl relative z-10"
       >
         <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-4">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Official CSC201 CBT Engine</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            Introduction to <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Python Programming</span>
+          {courseCode && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-4">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Official {courseCode} CBT Engine</span>
+            </div>
+          )}
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-white">
+            {courseTitle}
           </h1>
           <p className="text-gray-400 text-lg">
             Practice with real questions, timed sessions, and AI-powered explanations.
@@ -87,7 +98,9 @@ export default function CbtLandingPage() {
                 className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all appearance-none text-white cursor-pointer"
               >
                 <option value="" disabled>Select a course...</option>
-                <option value="CSC201">CSC201 - Introduction to Python Programming</option>
+                {Object.keys(COURSES).map((code) => (
+                  <option key={code} value={code}>{code} - {COURSES[code]}</option>
+                ))}
               </select>
             </div>
 
