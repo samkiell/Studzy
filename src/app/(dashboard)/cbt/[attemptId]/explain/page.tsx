@@ -152,7 +152,7 @@ export default function ExplainPage() {
           </Button>
           <div className="flex items-center gap-2">
             <NextImage src="/favicon.png" alt="Studzy" width={20} height={20} />
-            <span className="text-sm font-bold text-white uppercase tracking-tighter italic">Studzy AI</span>
+            <span className="text-sm font-bold text-white uppercase tracking-tighter">Studzy AI</span>
           </div>
         </div>
       </div>
