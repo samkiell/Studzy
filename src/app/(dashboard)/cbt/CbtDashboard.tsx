@@ -15,7 +15,7 @@ import {
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { startCbtAttempt, getCbtMetadata } from "./actions";
-import { CbtMode, Difficulty } from "@/types/cbt";
+import { CbtMode } from "@/types/cbt";
 import { Course } from "@/types/database";
 
 interface CbtDashboardProps {
