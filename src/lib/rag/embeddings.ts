@@ -18,10 +18,16 @@ export async function embedText(text: string): Promise<number[]> {
 
   while (retryCount <= MAX_RETRIES) {
     try {
-      const response = await client.embeddings.create({
+      const embeddingPromise = client.embeddings.create({
         model: EMBEDDING_MODEL,
         inputs: [text],
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Mistral embedding request timed out")), 15000)
+      );
+
+      const response = await Promise.race([embeddingPromise, timeoutPromise]);
 
       const embedding = response.data?.[0]?.embedding;
       if (!embedding) {

@@ -41,6 +41,15 @@ export default function ExplainPage() {
     try {
       const prompt = generateExplanationPrompt(currentQuestion, selectedOption);
       
+      // Set a client-side timeout
+      const timeoutId = setTimeout(() => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          setError("The request timed out. Please try again.");
+          setIsLoading(false);
+        }
+      }, 15000);
+
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,17 +62,27 @@ export default function ExplainPage() {
         }),
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) throw new Error("Failed to reach Studzy AI");
       if (!response.body) throw new Error("No response body");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let chunkCount = 0;
+      let totalContentLength = 0;
+
+      console.log("[AI Stream] 🚀 Started reading stream...");
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log(`[AI Stream] ✅ Reader done. Total chunks: ${chunkCount}, Total length: ${totalContentLength}`);
+          break;
+        }
 
+        chunkCount++;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
@@ -73,18 +92,31 @@ export default function ExplainPage() {
           if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
           
           const data = trimmedLine.slice(6);
-          if (data === "[DONE]") break;
+          if (data === "[DONE]") {
+            console.log(`[AI Stream] 🏁 [DONE] signal received at chunk ${chunkCount}`);
+            setIsLoading(false);
+            return;
+          }
 
           try {
             const parsed = JSON.parse(data);
             const content = parsed.choices?.[0]?.delta?.content || "";
             if (content) {
+              totalContentLength += content.length;
+              if (chunkCount <= 5) {
+                console.log(`[AI Stream] 🧩 Chunk ${chunkCount} content: "${content.substring(0, 15)}..."`);
+              }
               setAiExplanation((prev) => prev + content);
             }
           } catch (e) {
-            console.error("Error parsing stream chunk:", e);
+            console.error("[AI Stream] ❌ Error parsing stream chunk:", e, "Line:", trimmedLine);
           }
         }
+      }
+      
+      // Final scroll on completion
+      if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     } catch (err: any) {
       if (err.name === 'AbortError') return;

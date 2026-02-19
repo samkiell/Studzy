@@ -41,8 +41,12 @@ async function getRAGContext(
     const queryEmbedding = await embedText(question);
     const supabase = createAdminClient();
 
+    console.log(`[RAG] 🔍 RPC Match Embeddings - Threshold: ${SIMILARITY_THRESHOLD}, Count: ${TOP_K}, Course: ${courseCode}, Level: ${level}`);
+    
+    // NOTE: Some PGVector implementations expect query_embedding as a raw array, not stringified.
+    // We pass it as-is (array) which Supabase-JS handles.
     const { data, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: JSON.stringify(queryEmbedding),
+      query_embedding: queryEmbedding, 
       match_threshold: SIMILARITY_THRESHOLD,
       match_count: TOP_K,
       filter_course_code: courseCode || null,
@@ -51,12 +55,12 @@ async function getRAGContext(
     
     // 🌍 Fallback: If no course-specific materials, search across the entire "RAG Bucket"
     if (!error && (!data || data.length === 0) && courseCode) {
-      console.log(`[RAG] 🌍 Course search returned nothing. Retrying with Global wildcard scope...`);
+      console.log(`[RAG] 🌍 Course search returned nothing. Retrying Global...`);
       const { data: globalData, error: globalError } = await supabase.rpc("match_embeddings", {
-        query_embedding: JSON.stringify(queryEmbedding),
+        query_embedding: queryEmbedding,
         match_threshold: SIMILARITY_THRESHOLD,
         match_count: TOP_K,
-        filter_course_code: null, // Global wildcard search
+        filter_course_code: null,
         filter_level: null,
       });
 
@@ -151,11 +155,18 @@ export async function POST(request: NextRequest) {
     if (messages.length > 0) {
       const lastUserMessage = messages.filter(m => m.role === "user").pop();
       if (lastUserMessage) {
-        const ragContext = await getRAGContext(
-          lastUserMessage.content,
-          course_code,
-          level
+        console.log(`[API] 🕵️ Attempting RAG context retrieval...`);
+        
+        // Use a timeout to prevent RAG hanging the entire request
+        const ragPromise = getRAGContext(lastUserMessage.content, course_code, level);
+        const timeoutPromise = new Promise<null>((resolve) => 
+          setTimeout(() => {
+            console.warn("[API] ⏱️ RAG retrieval timed out after 6s. Falling back to base AI.");
+            resolve(null);
+          }, 6000)
         );
+
+        const ragContext = await Promise.race([ragPromise, timeoutPromise]);
 
         if (ragContext) {
           // Prepend as system message so the AI has study material context
@@ -167,7 +178,7 @@ export async function POST(request: NextRequest) {
           // 💡 FALLBACK: Inform the AI that no local context was found so it answers normally
           mistralMessages.unshift({
             role: "system",
-            content: "Note: No specific study materials were found in the database for this query. Please answer based on your general knowledge or available web search tools. If the user is asking about their course, mention that no materials for this specific query have been uploaded yet.",
+            content: "Note: No specific study materials were found in the database for this query. Please answer based on your general knowledge or available web search tools.",
           });
         }
       }
@@ -267,12 +278,19 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
              })}\n\n`));
         }
 
+        let chunkCount = 0;
         for await (const chunk of response) {
+          chunkCount++;
           const data = (chunk as any).data || chunk;
           const choice = data.choices?.[0];
           
           let content = "";
           const rawContent = choice?.delta?.content;
+          
+          // Debug log first few chunks
+          if (chunkCount <= 5) {
+            console.log(`[API] 🧩 Chunk ${chunkCount} raw content piece: "${typeof rawContent === 'string' ? rawContent.substring(0, 20) : 'complex'}"`);
+          }
           
           // 1. Robust Content Extraction (Handles strings and multi-part content items)
           if (typeof rawContent === "string") {
@@ -315,16 +333,18 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
                           choice?.message?.tool_calls || choice?.message?.toolCalls;
           
           if (data.choices?.[0]?.finish_reason) {
-            console.log(`[API] 🏁 Stream finished. Reason: ${data.choices[0].finish_reason}`);
+            console.log(`[API] 🏁 Stream finished at chunk ${chunkCount}. Reason: ${data.choices[0].finish_reason}`);
           }
 
           if (toolCalls && toolCalls.length > 0) {
+            console.log(`[API] 🔧 Tool call detected in chunk ${chunkCount}. Pulsing connection...`);
             // Always pulse on tool calls to keep connection alive
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content: "" } }]
             })}\n\n`));
           }
         }
+        console.log(`[API] ✅ Stream complete. Total chunks emitted: ${chunkCount}`);
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
         controller.error(err);
