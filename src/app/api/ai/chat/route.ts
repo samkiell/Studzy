@@ -232,8 +232,10 @@ function validateMessages(messages: any[]): any[] {
   return messages.filter((msg, index) => {
     if (msg.role !== "assistant") return true;
 
-    const hasContent = msg.content && typeof msg.content === "string" && msg.content.trim().length > 0;
-    const hasToolCalls = msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0;
+    const hasContent = (msg.content && typeof msg.content === "string" && msg.content.trim().length > 0) || 
+                       (Array.isArray(msg.content) && msg.content.length > 0);
+    const hasToolCalls = (msg.tool_calls && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) ||
+                         (msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0);
 
     if (!hasContent && !hasToolCalls) {
       console.warn(`[API] 🧹 Removing invalid assistant message at index ${index}: No content and no tool_calls.`);
@@ -309,7 +311,8 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
           }
 
           // Handle tool calls privately
-          const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
+          const toolCalls = choice?.delta?.tool_calls || choice?.delta?.toolCalls || 
+                          choice?.message?.tool_calls || choice?.message?.toolCalls;
           if (toolCalls && toolCalls.length > 0) {
             if (!hasEmittedContent) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({
