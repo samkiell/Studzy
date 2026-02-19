@@ -41,6 +41,9 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
       video: resources.filter((r) => r.type === "video").length,
       audio: resources.filter((r) => r.type === "audio").length,
       pdf: resources.filter((r) => r.type === "pdf").length,
+      image: resources.filter((r) => r.type === "image").length,
+      document: resources.filter((r) => r.type === "document").length,
+      question_bank: resources.filter((r) => r.type === "question_bank").length,
     }),
     [resources]
   );

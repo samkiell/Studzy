@@ -22,6 +22,9 @@ interface ResourceFilterTabsProps {
     video: number;
     audio: number;
     pdf: number;
+    image: number;
+    document: number;
+    question_bank: number;
   };
 }
 

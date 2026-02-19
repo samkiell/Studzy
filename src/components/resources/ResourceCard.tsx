@@ -64,6 +64,16 @@ const typeIcons = {
       />
     </svg>
   ),
+  question_bank: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+      />
+    </svg>
+  ),
 };
 
 const typeColors = {
@@ -72,6 +82,7 @@ const typeColors = {
   pdf: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   image: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   document: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400",
+  question_bank: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
 
 const typeLabels = {
@@ -80,6 +91,7 @@ const typeLabels = {
   pdf: "PDF",
   image: "Image",
   document: "Document",
+  question_bank: "Question Bank",
 };
 
 export function ResourceCard({ resource, courseCode, isCompleted = false }: ResourceCardProps) {
