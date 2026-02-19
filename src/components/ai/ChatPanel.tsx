@@ -366,22 +366,8 @@ export function ChatPanel({
       let assistantContent = "";
       let buffer = ""; // SSE buffer
       
-      // Create a stable assistant message structure
+      let assistantMsgCreated = false;
       const assistantMsgId = `assistant-${Date.now()}`;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantMsgId,
-          session_id: sessionId,
-          role: "assistant",
-          content: "",
-          mode,
-          image_url: null,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      setIsLoading(false); // We can show the message bubble now
 
       while (true) {
         const { done, value } = await reader.read();
@@ -389,19 +375,40 @@ export function ChatPanel({
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // Keep last partial line
+        buffer = lines.pop() || ""; 
 
         for (const line of lines) {
           const trimmedLine = line.trim();
           if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
           
           const data = trimmedLine.slice(6);
-          if (data === "[DONE]") break;
+          if (data === "[DONE]") {
+            setIsLoading(false);
+            break;
+          }
 
           try {
             const parsed = JSON.parse(data);
             const content = parsed.choices?.[0]?.delta?.content || "";
+            
             if (content) {
+              if (!assistantMsgCreated) {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: assistantMsgId,
+                    session_id: sessionId,
+                    role: "assistant",
+                    content: "",
+                    mode,
+                    image_url: null,
+                    created_at: new Date().toISOString(),
+                  },
+                ]);
+                assistantMsgCreated = true;
+                setIsLoading(false); // Hide the global loader, bubble will show content
+              }
+
               assistantContent += content;
               setMessages((prev) => {
                 const lastMsg = prev[prev.length - 1];

@@ -177,13 +177,12 @@ export async function POST(request: NextRequest) {
       mistralMessages.unshift({
         role: "system",
         content: `SEARCH MODE ACTIVE. 
-CRITICAL INSTRUCTIONS:
-1. Use your search tools internally as needed. 
-2. ALWAYS provide a "SEARCH HIGHLIGHTS" or "SOURCES" section at the top of your final answer showing what you found.
-3. Synthesize the findings into a COMPREHENSIVE FINAL ANSWER for the student.
-4. Use clean markdown (bold, lists, headers).
-5. NEVER output raw technical logs, function names (like "web_search" as code), or internal JSON.
-6. If no search results are found, explain briefly but still provide a helpful answer from your general knowledge.`,
+CRITICAL:
+1. Provide the SEARCH RESULTS immediately in clean markdown. 
+2. Use lists, bold text, and headers to present the data clearly.
+3. If specific links or sources are found, include them.
+4. Synthesize a brief final summary after the results.
+5. NEVER output technical code/JSON or label segments like "web_search".`,
       });
     }
 
@@ -283,8 +282,9 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
           
           if (content) {
             // 2. Surgical Filtering for Technical Debris
-            const isPureNoise = /^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i.test(content.trim());
-            if (isPureNoise) {
+            const trimmed = content.trim();
+            const isPureNoise = /^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i.test(trimmed);
+            if (isPureNoise && trimmed.length < 50) {
               console.log(`[API] 🧹 Filtered internal noise: "${content.substring(0, 50)}"`);
               continue; 
             }
