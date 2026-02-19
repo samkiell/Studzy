@@ -123,7 +123,6 @@ export default function ExplainPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] pb-20">
-      {/* Header */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0A0B]/95 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button 
@@ -144,7 +143,6 @@ export default function ExplainPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 mt-8 space-y-8">
-        {/* Question Review */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -159,7 +157,6 @@ export default function ExplainPage() {
           </h1>
         </div>
 
-        {/* Options Feedback */}
         <div className="grid grid-cols-1 gap-3">
           {Object.entries(currentQuestion.options).map(([key, value]) => {
             const isSelected = selectedOption === key;
@@ -187,7 +184,6 @@ export default function ExplainPage() {
           })}
         </div>
 
-        {/* AI Content */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -256,8 +252,6 @@ export default function ExplainPage() {
                   )}
                 </div>
               </div>
-            </div>
-
             </div>
           </div>
         </motion.div>
