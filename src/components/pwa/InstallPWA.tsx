@@ -75,40 +75,40 @@ export function InstallPWA() {
         exit={{ opacity: 0, y: 100 }}
         className="fixed bottom-6 left-4 right-4 z-[9999] md:left-auto md:right-8 md:w-[480px]"
       >
-        <div className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="relative overflow-hidden rounded-[24px] border border-neutral-100 bg-white/95 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/95">
           {/* Close button */}
           <button
             onClick={handleDismiss}
             className="absolute right-6 top-6 text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-white"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
 
           <div className="flex items-start gap-5">
-            {/* Logo Icon Container */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-500 p-3 shadow-lg shadow-indigo-500/20">
-              <Download className="h-8 w-8 text-white" />
+            {/* Icon Container - Matches screenshot style */}
+            <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[#1e4d44] text-white">
+              <Download className="h-7 w-7" />
             </div>
 
-            <div className="min-w-0 flex-1 pt-1 pr-6">
-              <h3 className="text-xl font-bold text-neutral-900 dark:text-white">Install Studzy</h3>
-              <p className="mt-1 text-[15px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
+            <div className="min-w-0 flex-1 pt-0.5 pr-6">
+              <h3 className="text-[19px] font-bold text-neutral-900 dark:text-white leading-tight">Install Studzy</h3>
+              <p className="mt-1 text-[14px] font-medium text-neutral-500 dark:text-neutral-400">
                 Add Studzy to your home screen for quick access
               </p>
             </div>
           </div>
 
-          <div className="mt-8 flex items-center justify-between">
+          <div className="mt-7 flex items-center justify-between">
             <button
               onClick={handleInstall}
-              className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-10 py-3.5 text-base font-bold text-white shadow-lg shadow-indigo-600/20 transition-all hover:bg-indigo-700 hover:shadow-indigo-600/30 active:scale-[0.98]"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#2d6a4f] px-10 py-3.5 text-base font-bold text-white shadow-lg shadow-[#2d6a4f]/20 transition-all hover:bg-[#1b4332] active:scale-[0.98]"
             >
               <Download className="h-5 w-5" />
               Install Now
             </button>
             <button
               onClick={handleDismiss}
-              className="px-6 py-3.5 text-base font-semibold text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+              className="px-4 text-[16px] font-semibold text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               Not now
             </button>
