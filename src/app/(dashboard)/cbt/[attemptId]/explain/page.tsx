@@ -223,7 +223,7 @@ export default function ExplainPage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-white text-sm">
-                    {isCorrect ? "Spot on!" : "Not quite right"}
+                    {isCorrect ? "Spot on!" : "Wrong"}
                   </h4>
                   <p className="text-[10px] text-gray-400">
                     {isCorrect 

@@ -206,6 +206,7 @@ CRITICAL:
       const response = await client.agents.stream({
         agentId: MISTRAL_AI_AGENT_ID,
         messages: finalMessages,
+        maxTokens: 2048, // Increase token limit for longer explanations
       });
       return streamResponse(response, mode, shouldUseWebSearch);
     } catch (apiError: any) {
@@ -312,6 +313,11 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
           // Handle tool calls privately
           const toolCalls = choice?.delta?.tool_calls || choice?.delta?.toolCalls || 
                           choice?.message?.tool_calls || choice?.message?.toolCalls;
+          
+          if (data.choices?.[0]?.finish_reason) {
+            console.log(`[API] 🏁 Stream finished. Reason: ${data.choices[0].finish_reason}`);
+          }
+
           if (toolCalls && toolCalls.length > 0) {
             // Always pulse on tool calls to keep connection alive
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
