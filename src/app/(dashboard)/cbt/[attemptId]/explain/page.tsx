@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 export default function ExplainPage() {
   const router = useRouter();
-  const { session, isHydrated } = useQuizContext();
+  const { session, questions: orderedQuestions, isHydrated } = useQuizContext();
 
   if (!isHydrated || !session) {
     return (
@@ -18,7 +18,7 @@ export default function ExplainPage() {
     );
   }
 
-  const currentQuestion = session.questions[session.currentIndex];
+  const currentQuestion = orderedQuestions[session.currentIndex];
   const selectedOption = session.answers[currentQuestion.id];
   const isCorrect = selectedOption === currentQuestion.correct_option;
 

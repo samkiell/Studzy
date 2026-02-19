@@ -1,4 +1,3 @@
-import { ActionResponse } from "@/types/actions";
 import { QuizSession } from "@/types/quiz";
 import { quizSessionStorage } from "./quizSessionStorage";
 import { createQuizSession } from "./createQuizSession";
