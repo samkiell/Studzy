@@ -75,10 +75,13 @@ export default function ExplainPage() {
 
       console.log("[AI Stream] 🚀 Started reading stream...");
 
+      let accumulatedContent = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
           console.log(`[AI Stream] ✅ Reader done. Total chunks: ${chunkCount}, Total length: ${totalContentLength}`);
+          setAiExplanation(accumulatedContent);
           break;
         }
 
@@ -94,6 +97,7 @@ export default function ExplainPage() {
           const data = trimmedLine.slice(6);
           if (data === "[DONE]") {
             console.log(`[AI Stream] 🏁 [DONE] signal received at chunk ${chunkCount}`);
+            setAiExplanation(accumulatedContent);
             setIsLoading(false);
             return;
           }
@@ -103,16 +107,15 @@ export default function ExplainPage() {
             const content = parsed.choices?.[0]?.delta?.content || "";
             if (content) {
               totalContentLength += content.length;
-              if (chunkCount <= 5) {
-                console.log(`[AI Stream] 🧩 Chunk ${chunkCount} content: "${content.substring(0, 15)}..."`);
-              }
-              setAiExplanation((prev) => prev + content);
+              accumulatedContent += content;
             }
           } catch (e) {
             console.error("[AI Stream] ❌ Error parsing stream chunk:", e, "Line:", trimmedLine);
           }
         }
       }
+      
+      setAiExplanation(accumulatedContent);
       
       // Final scroll on completion
       if (scrollRef.current) {
@@ -278,68 +281,66 @@ export default function ExplainPage() {
             </div>
 
             <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
-              <div className="bg-white/5 border border-white/5 p-6 rounded-2xl min-h-[100px] relative">
-                {isLoading && !aiExplanation && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/[0.02] backdrop-blur-[2px] rounded-2xl">
+              <div className="bg-white/5 border border-white/5 p-6 rounded-2xl min-h-[140px] relative">
+                {isLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/[0.02] backdrop-blur-[2px] rounded-2xl z-20">
                     <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
-                    <p className="text-xs text-indigo-400 font-medium animate-pulse">Thinking...</p>
+                    <p className="text-xs text-indigo-400 font-medium animate-pulse">Analyzing question...</p>
                   </div>
                 )}
                 
-                {error && (
+                {error && !isLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 py-4">
                     <p className="text-sm text-red-400">{error}</p>
                     <Button size="sm" onClick={fetchAiExplanation} className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20">Try Again</Button>
                   </div>
                 )}
 
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    table({ children }) {
-                      return (
-                        <div className="my-4 overflow-x-auto rounded-xl border border-white/10">
-                          <table className="min-w-full divide-y divide-white/10 text-sm">
-                            {children}
-                          </table>
-                        </div>
-                      );
-                    },
-                    thead({ children }) {
-                      return <thead className="bg-white/5">{children}</thead>;
-                    },
-                    th({ children }) {
-                      return <th className="px-4 py-2 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{children}</th>;
-                    },
-                    td({ children }) {
-                      return <td className="px-4 py-2 text-gray-300 border-t border-white/5">{children}</td>;
-                    },
-                    code({ className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || "");
-                      const isInline = !match;
-                      return isInline ? (
-                        <code
-                          className="rounded bg-white/10 px-1.5 py-0.5 text-sm font-mono text-indigo-400"
-                          {...props}
-                        >
-                          {children}
-                        </code>
-                      ) : (
-                          <pre className="block w-full overflow-x-auto rounded-xl bg-black/50 p-4 text-xs md:text-sm text-gray-200 font-mono border border-white/5 scrollbar-thin scrollbar-thumb-white/10">
-                            <code className={`${className} block min-w-full`} {...props}>
+                <div className={isLoading ? "opacity-0 invisible" : "opacity-100 visible"}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table({ children }) {
+                        return (
+                          <div className="my-4 overflow-x-auto rounded-xl border border-white/10">
+                            <table className="min-w-full divide-y divide-white/10 text-sm">
                               {children}
-                            </code>
-                          </pre>
-                      );
-                    },
-                  }}
-                >
-                  {aiExplanation}
-                </ReactMarkdown>
-
-                {isLoading && aiExplanation && (
-                  <span className="inline-block w-1.5 h-4 bg-indigo-500 ml-1 animate-pulse align-middle" />
-                )}
+                            </table>
+                          </div>
+                        );
+                      },
+                      thead({ children }) {
+                        return <thead className="bg-white/5">{children}</thead>;
+                      },
+                      th({ children }) {
+                        return <th className="px-4 py-2 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{children}</th>;
+                      },
+                      td({ children }) {
+                        return <td className="px-4 py-2 text-gray-300 border-t border-white/5">{children}</td>;
+                      },
+                      code({ className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || "");
+                        const isInline = !match;
+                        return isInline ? (
+                          <code
+                            className="rounded bg-white/10 px-1.5 py-0.5 text-sm font-mono text-indigo-400"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        ) : (
+                            <pre className="block w-full overflow-x-auto rounded-xl bg-black/50 p-4 text-xs md:text-sm text-gray-200 font-mono border border-white/5 scrollbar-thin scrollbar-thumb-white/10">
+                              <code className={`${className} block min-w-full`} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                        );
+                      },
+                    }}
+                  >
+                    {aiExplanation}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           </div>

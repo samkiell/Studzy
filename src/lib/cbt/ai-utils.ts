@@ -12,6 +12,7 @@ export function generateExplanationPrompt(
     .join("\n");
 
   return `You are an expert tutor. Explain the following question clearly.
+  KEEP IT VERY SHORT AND BRIEF. Max 2-3 sentences per section.
 
 Question:
 "${question.question_text}"
@@ -25,8 +26,8 @@ Student's Selected Answer:
 Correct Answer:
 "${question.correct_option.toUpperCase()}"
  Explain clearly WHY the correct answer is correct.
- Explain WHY the other options (including the student's choice if wrong) are incorrect.
- Keep the tone encouraging and educational.`;
+ Explain WHY the other options are incorrect.
+ Keep the tone encouraging and brief.`;
 }
 
 /**
