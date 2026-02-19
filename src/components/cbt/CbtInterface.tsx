@@ -19,8 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Question, Attempt, SubmitAnswer } from "@/types/cbt";
 import { submitCbtAttempt } from "@/app/(dashboard)/cbt/actions";
-import { createExplanationSession } from "@/lib/cbt/ai-utils";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 import { ResultSummary } from "./ResultSummary";
 import { useQuizSession } from "@/hooks/useQuizSession";
@@ -184,21 +183,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   };
 
   const handleExplainWithAi = async () => {
-    if (isCreatingAiSession) return;
-    setIsCreatingAiSession(true);
-    try {
-      const { sessionId } = await createExplanationSession(
-        currentQuestion,
-        answers[currentQuestion.id]
-      );
-      
-      // Navigate to chat with the created session
-      router.push(`/studzyai/chat/${sessionId}`);
-    } catch (error) {
-      console.error("Failed to create AI session:", error);
-    } finally {
-      setIsCreatingAiSession(false);
-    }
+    router.push(`/cbt/${initialAttempt.id}/explain`);
   };
 
   const formatTime = (seconds: number) => {
