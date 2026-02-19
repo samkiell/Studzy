@@ -207,10 +207,12 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           </div>
 
           <div className="flex items-center gap-3 md:gap-6">
-            <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
-              <Target className="w-3 h-3 text-green-400" />
-              <span className="text-[11px] md:text-sm font-bold font-mono text-green-400">{currentAccuracy}%</span>
-            </div>
+            {initialAttempt.mode !== 'exam' && (
+              <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                <Target className="w-3 h-3 text-green-400" />
+                <span className="text-[11px] md:text-sm font-bold font-mono text-green-400">{currentAccuracy}%</span>
+              </div>
+            )}
 
             {initialAttempt.mode === 'exam' && (
               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${

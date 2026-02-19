@@ -99,11 +99,10 @@ function formatRAGPrompt(data: any[]): string {
 ${contextBlocks}
 
 INSTRUCTIONS FOR USING STUDY MATERIALS:
-1. START YOUR RESPONSE by listing the names of the files/sources found below (e.g., "I've found relevant information in [File Name]...").
+1. START YOUR RESPONSE by acknowledging the materials found, but DO NOT show raw technical file paths (e.g., avoid "pdf/12345.pdf"). Instead, use descriptive terms if possible or just refer to them as "uploaded study materials".
 2. Use the provided study materials to answer the student's question accurately.
-3. Cite which source the information comes from when possible.
-4. If the study materials don't cover the topic, answer from your general knowledge or search tools, but clarify what is and isn't from the uploaded materials.
-5. Format responses with markdown for readability.`;
+3. If the study materials don't cover the topic, answer from your general knowledge or search tools, but clarify what is and isn't from the uploaded materials.
+4. Format responses with markdown for readability.`;
 }
 
 export async function POST(request: NextRequest) {
