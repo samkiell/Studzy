@@ -49,6 +49,7 @@ const FILE_TYPES: Record<ResourceType, { accept: string; label: string }> = {
   pdf: { accept: ".pdf,application/pdf", label: "PDF documents" },
   image: { accept: "image/*,.jpg,.jpeg,.png,.webp,.svg,.gif", label: "Image files (JPG, PNG, WebP, SVG)" },
   document: { accept: ".txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx", label: "Documents & Code (TXT, MD, JSON, JS/TS)" },
+  question_bank: { accept: ".json", label: "CBT Question Bank (JSON)" },
 };
 
 // Auto-detect resource type from MIME type

@@ -176,10 +176,10 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
               <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-none">
+              <p className="text-[9px] text-gray-500 font-mono uppercase tracking-wider leading-none mb-1">{initialAttempt.course_code}</p>
+              <h2 className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-none leading-none">
                 {initialAttempt.course_title || "CBT Session"}
               </h2>
-              <p className="text-[9px] text-gray-500 font-mono uppercase tracking-wider">{initialAttempt.course_code}</p>
             </div>
           </div>
 

@@ -82,7 +82,12 @@ export async function startCbtAttempt({
     .eq("course_id", courseId);
 
   if (targetTopics.length > 0) {
-    query = query.in("topic", targetTopics);
+    // If 'General' is in targetTopics, we also want to include questions where topic is null
+    if (targetTopics.includes("General")) {
+      query = query.or(`topic.in.(${targetTopics.map(t => `"${t}"`).join(",")}),topic.is.null`);
+    } else {
+      query = query.in("topic", targetTopics);
+    }
   }
 
   const { data: questionIds, error: questError } = await query;
