@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { 
   BarChart3, 
   Clock, 
@@ -13,9 +13,12 @@ import {
   XCircle,
   Timer,
   ShieldCheck,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
+import { createExplanationSession } from "@/lib/cbt/ai-utils";
+import { Question } from "@/types/cbt";
 
 interface QuestionResult {
   id: string;
@@ -41,11 +44,38 @@ interface ResultSummaryProps {
 
 export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
   const router = useRouter();
-  const reviewRef = useRef<HTMLDivElement>(null);
+  const reviewsRef = useRef<HTMLDivElement>(null);
   const percentage = Math.round((results.score / results.totalQuestions) * 100);
+  const [loadingQuestionId, setLoadingQuestionId] = useState<string | null>(null);
 
   const scrollToReview = () => {
-    reviewRef.current?.scrollIntoView({ behavior: 'smooth' });
+    reviewsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleExplainWithAi = async (question: QuestionResult) => {
+    if (loadingQuestionId) return;
+    setLoadingQuestionId(question.id);
+    try {
+      // Create a compatible question object for the utility
+      const compatibleQuestion = {
+        ...question,
+        course_id: "", // Not strictly needed for prompt but required by type
+        question_id: 0,
+        difficulty: 'medium' as any,
+        created_at: new Date().toISOString()
+      } as Question;
+
+      const { sessionId } = await createExplanationSession(
+        compatibleQuestion,
+        question.selected_option
+      );
+      
+      router.push(`/studzyai/chat/${sessionId}`);
+    } catch (error) {
+      console.error("Failed to create AI session:", error);
+    } finally {
+      setLoadingQuestionId(null);
+    }
   };
 
   const getPercentageColor = (pct: number) => {
@@ -178,7 +208,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
       </div>
 
       {/* Questions Review */}
-      <div ref={reviewRef} id="review" className="space-y-6 pt-4">
+      <div ref={reviewsRef} id="review" className="space-y-6 pt-4">
         <h3 className="text-base md:text-lg font-bold flex items-center gap-2.5 mb-2">
           <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
           Detailed Question Review
@@ -213,11 +243,27 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                     </div>
                   </div>
                 </div>
-                {q.is_correct ? (
-                  <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-green-500 shrink-0" />
-                ) : (
-                  <XCircle className="w-5 h-5 md:w-6 md:h-6 text-red-500 shrink-0" />
-                )}
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  {q.is_correct ? (
+                    <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
+                  ) : (
+                    <XCircle className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleExplainWithAi(q)}
+                    disabled={!!loadingQuestionId}
+                    className="h-7 px-2 text-[10px] font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 gap-1.5"
+                  >
+                    {loadingQuestionId === q.id ? (
+                      <div className="w-3 h-3 border border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    EXPLAIN
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
