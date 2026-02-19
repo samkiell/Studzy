@@ -260,12 +260,7 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
         let lastChar = '';
         let repeatCount = 0;
 
-        // 🌐 Immediate feedback for search mode
-        if (isSearch) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-            choices: [{ delta: { content: "🔍 searching... \n\n" } }]
-          })}\n\n`));
-        }
+        // 🌐 Connection keep-alive for search mode will be handled by tool call pulses
 
         for await (const chunk of response) {
           const data = (chunk as any).data || chunk;
