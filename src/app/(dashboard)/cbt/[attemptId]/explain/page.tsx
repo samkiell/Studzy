@@ -2,15 +2,103 @@
 
 import { useQuizContext } from "@/context/QuizContext";
 import { Button } from "@/components/ui/Button";
-import { ChevronLeft, BrainCircuit, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, BrainCircuit, Sparkles, AlertCircle, CheckCircle2, Loader2, RefreshCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { generateExplanationPrompt } from "@/lib/cbt/ai-utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function ExplainPage() {
   const router = useRouter();
   const { session, questions: orderedQuestions, isHydrated } = useQuizContext();
+  const [aiExplanation, setAiExplanation] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  if (!isHydrated || !session) {
+  const fetchAiExplanation = useCallback(async () => {
+    if (!session || !orderedQuestions.length) return;
+    
+    const currentQuestion = orderedQuestions[session.currentIndex];
+    const selectedOption = session.answers[currentQuestion.id];
+    
+    if (!currentQuestion || !selectedOption) return;
+
+    setIsLoading(true);
+    setError(null);
+    setAiExplanation("");
+
+    try {
+      const prompt = generateExplanationPrompt(currentQuestion, selectedOption);
+      
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          mode: "chat",
+          enable_search: false,
+          enable_code: false,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to reach AI tutor");
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
+          
+          const data = trimmedLine.slice(6);
+          if (data === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content || "";
+            if (content) {
+              setAiExplanation((prev) => prev + content);
+            }
+          } catch (e) {
+            console.error("Error parsing stream chunk:", e);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error("AI Explanation Error:", err);
+      setError(err.message || "Failed to generate explanation. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session, orderedQuestions]);
+
+  useEffect(() => {
+    if (isHydrated && session && orderedQuestions.length && !aiExplanation && !isLoading && !error) {
+      fetchAiExplanation();
+    }
+  }, [isHydrated, session, orderedQuestions, aiExplanation, isLoading, error, fetchAiExplanation]);
+
+  // Auto-scroll while streaming
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [aiExplanation]);
+
+  if (!isHydrated || !session || !orderedQuestions.length) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0A0A0B]">
         <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
@@ -50,7 +138,7 @@ export default function ExplainPage() {
             <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
               <Sparkles className="w-4 h-4 text-indigo-400" />
             </div>
-            <span className="text-sm font-bold text-white">AI Explanation</span>
+            <span className="text-sm font-bold text-white uppercase tracking-tighter italic">AI Explanation</span>
           </div>
         </div>
       </div>
@@ -91,8 +179,8 @@ export default function ExplainPage() {
                 }`}>
                   {key.toUpperCase()}
                 </div>
-                <div className="flex-1">
-                  <span className="text-sm">{value}</span>
+                <div className="flex-1 text-sm">
+                  {value}
                 </div>
               </div>
             );
@@ -108,33 +196,65 @@ export default function ExplainPage() {
           <div className="absolute -right-10 -top-10 w-40 h-40 blur-3xl rounded-full opacity-5 bg-indigo-500" />
           
           <div className="relative z-10 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                isCorrect ? 'bg-green-500/20' : 'bg-red-500/20'
-              }`}>
-                {isCorrect ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  isCorrect ? 'bg-green-500/20' : 'bg-red-500/20'
+                }`}>
+                  {isCorrect ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm">
+                    {isCorrect ? "Spot on!" : "Not quite right"}
+                  </h4>
+                  <p className="text-[10px] text-gray-400">
+                    {isCorrect 
+                      ? "Your logic holds up. Here's why this is correct:" 
+                      : `The correct answer is ${currentQuestion.correct_option.toUpperCase()}. Let's break it down:`}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-white">
-                  {isCorrect ? "Spot on!" : "Not quite right"}
-                </h4>
-                <p className="text-xs text-gray-400">
-                  {isCorrect 
-                    ? "Your logic holds up. Here's why this is correct:" 
-                    : `The correct answer is ${currentQuestion.correct_option.toUpperCase()}. Let's break it down:`}
-                </p>
-              </div>
+              
+              {!isLoading && aiExplanation && (
+                <Button 
+                  onClick={fetchAiExplanation}
+                  variant="ghost"
+                  className="h-8 px-3 text-[10px] text-gray-500 hover:text-white gap-1.5"
+                >
+                  <RefreshCcw className="w-3 h-3" />
+                  Regenerate
+                </Button>
+              )}
             </div>
 
             <div className="prose prose-invert max-w-none">
-              <div className="bg-white/5 border border-white/5 p-6 rounded-2xl">
-                <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-                  {currentQuestion.explanation || "Detailed AI explanation logic would be integrated here, potentially streaming from a backend if not pre-provided in the question object."}
-                </p>
+              <div className="bg-white/5 border border-white/5 p-6 rounded-2xl min-h-[100px] relative">
+                {isLoading && !aiExplanation && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/[0.02] backdrop-blur-[2px] rounded-2xl">
+                    <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+                    <p className="text-xs text-indigo-400 font-medium animate-pulse">Thinking...</p>
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="flex flex-col items-center justify-center gap-3 py-4">
+                    <p className="text-sm text-red-400">{error}</p>
+                    <Button size="sm" onClick={fetchAiExplanation} className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20">Try Again</Button>
+                  </div>
+                )}
+
+                <div className="text-sm md:text-base text-gray-300 leading-relaxed font-mono">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {aiExplanation || ""}
+                  </ReactMarkdown>
+                  {isLoading && aiExplanation && (
+                    <span className="inline-block w-1 h-4 bg-indigo-500 ml-1 animate-pulse align-middle" />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -144,7 +264,7 @@ export default function ExplainPage() {
                 <span className="text-xs font-bold uppercase tracking-wider">Tutor Tip</span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed italic">
-                Always look for keywords in the question that might hint at the intended behavior. For OAU exams, precision in terminology matters!
+                Always look for keywords in the question that might hint at the intended behavior. Precision in terminology matters!
               </p>
             </div>
           </div>
