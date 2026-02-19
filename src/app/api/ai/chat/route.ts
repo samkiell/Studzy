@@ -207,7 +207,7 @@ CRITICAL INSTRUCTIONS:
         agentId: MISTRAL_AI_AGENT_ID,
         messages: finalMessages,
       });
-      return streamResponse(response, mode);
+      return streamResponse(response, mode, shouldUseWebSearch);
     } catch (apiError: any) {
       console.error("[API] ❌ Mistral failure:", apiError);
       return NextResponse.json(
@@ -247,7 +247,7 @@ function validateMessages(messages: any[]): any[] {
 /**
  * Helper to convert Mistral SDK stream to Next.js NextResponse
  */
-async function streamResponse(response: any, mode: string) {
+async function streamResponse(response: any, mode: string, isSearch: boolean = false) {
   const encoder = new TextEncoder();
   
   const stream = new ReadableStream({
@@ -256,6 +256,14 @@ async function streamResponse(response: any, mode: string) {
         let hasEmittedContent = false;
         let lastChar = '';
         let repeatCount = 0;
+
+        // 🌐 Immediate feedback for search mode
+        if (isSearch) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            choices: [{ delta: { content: "Searching the web... 🌐\n\n" } }]
+          })}\n\n`));
+          hasEmittedContent = true;
+        }
 
         for await (const chunk of response) {
           const data = (chunk as any).data || chunk;
@@ -278,8 +286,8 @@ async function streamResponse(response: any, mode: string) {
           
           if (content) {
             // 2. Aggressive Filtering for Technical Debris
-            // Catch "web_search", "thought", or raw JSON fragments that might leak
-            const technicalNoiseRegex = /^(web_search|thought|{"query"|\[{"query"|.*tool_call.*)/i;
+            // Targeted to catch EXACT tool name leaks or raw internal JSON, while sparing descriptive text
+            const technicalNoiseRegex = /^(\s*web_search\s*$|^thought\s*$|^\{"query"|^\s*\[\s*\{"query")/i;
             if (technicalNoiseRegex.test(content.trim())) {
               console.log(`[API] 🧹 Filtered internal noise: ${content.substring(0, 50)}...`);
               continue; 

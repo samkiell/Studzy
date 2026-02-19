@@ -187,6 +187,14 @@ export async function POST(
           let lastChar = '';
           let repeatCount = 0;
 
+          // 🌐 Immediate feedback for search mode
+          if (enable_search || mode === "search") {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              choices: [{ delta: { content: "Searching the web... 🌐\n\n" } }]
+            })}\n\n`));
+            hasEmittedContent = true;
+          }
+
           for await (const chunk of stream) {
             const data = (chunk as any).data || chunk;
             const choice = data.choices?.[0];
@@ -194,7 +202,7 @@ export async function POST(
             let content = "";
             const rawContent = choice?.delta?.content;
             
-            // 1. Robust Content Extraction (Handles strings and multi-part content items)
+            // 1. Robust Content Extraction
             if (typeof rawContent === "string") {
               content = rawContent;
             } else if (Array.isArray(rawContent)) {
@@ -207,7 +215,7 @@ export async function POST(
             
             if (content) {
               // 2. Aggressive Filtering for Technical Debris
-              const technicalNoiseRegex = /^(web_search|thought|{"query"|\[{"query"|.*tool_call.*)/i;
+              const technicalNoiseRegex = /^(\s*web_search\s*$|^thought\s*$|^\{"query"|^\s*\[\s*\{"query")/i;
               if (technicalNoiseRegex.test(content.trim())) {
                 console.log(`[API Session] 🧹 Filtered internal noise: ${content.substring(0, 50)}...`);
                 continue; 
