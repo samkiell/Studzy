@@ -23,6 +23,8 @@ import { createExplanationSession } from "@/lib/cbt/ai-utils";
 import { useRouter } from "next/navigation";
 
 import { ResultSummary } from "./ResultSummary";
+import { useQuizSession } from "@/hooks/useQuizSession";
+import { quizSessionStorage } from "@/lib/quiz/quizSessionStorage";
 
 interface CbtInterfaceProps {
   initialAttempt: Attempt;
@@ -31,8 +33,20 @@ interface CbtInterfaceProps {
 
 export default function CbtInterface({ initialAttempt, questions }: CbtInterfaceProps) {
   const router = useRouter();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  
+  const {
+    session,
+    isHydrated,
+    setAnswer,
+    setCurrentIndex: setSessionCurrentIndex,
+    completeSession,
+    clearSession
+  } = useQuizSession({
+    courseId: initialAttempt.course_id,
+    questions,
+    sessionId: initialAttempt.id
+  });
+
   const [isSubmitted, setIsSubmitted] = useState(!!initialAttempt.completed_at);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialAttempt.time_limit_seconds || (initialAttempt.mode === 'exam' ? 1800 : 0)); 
@@ -46,6 +60,9 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const [isCreatingAiSession, setIsCreatingAiSession] = useState(false);
   const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
 
+  const currentIndex = session?.currentIndex || 0;
+  const answers = session?.answers || {};
+  
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
 
@@ -113,7 +130,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   const handleSelectOption = (option: string) => {
     if (isSubmitted) return;
-    setAnswers(prev => ({ ...prev, [currentQuestion.id]: option }));
+    setAnswer(currentQuestion.id, option);
     if (initialAttempt.mode === 'study') {
       setShowExplanation(true);
     }
@@ -121,14 +138,14 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   const nextQuestion = () => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setSessionCurrentIndex(currentIndex + 1);
       setShowExplanation(false);
     }
   };
 
   const prevQuestion = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      setSessionCurrentIndex(currentIndex - 1);
       setShowExplanation(false);
     }
   };
@@ -152,6 +169,9 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       // @ts-ignore - The response object structure is correct now
       setResults(res);
       setIsSubmitted(true);
+      completeSession();
+      // Clear storage on successful submission
+      quizSessionStorage.clearSession(initialAttempt.course_id);
     } catch (error) {
       console.error("Submission failed:", error);
     } finally {
@@ -182,6 +202,14 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
+
+  if (!isHydrated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0A0A0B]">
+        <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (isSubmitted && results) {
     return (
