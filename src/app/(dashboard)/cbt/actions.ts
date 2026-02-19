@@ -210,7 +210,7 @@ export async function submitCbtAttempt({
     // Attempt already completed. Return the existing results to make this idempotent.
     const { data: existingAnswers, error: answersErr } = await supabase
       .from("attempt_answers")
-      .select("question_id, selected_option, is_correct, duration_seconds")
+      .select("question_id, selected_option, is_correct")
       .eq("attempt_id", attemptId);
 
     if (answersErr) {
@@ -241,13 +241,11 @@ export async function submitCbtAttempt({
       if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
       topicStats[topic].total++;
       if (ans.is_correct) topicStats[topic].correct++;
-      topicStats[topic].avgTime += ans.duration_seconds;
-
       return {
         ...question,
         selected_option: ans.selected_option,
         is_correct: ans.is_correct,
-        duration_seconds: ans.duration_seconds
+        duration_seconds: 0 // Default to 0 as it's missing in DB
       };
     });
 
@@ -307,7 +305,7 @@ export async function submitCbtAttempt({
       question_id: ans.question_id,
       selected_option: ans.selected_option,
       is_correct: isCorrect,
-      duration_seconds: ans.duration_seconds
+      // Removed duration_seconds as it's missing in DB
     };
   });
 
