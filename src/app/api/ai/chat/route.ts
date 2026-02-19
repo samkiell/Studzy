@@ -295,10 +295,10 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
               content = remaining;
             }
 
-            // 3. Repetitive Character Guard (Trapping trailing dots or hallucinatory loops)
+            // 3. Repetitive Character Guard
             if (content === lastChar && content.length === 1 && !/[a-zA-Z0-9]/.test(content)) {
               repeatCount++;
-              if (repeatCount > 5) continue; // Skip excessive repetition
+              if (repeatCount > 10) continue; // Trapping dots/loops
             } else {
               lastChar = content.length === 1 ? content : '';
               repeatCount = 0;
