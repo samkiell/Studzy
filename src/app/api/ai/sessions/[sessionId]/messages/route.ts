@@ -274,7 +274,7 @@ async function callMistralAIStream(
   level?: string
 ): Promise<AsyncIterable<any>> {
   if (!MISTRAL_API_KEY) {
-    throw new Error("Mistral API Key not configured");
+    throw new Error("Mistral API Key not cconfigured");
   }
 
   const mistralMessages: any[] = messages.map((msg) => {
