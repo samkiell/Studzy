@@ -24,7 +24,7 @@ async function checkSchema() {
     console.log(
       "No messages found, checking table info via RPC or other means if needed.",
     );
-    // Fallback: search for any message in any sessiond
+    // Fallback: search for any message in any session
     const { data: allData } = await supabase
       .from("chat_messages")
       .select("*")
