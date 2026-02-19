@@ -7,6 +7,7 @@ import { LoadingProvider } from "@/components/providers/LoadingProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "react-hot-toast";
+import { InstallPWA } from "@/components/pwa/InstallPWA";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -84,7 +85,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#0ea5e9" />
+        <meta name="theme-color" content="#4f46e5" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -124,6 +125,7 @@ export default function RootLayout({
             </div>
           </AIProvider>
         </LoadingProvider>
+        <InstallPWA />
         <Analytics />
         <SpeedInsights />
         <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
