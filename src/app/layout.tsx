@@ -14,6 +14,13 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: {
     default: "Studzy – Software Engineering Learning Platform | OAU",
@@ -49,12 +56,6 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
   },
   openGraph: {
     type: "website",
