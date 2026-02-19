@@ -53,26 +53,39 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
     // but ideally we'd show a summary. For now, we pass the attempt and it might show the result view)
   }
 
-  // 3. Fetch questions using course_id
-  // NOTE: In a production environment, we should persistently store the list of question IDs 
-  // assigned to this attempt to ensure the user sees the *exact same* questions on refresh.
-  // For now, we fetch ALL questions from the course and randomize them.
-  const { data: allQuestions, error: questError } = await supabase
-    .from("questions")
-    .select("*")
-    .eq("course_id", attemptData.course_id);
+  // 3. Fetch questions
+  // We use the persisted question_ids to ensure the user sees the exact same questions in order.
+  let questions: Question[] = [];
+  
+  if (attempt.question_ids && attempt.question_ids.length > 0) {
+    const { data: fetchedQuestions, error: questError } = await supabase
+      .from("questions")
+      .select("*")
+      .in("id", attempt.question_ids);
 
-  if (questError || !allQuestions) {
-    console.error("Questions fetch error:", questError);
-    throw new Error("Failed to load questions");
-  }
+    if (questError || !fetchedQuestions) {
+      console.error("Questions fetch error:", questError);
+      throw new Error("Failed to load persisted questions");
+    }
 
-  // Randomize and select N questions
-  const questions = shuffle(allQuestions as Question[]).slice(0, attempt.total_questions);
+    // Sort to match the exact order in question_ids
+    questions = attempt.question_ids
+      .map(id => fetchedQuestions.find(q => q.id === id))
+      .filter((q): q is Question => !!q);
+  } else {
+    // FALLBACK: For legacy attempts without question_ids
+    const { data: allQuestions, error: questError } = await supabase
+      .from("questions")
+      .select("*")
+      .eq("course_id", attemptData.course_id);
 
-  if (questError || !questions) {
-    console.error("Questions fetch error:", questError);
-    throw new Error("Failed to load questions");
+    if (questError || !allQuestions) {
+      console.error("Questions fetch error:", questError);
+      throw new Error("Failed to load questions");
+    }
+
+    // Randomize and select N questions (legacy behavior)
+    questions = shuffle(allQuestions as Question[]).slice(0, attempt.total_questions);
   }
 
   return (
