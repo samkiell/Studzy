@@ -214,7 +214,13 @@ export async function submitCbtAttempt({
       .eq("attempt_id", attemptId);
 
     if (answersErr) {
-      throw new Error("Attempt already completed and failed to fetch results");
+      console.error("Error fetching existing answers:", {
+        code: answersErr.code,
+        message: answersErr.message,
+        details: answersErr.details,
+        hint: answersErr.hint
+      });
+      throw new Error(`Attempt already completed and failed to fetch results: ${answersErr.message}`);
     }
 
     // Fetch question details for the summary
@@ -310,7 +316,20 @@ export async function submitCbtAttempt({
     topicStats[topic].avgTime = Math.round(topicStats[topic].avgTime / topicStats[topic].total);
   });
 
-  // 4. Update attempt record
+  // 4. Insert individual answers (Do this BEFORE updating attempt to avoid race condition in idempotency check)
+  const { error: answersError } = await supabase
+    .from("attempt_answers")
+    .insert(attemptAnswersPayload);
+
+  if (answersError) {
+    console.error("Error inserting attempt answers:", answersError);
+    // If it's a conflict error, it means another request already inserted them, which is fine for idempotency
+    if (answersError.code !== '23505') { 
+      throw new Error("Failed to save attempt answers");
+    }
+  }
+
+  // 5. Update attempt record
   const { error: updateError } = await supabase
     .from("attempts")
     .update({
@@ -323,15 +342,6 @@ export async function submitCbtAttempt({
   if (updateError) {
     console.error("Error updating attempt:", updateError);
     throw new Error("Failed to update attempt score");
-  }
-
-  // 5. Insert individual answers
-  const { error: answersError } = await supabase
-    .from("attempt_answers")
-    .insert(attemptAnswersPayload);
-
-  if (answersError) {
-    console.error("Error inserting attempt answers:", answersError);
   }
 
   revalidatePath("/dashboard/cbt");
