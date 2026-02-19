@@ -39,7 +39,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
 
   // Reconstruct questions in order based on session.orderedQuestionIds
   const orderedQuestions = useMemo(() => {
-    if (!session || !allFetchedQuestions.length) return [];
+    if (!session || !session.orderedQuestionIds || !allFetchedQuestions.length) return [];
     
     return session.orderedQuestionIds
       .map(id => allFetchedQuestions.find(q => q.id === id))
