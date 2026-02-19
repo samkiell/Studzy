@@ -33,7 +33,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(!!initialAttempt.completed_at);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialAttempt.time_limit_seconds || (initialAttempt.mode === 'exam' ? 1800 : 0)); 
   const [results, setResults] = useState<{ 
@@ -62,6 +62,29 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     
     return () => clearInterval(interval);
   }, [currentQuestion.id, isSubmitted]);
+
+  // Handle already completed attempts
+  useEffect(() => {
+    if (initialAttempt.completed_at && !results && !isSubmitting) {
+      const fetchExistingResults = async () => {
+        setIsSubmitting(true);
+        try {
+          const res = await submitCbtAttempt({
+            attemptId: initialAttempt.id,
+            answers: [],
+            durationSeconds: initialAttempt.duration_seconds || 0
+          });
+          // @ts-ignore
+          setResults(res);
+        } catch (error) {
+          console.error("Failed to fetch existing results:", error);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      fetchExistingResults();
+    }
+  }, [initialAttempt.completed_at, initialAttempt.id, results, isSubmitting]);
 
   // Timer logic for exam mode
   useEffect(() => {

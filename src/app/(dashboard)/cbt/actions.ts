@@ -207,7 +207,55 @@ export async function submitCbtAttempt({
   }
 
   if (attempt.completed_at) {
-    throw new Error("Attempt already completed");
+    // Attempt already completed. Return the existing results to make this idempotent.
+    const { data: existingAnswers, error: answersErr } = await supabase
+      .from("attempt_answers")
+      .select("question_id, selected_option, is_correct, duration_seconds")
+      .eq("attempt_id", attemptId);
+
+    if (answersErr) {
+      throw new Error("Attempt already completed and failed to fetch results");
+    }
+
+    // Fetch question details for the summary
+    const { data: questions, error: questError } = await supabase
+      .from("questions")
+      .select("id, question_text, options, correct_option, topic, difficulty, explanation")
+      .in("id", existingAnswers.map(a => a.question_id));
+
+    if (questError || !questions) {
+      throw new Error("Failed to fetch results metadata");
+    }
+
+    const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
+    const questionsWithAnswers = existingAnswers.map(ans => {
+      const question = questions.find(q => q.id === ans.question_id);
+      const topic = question?.topic || "General";
+      
+      if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
+      topicStats[topic].total++;
+      if (ans.is_correct) topicStats[topic].correct++;
+      topicStats[topic].avgTime += ans.duration_seconds;
+
+      return {
+        ...question,
+        selected_option: ans.selected_option,
+        is_correct: ans.is_correct,
+        duration_seconds: ans.duration_seconds
+      };
+    });
+
+    Object.keys(topicStats).forEach(topic => {
+      topicStats[topic].avgTime = Math.round(topicStats[topic].avgTime / topicStats[topic].total);
+    });
+
+    return {
+      score: attempt.score,
+      totalQuestions: attempt.total_questions,
+      completedAt: attempt.completed_at,
+      topicStats,
+      questionsWithAnswers
+    };
   }
 
   // 2. Fetch correct answers for the questions in this attempt
