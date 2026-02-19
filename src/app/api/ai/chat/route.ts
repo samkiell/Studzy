@@ -262,9 +262,8 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
         // 🌐 Immediate feedback for search mode
         if (isSearch) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-            choices: [{ delta: { content: "Searching the web... 🌐\n\n" } }]
+            choices: [{ delta: { content: "🔍 searching... \n\n" } }]
           })}\n\n`));
-          hasEmittedContent = true;
         }
 
         for await (const chunk of response) {
@@ -314,12 +313,10 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
           const toolCalls = choice?.delta?.tool_calls || choice?.delta?.toolCalls || 
                           choice?.message?.tool_calls || choice?.message?.toolCalls;
           if (toolCalls && toolCalls.length > 0) {
-            if (!hasEmittedContent) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                choices: [{ delta: { content: "" } }]
-              })}\n\n`));
-              hasEmittedContent = true;
-            }
+            // Always pulse on tool calls to keep connection alive
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              choices: [{ delta: { content: "" } }]
+            })}\n\n`));
           }
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));

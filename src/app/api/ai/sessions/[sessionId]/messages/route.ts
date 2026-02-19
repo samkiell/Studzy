@@ -190,9 +190,8 @@ export async function POST(
           // 🌐 Immediate feedback for search mode
           if (enable_search || mode === "search") {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              choices: [{ delta: { content: "Searching the web... 🌐\n\n" } }]
+              choices: [{ delta: { content: "🔍 searching... \n\n" } }]
             })}\n\n`));
-            hasEmittedContent = true;
           }
 
           for await (const chunk of stream) {
@@ -241,13 +240,10 @@ export async function POST(
             const toolCalls = choice?.delta?.tool_calls || choice?.delta?.toolCalls || 
                             choice?.message?.tool_calls || choice?.message?.toolCalls;
             if (toolCalls && toolCalls.length > 0) {
-              if (!hasEmittedContent) {
-                // Pulse to keep stream alive
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                  choices: [{ delta: { content: "" } }]
-                })}\n\n`));
-                hasEmittedContent = true;
-              }
+              // Always pulse on tool calls to keep connection alive
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                choices: [{ delta: { content: "" } }]
+              })}\n\n`));
             }
           }
 
