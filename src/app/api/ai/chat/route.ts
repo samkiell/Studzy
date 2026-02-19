@@ -175,10 +175,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 🌐 Search Mode: Add specific instructions if in search mode
-    if (mode === "search" || enable_search) {
       mistralMessages.unshift({
         role: "system",
-        content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information or specific details not in your training data or study materials, please use your web search tool. If you use a tool, explain to the user that you are searching the web."
+        content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information, use your web search tool. IMPORTANT: Do not output any technical tool-call JSON, code, or internal thought process markers like 'web_search' or 'thought' as text in your final response. Only provide the final, helpful answer to the user."
       });
     }
 
@@ -254,25 +253,35 @@ async function streamResponse(response: any, mode: string) {
         for await (const chunk of response) {
           const data = (chunk as any).data || chunk;
           const choice = data.choices?.[0];
-          const content = choice?.delta?.content || "";
+          
+          // Extracts content regardless if it's a string or a multipart part
+          let content = "";
+          const rawContent = choice?.delta?.content;
+          if (typeof rawContent === "string") {
+            content = rawContent;
+          } else if (rawContent && typeof rawContent === "object") {
+            content = (rawContent as any).text || "";
+          }
           
           if (content) {
+            // Filter out technical debris (some models leak tool call representation into content)
+            if (content.startsWith("web_search") || content.startsWith("thought")) {
+              continue; 
+            }
+
             hasEmittedContent = true;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content } }]
             })}\n\n`));
           }
 
-          // Log tool calls privately in server console
+          // Handle tool calls privately
           const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
           if (toolCalls && toolCalls.length > 0) {
-            const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
             if (!hasEmittedContent) {
-              console.log(`[API] 🛠️ AI requested tools: ${toolNames}`);
-              // We send a small invisible whitespace to keep the stream "alive" for the browser
-              // without showing "Thinking" or "Searching" to the user.
+              // Send a pulse to keep stream alive
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                choices: [{ delta: { content: " " } }]
+                choices: [{ delta: { content: "" } }]
               })}\n\n`));
               hasEmittedContent = true;
             }

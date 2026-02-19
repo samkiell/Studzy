@@ -9,21 +9,38 @@ import { EMBEDDING_MODEL, EMBEDDING_BATCH_SIZE, EMBEDDING_TOKEN_LIMIT, TOKENS_PE
 const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
 
 /**
- * Generate embeddings for a single piece of text.
- * Returns a 1024-dimensional vector.
+ * Generate embeddings for a single piece of text with retry logic.
  */
 export async function embedText(text: string): Promise<number[]> {
-  const response = await client.embeddings.create({
-    model: EMBEDDING_MODEL,
-    inputs: [text],
-  });
+  const MAX_RETRIES = 3;
+  const INITIAL_DELAY = 1000;
+  let retryCount = 0;
 
-  const embedding = response.data?.[0]?.embedding;
-  if (!embedding) {
-    throw new Error("Failed to generate embedding: no data returned");
+  while (retryCount <= MAX_RETRIES) {
+    try {
+      const response = await client.embeddings.create({
+        model: EMBEDDING_MODEL,
+        inputs: [text],
+      });
+
+      const embedding = response.data?.[0]?.embedding;
+      if (!embedding) {
+        throw new Error("Failed to generate embedding: no data returned");
+      }
+
+      return embedding as number[];
+    } catch (error: any) {
+      if ((error.statusCode === 429 || error.status === 429) && retryCount < MAX_RETRIES) {
+        retryCount++;
+        const delay = INITIAL_DELAY * Math.pow(2, retryCount - 1) + (Math.random() * 1000);
+        console.warn(`[RAG] Rate limited (429) during query. Retrying in ${Math.round(delay)}ms... (Attempt ${retryCount}/${MAX_RETRIES})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
   }
-
-  return embedding as number[];
+  throw new Error("Failed to generate embedding after retries");
 }
 
 /**
