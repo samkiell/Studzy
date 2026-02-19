@@ -50,6 +50,13 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  viewport: {
+    themeColor: "#4f46e5",
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
