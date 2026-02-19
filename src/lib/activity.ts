@@ -12,7 +12,7 @@ export async function logActivity(actionType: ActivityAction, resourceId?: strin
   const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: null };
 
   const { error } = await supabase.from("user_activity").upsert({
     user_id: user.id,
