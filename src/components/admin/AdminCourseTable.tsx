@@ -118,9 +118,16 @@ export function AdminCourseTable({
                             <p className="font-bold text-neutral-900 dark:text-white">
                               {course.code}
                             </p>
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate max-w-[250px]">
-                              {course.title}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate max-w-[250px]">
+                                {course.title}
+                              </p>
+                              {course.is_cbt && (
+                                <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                  CBT
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

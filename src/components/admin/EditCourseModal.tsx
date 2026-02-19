@@ -15,6 +15,7 @@ interface EditCourseModalProps {
 export function EditCourseModal({ course, onClose, onSave }: EditCourseModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCbt, setIsCbt] = useState(course?.is_cbt || false);
   
   const isEditing = !!course;
 
@@ -24,6 +25,7 @@ export function EditCourseModal({ course, onClose, onSave }: EditCourseModalProp
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    formData.set("is_cbt", String(isCbt));
     if (isEditing) {
       formData.append("id", course.id);
     }
@@ -41,6 +43,7 @@ export function EditCourseModal({ course, onClose, onSave }: EditCourseModalProp
           title: formData.get("title") as string,
           description: formData.get("description") as string || null,
           created_at: isEditing ? course.created_at : new Date().toISOString(),
+          is_cbt: isCbt,
         };
         onSave(updatedCourse);
         onClose();
@@ -128,6 +131,24 @@ export function EditCourseModal({ course, onClose, onSave }: EditCourseModalProp
                   placeholder="Tell students what they'll learn in this course..."
                   className="mt-1.5 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-neutral-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                 />
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                <input
+                  type="checkbox"
+                  id="is_cbt"
+                  checked={isCbt}
+                  onChange={(e) => setIsCbt(e.target.checked)}
+                  className="h-5 w-5 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900"
+                />
+                <div>
+                  <label htmlFor="is_cbt" className="block text-sm font-bold text-neutral-900 dark:text-white">
+                    Enable CBT (Computer Based Test)
+                  </label>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    If enabled, students can take practice exams for this course.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -254,6 +254,7 @@ export async function createCourse(formData: FormData): Promise<UploadResult> {
     const code = (formData.get("code") as string)?.trim().toUpperCase();
     const title = (formData.get("title") as string)?.trim();
     const description = (formData.get("description") as string)?.trim() || null;
+    const is_cbt = formData.get("is_cbt") === "true";
 
     if (!code || !title) {
       return { success: false, message: "Code and Title are required" };
@@ -261,7 +262,7 @@ export async function createCourse(formData: FormData): Promise<UploadResult> {
 
     const { data: course, error } = await supabase
       .from("courses")
-      .insert({ code, title, description })
+      .insert({ code, title, description, is_cbt })
       .select()
       .single();
 
@@ -288,6 +289,7 @@ export async function updateCourse(formData: FormData): Promise<UploadResult> {
     const code = (formData.get("code") as string)?.trim().toUpperCase();
     const title = (formData.get("title") as string)?.trim();
     const description = (formData.get("description") as string)?.trim() || null;
+    const is_cbt = formData.get("is_cbt") === "true";
 
     if (!id || !code || !title) {
       return { success: false, message: "ID, Code, and Title are required" };
@@ -295,7 +297,7 @@ export async function updateCourse(formData: FormData): Promise<UploadResult> {
 
     const { error } = await supabase
       .from("courses")
-      .update({ code, title, description })
+      .update({ code, title, description, is_cbt })
       .eq("id", id);
 
     if (error) {
