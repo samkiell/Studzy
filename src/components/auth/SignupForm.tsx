@@ -105,7 +105,7 @@ export function SignupForm() {
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         required
-        autoComplete="username"
+        autoComplete="off"
       />
       <PasswordInput
         id="password"

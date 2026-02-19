@@ -28,18 +28,33 @@ export default async function AuthenticatedLayout({
     redirect("/login?error=account_suspended");
   }
 
-  // Activity Tracking: Update last_login if needed
+  // Activity Tracking & Data Sync
   const lastLogin = profile?.last_login ? new Date(profile.last_login) : new Date(0);
   const now = new Date();
-  const timeSinceLogin = now.getTime() - lastLogin.getTime();
+  const timeSinceSync = now.getTime() - lastLogin.getTime();
   
-  // Throttle updates: every 30 minutes for activity logs, but always update profile timestamp
-  if (timeSinceLogin > 30 * 60 * 1000) {
+  // Sync core user data from Auth to Profile
+  // Always update if email_confirmed_at is missing in profile but present in auth
+  const needsVerificationSync = !profile?.email_confirmed_at && user.email_confirmed_at;
+  const needsEmailSync = !profile?.email && user.email;
+  const needsUsernameSync = !profile?.username && user.user_metadata?.username;
+
+  if (timeSinceSync > 15 * 60 * 1000 || needsVerificationSync || needsEmailSync || needsUsernameSync) {
     const adminClient = createAdminClient();
-    await adminClient.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
-    await logActivity("login");
+    await adminClient.from("profiles").update({ 
+      last_login: now.toISOString(),
+      email: user.email,
+      email_confirmed_at: user.email_confirmed_at,
+      username: profile?.username || user.user_metadata?.username,
+      full_name: profile?.full_name || user.user_metadata?.full_name,
+    }).eq("id", user.id);
+    
+    // Only log "login" activity if it's been more than 30 mins
+    if (timeSinceSync > 30 * 60 * 1000) {
+      await logActivity("login");
+    }
   } else {
-    // Keep timestamp fresh for presence - but wait for it to ensure it completes
+    // Just keep the timestamp fresh for presence
     const adminClient = createAdminClient();
     await adminClient.from("profiles").update({ last_login: now.toISOString() }).eq("id", user.id);
   }

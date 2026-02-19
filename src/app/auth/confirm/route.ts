@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
     if (!error && data.user) {
       const username =
         data.user.user_metadata?.username ||
-        data.user.email?.split("@")[0] ||
         "Scholar";
 
       // Sync confirmation to profiles table
@@ -66,7 +65,6 @@ export async function GET(request: NextRequest) {
     if (!error && data.user) {
       const username =
         data.user.user_metadata?.username ||
-        data.user.email?.split("@")[0] ||
         "Scholar";
 
       // Sync confirmation to profiles table

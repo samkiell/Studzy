@@ -18,7 +18,6 @@ export async function GET(request: Request) {
       if (searchParams.get('type') === 'signup' || !searchParams.has('next')) {
         const username =
           data.user?.user_metadata?.username ||
-          data.user?.email?.split("@")[0] ||
           "Scholar";
 
         // Sign out after verification so user can login fresh
