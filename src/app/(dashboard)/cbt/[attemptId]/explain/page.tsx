@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { generateExplanationPrompt } from "@/lib/cbt/ai-utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import NextImage from "next/image";
 
 export default function ExplainPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function ExplainPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchAiExplanation = useCallback(async () => {
     if (!session || !orderedQuestions.length) return;
@@ -25,6 +27,12 @@ export default function ExplainPage() {
     const selectedOption = session.answers[currentQuestion.id];
     
     if (!currentQuestion || !selectedOption) return;
+
+    // Abort previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     setIsLoading(true);
     setError(null);
@@ -36,6 +44,7 @@ export default function ExplainPage() {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           messages: [{ role: "user", content: prompt }],
           mode: "chat",
@@ -44,7 +53,7 @@ export default function ExplainPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to reach AI tutor");
+      if (!response.ok) throw new Error("Failed to reach Studzy AI");
       if (!response.body) throw new Error("No response body");
 
       const reader = response.body.getReader();
@@ -78,6 +87,7 @@ export default function ExplainPage() {
         }
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error("AI Explanation Error:", err);
       setError(err.message || "Failed to generate explanation. Please try again.");
     } finally {
@@ -89,6 +99,12 @@ export default function ExplainPage() {
     if (isHydrated && session && orderedQuestions.length && !aiExplanation && !isLoading && !error) {
       fetchAiExplanation();
     }
+    
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [isHydrated, session, orderedQuestions, aiExplanation, isLoading, error, fetchAiExplanation]);
 
   // Auto-scroll while streaming
@@ -123,6 +139,7 @@ export default function ExplainPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] pb-20">
+      {/* Header */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0A0B]/95 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button 
@@ -134,15 +151,14 @@ export default function ExplainPage() {
             Back to Quiz
           </Button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-            </div>
-            <span className="text-sm font-bold text-white uppercase tracking-tighter italic">AI Explanation</span>
+            <NextImage src="/favicon.png" alt="Studzy" width={20} height={20} />
+            <span className="text-sm font-bold text-white uppercase tracking-tighter italic">Studzy AI</span>
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 mt-8 space-y-8">
+        {/* Question Review */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -157,6 +173,7 @@ export default function ExplainPage() {
           </h1>
         </div>
 
+        {/* Options Feedback */}
         <div className="grid grid-cols-1 gap-3">
           {Object.entries(currentQuestion.options).map(([key, value]) => {
             const isSelected = selectedOption === key;
@@ -184,6 +201,7 @@ export default function ExplainPage() {
           })}
         </div>
 
+        {/* AI Content */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -227,7 +245,7 @@ export default function ExplainPage() {
               )}
             </div>
 
-            <div className="prose prose-invert max-w-none">
+            <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
               <div className="bg-white/5 border border-white/5 p-6 rounded-2xl min-h-[100px] relative">
                 {isLoading && !aiExplanation && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/[0.02] backdrop-blur-[2px] rounded-2xl">
@@ -243,14 +261,53 @@ export default function ExplainPage() {
                   </div>
                 )}
 
-                <div className="text-sm md:text-base text-gray-300 leading-relaxed font-mono">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {aiExplanation || ""}
-                  </ReactMarkdown>
-                  {isLoading && aiExplanation && (
-                    <span className="inline-block w-1 h-4 bg-indigo-500 ml-1 animate-pulse align-middle" />
-                  )}
-                </div>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    table({ children }) {
+                      return (
+                        <div className="my-4 overflow-x-auto rounded-xl border border-white/10">
+                          <table className="min-w-full divide-y divide-white/10 text-sm">
+                            {children}
+                          </table>
+                        </div>
+                      );
+                    },
+                    thead({ children }) {
+                      return <thead className="bg-white/5">{children}</thead>;
+                    },
+                    th({ children }) {
+                      return <th className="px-4 py-2 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{children}</th>;
+                    },
+                    td({ children }) {
+                      return <td className="px-4 py-2 text-gray-300 border-t border-white/5">{children}</td>;
+                    },
+                    code({ className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const isInline = !match;
+                      return isInline ? (
+                        <code
+                          className="rounded bg-white/10 px-1.5 py-0.5 text-sm font-mono text-indigo-400"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      ) : (
+                          <pre className="block w-full overflow-x-auto rounded-xl bg-black/50 p-4 text-xs md:text-sm text-gray-200 font-mono border border-white/5 scrollbar-thin scrollbar-thumb-white/10">
+                            <code className={`${className} block min-w-full`} {...props}>
+                              {children}
+                            </code>
+                          </pre>
+                      );
+                    },
+                  }}
+                >
+                  {aiExplanation}
+                </ReactMarkdown>
+
+                {isLoading && aiExplanation && (
+                  <span className="inline-block w-1.5 h-4 bg-indigo-500 ml-1 animate-pulse align-middle" />
+                )}
               </div>
             </div>
           </div>
