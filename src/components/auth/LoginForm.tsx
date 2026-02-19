@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { recordLogin } from "@/app/auth/actions";
+import { login } from "@/app/auth/actions";
 
 export function LoginForm() {
   const router = useRouter();
@@ -28,49 +27,19 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      let loginEmail = email;
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
 
-      // Handle username login
-      if (!email.includes("@")) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("email")
-          .eq("username", email)
-          .single();
+      // Call Server Action
+      const result = await login(formData);
 
-        if (profileError || !profile?.email) {
-          setError("Username not found. Please check and try again.");
-          setLoading(false);
-          return;
-        }
-        loginEmail = profile.email;
-      }
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
-      });
-
-      if (error) {
-        if (error.message === "Invalid login credentials") {
-          setError("Invalid email or password. Please try again.");
-        } else {
-          setError(error.message);
-        }
+      if (result?.error) {
+        setError(result.error);
         setLoading(false);
-        return;
+      } else {
+        // Successful login will redirect from server
       }
-
-      // Record last login (non-critical, don't let it block redirect)
-      try {
-        await recordLogin();
-      } catch (recordError) {
-        console.error("Failed to record login:", recordError);
-      }
-
-      router.push("/dashboard");
-      router.refresh();
     } catch (err) {
       console.error("Login catch error:", err);
       setError("An unexpected error occurred. Please try again.");

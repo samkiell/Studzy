@@ -10,16 +10,51 @@ import { sendEmail } from "@/lib/email";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
+  const identifier = formData.get("email") as string; // We use 'email' field for both/either
+  const password = formData.get("password") as string;
 
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
+  let loginEmail = identifier;
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  // 1. Handle Username Login (if identifier is not an email)
+  if (!identifier.includes("@")) {
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("email")
+      .eq("username", identifier)
+      .single();
+
+    if (profileError || !profile?.email) {
+      return { error: "Username not found. Please check and try again." };
+    }
+    loginEmail = profile.email;
+  }
+
+  // 2. Sign In
+  const { error } = await supabase.auth.signInWithPassword({
+    email: loginEmail,
+    password,
+  });
 
   if (error) {
+    if (error.message === "Invalid login credentials") {
+      return { error: "Invalid email or password. Please try again." };
+    }
     return { error: error.message };
+  }
+
+  // 3. Record Login (background, non-blocking)
+  try {
+     const adminClient = createAdminClient();
+     const { data: { user } } = await supabase.auth.getUser();
+     if (user) {
+        await adminClient
+          .from("profiles")
+          .update({ last_login: new Date().toISOString() })
+          .eq("id", user.id);
+     }
+  } catch (e) {
+    console.error("Failed to record login timestamp:", e);
   }
 
   revalidatePath("/", "layout");
