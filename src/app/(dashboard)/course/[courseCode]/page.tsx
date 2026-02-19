@@ -147,6 +147,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
     .select("*")
     .eq("course_id", typedCourse.id)
     .eq("status", "published")
+    .neq("type", "question_bank")
     .order("created_at", { ascending: false });
 
   if (resourcesError) {

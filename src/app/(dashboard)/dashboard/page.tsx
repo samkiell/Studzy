@@ -32,7 +32,7 @@ export default async function DashboardPage() {
     { count: viewedResourcesCount },
     { count: bookmarksCount }
   ] = await Promise.all([
-    supabase.from("resources").select("*", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("resources").select("*", { count: "exact", head: true }).eq("status", "published").neq("type", "question_bank"),
     supabase.from("user_activity").select("resource_id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("action_type", "view_resource"),

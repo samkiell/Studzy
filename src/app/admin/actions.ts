@@ -385,13 +385,7 @@ export async function uploadCBTQuestions(formData: FormData) {
       return { success: false, message: `Failed to upload file to storage: ${uploadError.message}` };
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(uploadData.path);
-
-    // 2. Insert into Resources table (as a log/record of the file)
-    // We need to fetch the course_id first.
+    // 2. Resolve Course ID
     const { data: courseData, error: courseError } = await supabase
       .from("courses")
       .select("id")
@@ -400,27 +394,6 @@ export async function uploadCBTQuestions(formData: FormData) {
     
     if (courseError || !courseData) {
        return { success: false, message: `Course not found for code: ${courseCode}` };
-    }
-
-    // Generate slug from filename
-    const sanitizedTitle = file.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    const slug = `${courseCode.toLowerCase()}-${sanitizedTitle}-${Date.now()}`;
-
-    const { error: resourceError } = await supabase
-      .from("resources")
-      .insert({
-        course_id: courseData.id,
-        title: file.name,
-        slug: slug, // Add slug
-        type: "question_bank",
-        file_url: urlData.publicUrl,
-        description: `Uploaded at ${new Date().toLocaleString()}`,
-        status: "published", 
-      });
-
-    if (resourceError) {
-      console.error("Resource insert error:", resourceError);
-      // We could delete the file from storage if this fails, but it's not critical.
     }
 
     // 3. Process the Questions (Existing Logic)
