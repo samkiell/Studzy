@@ -258,14 +258,6 @@ export default function ExplainPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-              <div className="flex items-center gap-2 text-indigo-400">
-                <BrainCircuit className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">Tutor Tip</span>
-              </div>
-              <p className="text-xs text-gray-400 leading-relaxed italic">
-                Always look for keywords in the question that might hint at the intended behavior. Precision in terminology matters!
-              </p>
             </div>
           </div>
         </motion.div>
