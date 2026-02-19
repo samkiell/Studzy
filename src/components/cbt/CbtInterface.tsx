@@ -93,7 +93,6 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            handleSubmit();
             return 0;
           }
           return prev - 1;
@@ -102,6 +101,15 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       return () => clearInterval(timer);
     }
   }, [initialAttempt.mode, isSubmitted]);
+
+  // Auto-submit when time runs out
+  // We separate this from the timer effect to avoid stale closures over 'answers'
+  useEffect(() => {
+    if (initialAttempt.mode === 'exam' && timeLeft === 0 && !isSubmitted && !isSubmitting) {
+      handleSubmit();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, isSubmitted, isSubmitting, initialAttempt.mode]);
 
   const handleSelectOption = (option: string) => {
     if (isSubmitted) return;
