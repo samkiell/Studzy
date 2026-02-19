@@ -189,6 +189,7 @@ export async function POST(
 
           // 🌐 Immediate feedback for search mode
           if (enable_search || mode === "search") {
+            console.log("[API Session] 🌐 Search mode detected, emitting signal...");
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content: "🔍 searching... \n\n" } }]
             })}\n\n`));
@@ -213,17 +214,21 @@ export async function POST(
             }
             
             if (content) {
-              // 2. Aggressive Filtering for Technical Debris
-              const technicalNoiseRegex = /^(\s*web_search\s*$|^thought\s*$|^\{"query"|^\s*\[\s*\{"query")/i;
-              if (technicalNoiseRegex.test(content.trim())) {
-                console.log(`[API Session] 🧹 Filtered internal noise: ${content.substring(0, 50)}...`);
-                continue; 
+              // 2. Surgical Filtering for Technical Debris
+              // We only skip if the chunk is PURELY technical noise.
+              // We use exact string matches for "web_search" and "thought" to avoid catching real sentences.
+              const noiseMatch = content.match(/^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i);
+              if (noiseMatch) {
+                console.log(`[API Session] 🧹 Filtered internal noise: "${content.substring(0, 50)}"`);
+                const remaining = content.replace(noiseMatch[0], "").trim();
+                if (!remaining) continue; 
+                content = remaining;
               }
 
               // 3. Repetitive Character Guard
               if (content === lastChar && content.length === 1 && !/[a-zA-Z0-9]/.test(content)) {
                 repeatCount++;
-                if (repeatCount > 5) continue; 
+                if (repeatCount > 10) continue; 
               } else {
                 lastChar = content.length === 1 ? content : '';
                 repeatCount = 0;
@@ -362,10 +367,11 @@ async function callMistralAIStream(
       role: "system",
       content: `SEARCH MODE ACTIVE. 
 CRITICAL INSTRUCTIONS:
-1. Your tools (web_search) are internal. DO NOT output any technical log data, function names (like "web_search"), thought process markers, or raw JSON in your final answer.
-2. If you find no relevant information, explain that normally without technical jargon.
-3. Provide ONLY a clean, markdown-formatted final response for the student.
-4. Stop immediately once the answer is complete. Avoid trailing dots or repetitive characters.`,
+1. Use your search tools internally. 
+2. AFTER searching, provide a COMPREHENSIVE FINAL ANSWER to the student in clean markdown.
+3. NEVER output internal labels like "web_search", "thought", or raw tool-use JSON.
+4. Always provide an answer, even if brief. Do not leave the user with an empty response.
+5. Stop immediately after the final answer.`,
     });
   }
 

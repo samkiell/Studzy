@@ -286,12 +286,13 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
           }
           
           if (content) {
-            // 2. Aggressive Filtering for Technical Debris
-            // Targeted to catch EXACT tool name leaks or raw internal JSON, while sparing descriptive text
-            const technicalNoiseRegex = /^(\s*web_search\s*$|^thought\s*$|^\{"query"|^\s*\[\s*\{"query")/i;
-            if (technicalNoiseRegex.test(content.trim())) {
-              console.log(`[API] 🧹 Filtered internal noise: ${content.substring(0, 50)}...`);
-              continue; 
+            // 2. Surgical Filtering for Technical Debris
+            const noiseMatch = content.match(/^(\s*web_search\s*$|^thought\s*$|^\{"query"|^\s*\[\s*\{"query")/i);
+            if (noiseMatch) {
+              console.log(`[API] 🧹 Filtered internal noise chunk: "${content.substring(0, 50)}..."`);
+              const remaining = content.replace(noiseMatch[0], "").trim();
+              if (!remaining) continue; 
+              content = remaining;
             }
 
             // 3. Repetitive Character Guard (Trapping trailing dots or hallucinatory loops)
