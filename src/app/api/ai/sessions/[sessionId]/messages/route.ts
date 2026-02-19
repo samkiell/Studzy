@@ -185,23 +185,42 @@ export async function POST(
         let fullContent = "";
         try {
           let hasEmittedContent = false;
+          let lastChar = '';
+          let repeatCount = 0;
+
           for await (const chunk of stream) {
             const data = (chunk as any).data || chunk;
             const choice = data.choices?.[0];
             
-            // Extracts content regardless if it's a string or a multipart part
             let content = "";
             const rawContent = choice?.delta?.content;
+            
+            // 1. Robust Content Extraction (Handles strings and multi-part content items)
             if (typeof rawContent === "string") {
               content = rawContent;
+            } else if (Array.isArray(rawContent)) {
+              content = rawContent
+                .map(part => (typeof part === 'string' ? part : (part as any).text || ""))
+                .join("");
             } else if (rawContent && typeof rawContent === "object") {
               content = (rawContent as any).text || "";
             }
             
             if (content) {
-              // Filter out technical debris
-              if (content.startsWith("web_search") || content.startsWith("thought")) {
+              // 2. Aggressive Filtering for Technical Debris
+              const technicalNoiseRegex = /^(web_search|thought|{"query"|\[{"query"|.*tool_call.*)/i;
+              if (technicalNoiseRegex.test(content.trim())) {
+                console.log(`[API Session] 🧹 Filtered internal noise: ${content.substring(0, 50)}...`);
                 continue; 
+              }
+
+              // 3. Repetitive Character Guard
+              if (content === lastChar && content.length === 1 && !/[a-zA-Z0-9]/.test(content)) {
+                repeatCount++;
+                if (repeatCount > 5) continue; 
+              } else {
+                lastChar = content.length === 1 ? content : '';
+                repeatCount = 0;
               }
 
               fullContent += content;
@@ -335,7 +354,12 @@ async function callMistralAIStream(
   if (mode === "search" || enableSearch) {
     mistralMessages.unshift({
       role: "system",
-      content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information, use your web search tool. IMPORTANT: Do not output any technical tool-call JSON, code, or internal thought process markers like 'web_search' or 'thought' as text in your final response. Only provide the final, helpful answer to the user.",
+      content: `SEARCH MODE ACTIVE. 
+CRITICAL INSTRUCTIONS:
+1. Your tools (web_search) are internal. DO NOT output any technical log data, function names (like "web_search"), thought process markers, or raw JSON in your final answer.
+2. If you find no relevant information, explain that normally without technical jargon.
+3. Provide ONLY a clean, markdown-formatted final response for the student.
+4. Stop immediately once the answer is complete. Avoid trailing dots or repetitive characters.`,
     });
   }
 
