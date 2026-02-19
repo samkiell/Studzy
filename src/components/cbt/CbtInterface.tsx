@@ -72,7 +72,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   // Track time per question
   useEffect(() => {
-    if (isSubmitted) return;
+    if (isSubmitted || !currentQuestion?.id) return;
     
     const interval = setInterval(() => {
       setQuestionDurations(prev => ({
@@ -82,7 +82,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [currentQuestion.id, isSubmitted]);
+  }, [currentQuestion?.id, isSubmitted]);
 
   // Handle already completed attempts
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   }, [timeLeft, isSubmitted, isSubmitting, initialAttempt.mode]);
 
   const handleSelectOption = (option: string) => {
-    if (isSubmitted) return;
+    if (isSubmitted || !currentQuestion) return;
     setAnswer(currentQuestion.id, option);
     if (initialAttempt.mode === 'study') {
       setShowExplanation(true);
@@ -214,6 +214,22 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const currentAccuracy = answeredCount > 0 
     ? Math.round((orderedQuestions.filter(q => answers[q.id] === q.correct_option).length / answeredCount) * 100) 
     : 0;
+
+  if (!currentQuestion && !isSubmitted) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0A0A0B]">
+        <ContinueQuizModal 
+          isOpen={hasExistingSession}
+          onContinue={resumeExisting}
+          onStartNew={startFresh}
+          lastStartedAt={quizSessionStorage.getSession(initialAttempt.course_id)?.startedAt}
+        />
+        {!hasExistingSession && (
+          <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0A0A0B] relative">

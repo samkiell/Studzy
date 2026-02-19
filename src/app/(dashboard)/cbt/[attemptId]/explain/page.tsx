@@ -19,6 +19,17 @@ export default function ExplainPage() {
   }
 
   const currentQuestion = orderedQuestions[session.currentIndex];
+  
+  if (!currentQuestion) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0B] gap-4">
+        <AlertCircle className="w-8 h-8 text-red-500" />
+        <p className="text-gray-400">Question not found.</p>
+        <Button variant="ghost" onClick={() => router.back()}>Go Back</Button>
+      </div>
+    );
+  }
+
   const selectedOption = session.answers[currentQuestion.id];
   const isCorrect = selectedOption === currentQuestion.correct_option;
 
