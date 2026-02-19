@@ -40,7 +40,6 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     score: number; 
     totalQuestions: number;
     topicStats: Record<string, { correct: number; total: number; avgTime: number }>;
-    difficultyStats: Record<string, { correct: number; total: number }>;
     questionsWithAnswers: any[];
   } | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);

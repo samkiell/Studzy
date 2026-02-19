@@ -27,7 +27,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const [courseId, setCourseId] = useState("");
   const [mode, setMode] = useState<CbtMode>("study");
   const [numQuestions, setNumQuestions] = useState(20);
-  const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [topic, setTopic] = useState<string>("all");
   const [isWeakAreasOnly, setIsWeakAreasOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +71,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
         mode,
         numberOfQuestions: numQuestions,
         topic: topic === "all" ? undefined : topic,
-        difficulty: difficulty === "all" ? undefined : difficulty,
         timeLimitMinutes: mode === "exam" ? timeLimit : 30,
         isWeakAreasOnly,
       });
@@ -138,8 +136,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                 animate={{ opacity: 1, height: "auto" }}
                 className="space-y-8"
               >
-                {/* Topic & Difficulty */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <div>
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
                       <Layers className="w-4 h-4 text-indigo-400" />
@@ -158,28 +155,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
-                      <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                      Difficulty Level
-                    </label>
-                    <div className="flex gap-2">
-                      {['all', 'easy', 'medium', 'hard'].map((d) => (
-                        <button
-                          key={d}
-                          onClick={() => setDifficulty(d as any)}
-                          className={`flex-1 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all ${
-                            difficulty === d 
-                            ? "bg-indigo-500 border-indigo-500 text-white" 
-                            : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20"
-                          }`}
-                        >
-                          {d}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
 

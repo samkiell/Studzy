@@ -17,7 +17,6 @@ export async function startCbtAttempt({
   mode,
   numberOfQuestions,
   topic,
-  difficulty,
   timeLimitMinutes = 30,
   isWeakAreasOnly = false,
 }: {
@@ -25,7 +24,6 @@ export async function startCbtAttempt({
   mode: CbtMode;
   numberOfQuestions: number;
   topic?: string;
-  difficulty?: Difficulty;
   timeLimitMinutes?: number;
   isWeakAreasOnly?: boolean;
 }) {
@@ -85,10 +83,6 @@ export async function startCbtAttempt({
 
   if (targetTopics.length > 0) {
     query = query.in("topic", targetTopics);
-  }
-  
-  if (difficulty) {
-    query = query.eq("difficulty", difficulty);
   }
 
   const { data: questionIds, error: questError } = await query;
@@ -225,7 +219,6 @@ export async function submitCbtAttempt({
   // 3. Calculate score and prepare analytics
   let score = 0;
   const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
-  const difficultyStats: Record<string, { correct: number; total: number }> = {};
   const questionsWithAnswers: any[] = [];
 
   const attemptAnswersPayload = answers.map((ans) => {
@@ -235,18 +228,12 @@ export async function submitCbtAttempt({
 
     if (question) {
       const topic = question.topic || "General";
-      const difficulty = question.difficulty || "medium";
 
       // Topic stats
       if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
       topicStats[topic].total++;
       if (isCorrect) topicStats[topic].correct++;
       topicStats[topic].avgTime += ans.duration_seconds;
-
-      // Difficulty stats
-      if (!difficultyStats[difficulty]) difficultyStats[difficulty] = { correct: 0, total: 0 };
-      difficultyStats[difficulty].total++;
-      if (isCorrect) difficultyStats[difficulty].correct++;
 
       questionsWithAnswers.push({
         ...question,
@@ -302,7 +289,6 @@ export async function submitCbtAttempt({
     totalQuestions: attempt.total_questions,
     completedAt: new Date().toISOString(),
     topicStats,
-    difficultyStats,
     questionsWithAnswers
   };
 }

@@ -27,7 +27,6 @@ interface QuestionResult {
   duration_seconds: number;
   explanation: string | null;
   topic: string | null;
-  difficulty: string;
 }
 
 interface ResultSummaryProps {
@@ -35,7 +34,6 @@ interface ResultSummaryProps {
     score: number;
     totalQuestions: number;
     topicStats: Record<string, { correct: number; total: number; avgTime: number }>;
-    difficultyStats: Record<string, { correct: number; total: number }>;
     questionsWithAnswers: QuestionResult[];
   };
   courseCode?: string;
@@ -139,7 +137,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
           </div>
         </motion.div>
 
-        {/* Difficulty Breakdown / Time Analysis */}
+        {/* Time Analysis */}
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}

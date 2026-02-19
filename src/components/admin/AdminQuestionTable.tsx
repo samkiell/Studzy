@@ -115,14 +115,13 @@ export function AdminQuestionTable({
               <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white">Question</th>
                 <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white w-32">Course</th>
-                <th className="px-6 py-4 font-semibold text-neutral-900 dark:text-white w-24 text-center">Difficulty</th>
                 <th className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredQuestions.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={3} className="px-6 py-12 text-center text-neutral-500">
                     No questions match your filters
                   </td>
                 </tr>
@@ -176,17 +175,6 @@ export function AdminQuestionTable({
                            {/* We display course ID for now, ideally we need to mapping or extended type */}
                            {question.course_id} 
                            {/* TODO: Fetch course code in parent */}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                          question.difficulty === 'easy' 
-                          ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400' 
-                          : question.difficulty === 'medium'
-                          ? 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-900/20 dark:text-yellow-500'
-                          : 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/20 dark:text-red-400'
-                        }`}>
-                          {question.difficulty?.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
