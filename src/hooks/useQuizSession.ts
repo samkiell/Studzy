@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Question } from "@/types/cbt";
 import { QuizSession, QuizSessionUpdate } from "@/types/quiz";
 import { quizSessionStorage } from "@/lib/quiz/quizSessionStorage";
+import { quizSessionService } from "@/lib/quiz/quizSessionService";
 
 interface UseQuizSessionProps {
   courseId: string;
@@ -14,25 +15,28 @@ interface UseQuizSessionProps {
 export function useQuizSession({ courseId, questions, sessionId }: UseQuizSessionProps) {
   const [session, setSession] = useState<QuizSession | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [hasExistingSession, setHasExistingSession] = useState(false);
 
-  // Handle hydration and session restoration
+  // Handle hydration and check for existing session
   useEffect(() => {
     const existingSession = quizSessionStorage.getSession(courseId);
     
-    if (existingSession && !existingSession.completed && existingSession.sessionId === sessionId) {
-      setSession(existingSession);
+    if (existingSession && !existingSession.completed) {
+      // If it's the exact same session ID, we can auto-restore
+      if (existingSession.sessionId === sessionId) {
+        setSession(existingSession);
+      } else {
+        // It's a different session ID but for the same course
+        setHasExistingSession(true);
+      }
     } else {
-      const newSession: QuizSession = {
+      // No active session, initialize a new one
+      const newSession = quizSessionService.initializeNewSession({
         sessionId,
         courseId,
         questions,
-        currentIndex: 0,
-        answers: {},
-        startedAt: new Date().toISOString(),
-        completed: false,
-      };
+      });
       setSession(newSession);
-      quizSessionStorage.saveSession(newSession);
     }
     
     setIsHydrated(true);
@@ -75,11 +79,7 @@ export function useQuizSession({ courseId, questions, sessionId }: UseQuizSessio
   const completeSession = useCallback(() => {
     setSession((prev) => {
       if (!prev) return null;
-      const completedSession = { ...prev, completed: true };
-      // We might want to keep it in storage for a while or clear it
-      // For now, let's just mark it as completed.
-      // Integration logic in CbtInterface can decide to clear it on final submit.
-      return completedSession;
+      return { ...prev, completed: true };
     });
   }, []);
 
@@ -88,13 +88,34 @@ export function useQuizSession({ courseId, questions, sessionId }: UseQuizSessio
     setSession(null);
   }, [courseId]);
 
+  const resumeExisting = useCallback(() => {
+    const existing = quizSessionService.resumeSession(courseId);
+    if (existing) {
+      setSession(existing);
+      setHasExistingSession(false);
+    }
+  }, [courseId]);
+
+  const startFresh = useCallback(() => {
+    const newSession = quizSessionService.initializeNewSession({
+      sessionId,
+      courseId,
+      questions,
+    });
+    setSession(newSession);
+    setHasExistingSession(false);
+  }, [courseId, questions, sessionId]);
+
   return {
     session,
     isHydrated,
+    hasExistingSession,
     updateSession,
     setAnswer,
     setCurrentIndex,
     completeSession,
     clearSession,
+    resumeExisting,
+    startFresh,
   };
 }

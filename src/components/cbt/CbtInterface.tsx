@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { ResultSummary } from "./ResultSummary";
 import { useQuizSession } from "@/hooks/useQuizSession";
 import { quizSessionStorage } from "@/lib/quiz/quizSessionStorage";
+import { ContinueQuizModal } from "./ContinueQuizModal";
 
 interface CbtInterfaceProps {
   initialAttempt: Attempt;
@@ -37,10 +38,13 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const {
     session,
     isHydrated,
+    hasExistingSession,
     setAnswer,
     setCurrentIndex: setSessionCurrentIndex,
     completeSession,
-    clearSession
+    clearSession,
+    resumeExisting,
+    startFresh
   } = useQuizSession({
     courseId: initialAttempt.course_id,
     questions,
@@ -227,6 +231,12 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0A0A0B] relative">
+      <ContinueQuizModal 
+        isOpen={hasExistingSession}
+        onContinue={resumeExisting}
+        onStartNew={startFresh}
+        lastStartedAt={quizSessionStorage.getSession(initialAttempt.course_id)?.startedAt}
+      />
       {/* Top Header - Truly fixed below global navbar on mobile, top of content on desktop */}
       <div className="fixed top-16 left-0 right-0 md:absolute md:top-0 z-40 border-b border-white/5 bg-[#0A0A0B]/95 backdrop-blur-md">
         <div className="w-full px-4 py-2.5 md:py-3 flex items-center justify-between">
