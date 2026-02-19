@@ -6,30 +6,37 @@ import { useQuizContext } from "@/context/QuizContext";
 
 interface UseQuizSessionProps {
   courseId: string;
-  questions: Question[];
+  questions: Question[]; // All fetched questions for the course/topic
   sessionId: string;
 }
 
 /**
  * Hook that consumes the shared QuizContext.
- * If used outside a QuizProvider, it will throw an error.
  */
 export function useQuizSession({ courseId, questions, sessionId }: UseQuizSessionProps) {
   const context = useQuizContext();
 
-  const { initialize, startFresh: startFreshContext } = context;
+  const { initialize, startFresh: startFreshContext, resumeExisting: resumeExistingContext } = context;
+
+  // Extract question IDs for session initialization
+  const questionIds = useMemo(() => questions.map(q => q.id), [questions]);
 
   // Initialize the context on mount
   useEffect(() => {
-    initialize(sessionId, courseId, questions);
-  }, [initialize, sessionId, courseId, questions]);
+    initialize(sessionId, courseId, questionIds, questions);
+  }, [initialize, sessionId, courseId, questionIds, questions]);
 
   const startFresh = useMemo(() => {
-    return () => startFreshContext(sessionId, courseId, questions);
-  }, [startFreshContext, sessionId, courseId, questions]);
+    return () => startFreshContext(sessionId, courseId, questionIds, questions);
+  }, [startFreshContext, sessionId, courseId, questionIds, questions]);
+
+  const resumeExisting = useMemo(() => {
+    return () => resumeExistingContext(questions);
+  }, [resumeExistingContext, questions]);
 
   return {
     ...context,
-    startFresh, // Override startFresh to pre-fill arguments
+    startFresh, 
+    resumeExisting,
   };
 }

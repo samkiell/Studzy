@@ -1,6 +1,7 @@
-import { Question } from "@/types/cbt";
+import { ActionResponse } from "@/types/actions";
 import { QuizSession } from "@/types/quiz";
 import { quizSessionStorage } from "./quizSessionStorage";
+import { createQuizSession } from "./createQuizSession";
 
 export const quizSessionService = {
   /**
@@ -13,27 +14,21 @@ export const quizSessionService = {
 
   /**
    * Initializes a fresh session, clearing any existing one for the course.
+   * Shuffles IDs once.
    */
   initializeNewSession: (params: {
     sessionId: string;
     courseId: string;
-    questions: Question[];
+    questionIds: string[];
   }): QuizSession => {
-    const newSession: QuizSession = {
-      sessionId: params.sessionId,
-      courseId: params.courseId,
-      questions: params.questions,
-      currentIndex: 0,
-      answers: {},
-      startedAt: new Date().toISOString(),
-      completed: false,
-    };
+    const newSession = createQuizSession(params);
     quizSessionStorage.saveSession(newSession);
     return newSession;
   },
 
   /**
    * Returns the existing session for a course.
+   * No reshuffling happens here.
    */
   resumeSession: (courseId: string): QuizSession | null => {
     return quizSessionStorage.getSession(courseId);

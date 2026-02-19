@@ -36,6 +36,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   
   const {
     session,
+    questions: orderedQuestions,
     isHydrated,
     hasExistingSession,
     setAnswer,
@@ -66,8 +67,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const currentIndex = session?.currentIndex || 0;
   const answers = session?.answers || {};
   
-  const currentQuestion = questions[currentIndex];
-  const isLastQuestion = currentIndex === questions.length - 1;
+  const currentQuestion = orderedQuestions[currentIndex];
+  const isLastQuestion = currentIndex === orderedQuestions.length - 1;
 
   // Track time per question
   useEffect(() => {
@@ -140,7 +141,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   };
 
   const nextQuestion = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < orderedQuestions.length - 1) {
       setSessionCurrentIndex(currentIndex + 1);
       setShowExplanation(false);
     }
@@ -211,7 +212,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   const answeredCount = Object.keys(answers).length;
   const currentAccuracy = answeredCount > 0 
-    ? Math.round((questions.filter(q => answers[q.id] === q.correct_option).length / answeredCount) * 100) 
+    ? Math.round((orderedQuestions.filter(q => answers[q.id] === q.correct_option).length / answeredCount) * 100) 
     : 0;
 
   return (
@@ -265,7 +266,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           <motion.div 
             className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"
             initial={{ width: 0 }}
-            animate={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+            animate={{ width: `${((currentIndex + 1) / orderedQuestions.length) * 100}%` }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         </div>
@@ -287,7 +288,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Question {currentIndex + 1} of {questions.length}
+                      Question {currentIndex + 1} of {orderedQuestions.length}
                     </span>
                     <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest leading-none">
                       {currentQuestion.topic || "General"}
