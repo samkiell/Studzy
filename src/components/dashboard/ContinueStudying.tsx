@@ -9,7 +9,7 @@ interface RecentResource {
   id: string;
   title: string;
   slug: string;
-  type: "video" | "audio" | "pdf";
+  type: "video" | "audio" | "pdf" | "image" | "document" | "question_bank";
   course_code: string;
   course_id: string;
   created_at: string;
@@ -49,6 +49,7 @@ export function ContinueStudying() {
         `)
         .eq("user_id", user.id)
         .eq("action_type", "view_resource")
+        .neq("resources.type", "question_bank")
         .order("created_at", { ascending: false })
         .limit(10);
 
@@ -103,14 +104,18 @@ export function ContinueStudying() {
     video: <Video className="h-5 w-5" />,
     audio: <Music className="h-5 w-5" />,
     pdf: <FileText className="h-5 w-5" />,
+    image: <Video className="h-5 w-5" />, // Placeholder icon for image
     document: <FileCode className="h-5 w-5" />,
+    question_bank: <FileCode className="h-5 w-5" />,
   };
 
   const typeColors = {
     video: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
     audio: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
     pdf: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    image: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
     document: "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400",
+    question_bank: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
   };
 
   return (

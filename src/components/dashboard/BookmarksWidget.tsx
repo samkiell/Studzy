@@ -44,6 +44,7 @@ export function BookmarksWidget() {
             )
           )
         `)
+        .neq("resources.type", "question_bank")
         .limit(3);
 
       if (!error && data) {
@@ -74,6 +75,7 @@ export function BookmarksWidget() {
           )
         )
       `)
+      .neq("resources.type", "question_bank")
       .order("created_at", { ascending: false });
 
     if (!error && data) {
