@@ -187,7 +187,12 @@ export async function POST(
           let lastChar = '';
           let repeatCount = 0;
 
-          // 🌐 Connection keep-alive for search mode will be handled by tool call pulses
+          // 🌐 Connection keep-alive: Send an invisible pulse to prevent timeout during search
+          if (enable_search || mode === "search") {
+             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+               choices: [{ delta: { content: "" } }] 
+             })}\n\n`));
+          }
 
           for await (const chunk of stream) {
             const data = (chunk as any).data || chunk;

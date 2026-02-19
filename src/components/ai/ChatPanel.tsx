@@ -358,7 +358,11 @@ export function ChatPanel({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to get response");
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("API Error Body:", errText);
+        throw new Error(`Failed to get response: ${errText} (${response.status})`);
+      }
       if (!response.body) throw new Error("No response body");
 
       const reader = response.body.getReader();
