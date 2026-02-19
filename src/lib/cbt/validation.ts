@@ -41,15 +41,8 @@ export function validateCBTQuestion(question: any, index: number, defaultCourseC
     correct_option = correct_option.toUpperCase();
   }
 
-  // Provide a default difficulty if missing or invalid
-  const validDifficulties: Difficulty[] = ['easy', 'medium', 'hard'];
-  let difficulty = question.difficulty;
-  if (typeof difficulty === 'string') {
-    difficulty = difficulty.toLowerCase();
-  }
-  if (!validDifficulties.includes(difficulty)) {
-    difficulty = 'medium';
-  }
+  // Set default difficulty (not used in UI anymore)
+  const difficulty: Difficulty = 'medium';
 
   // Required Field Checks
   if (!course_code) throw new Error("Missing 'course_code'");
