@@ -173,9 +173,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       // @ts-ignore - The response object structure is correct now
       setResults(res);
       setIsSubmitted(true);
-      completeSession();
-      // Clear storage on successful submission
-      quizSessionStorage.clearSession(initialAttempt.course_id);
+      clearSession();
     } catch (error) {
       console.error("Submission failed:", error);
     } finally {
