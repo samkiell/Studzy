@@ -175,6 +175,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 🌐 Search Mode: Add specific instructions if in search mode
+    if (mode === "search" || enable_search) {
       mistralMessages.unshift({
         role: "system",
         content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information, use your web search tool. IMPORTANT: Do not output any technical tool-call JSON, code, or internal thought process markers like 'web_search' or 'thought' as text in your final response. Only provide the final, helpful answer to the user."

@@ -86,7 +86,8 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 2. Use the provided study materials to answer the student's question accurately.
 3. Cite which source the information comes from when possible.
 4. If the study materials don't cover the topic, answer from your general knowledge or search tools, but clarify what is and isn't from the uploaded materials.
-5. Format responses with markdown for readability.`;
+5. Format responses with markdown for readability.
+6. IMPORTANT: Do not output any technical tool-call JSON or internal markers like 'web_search' as text in your response.`;
 }
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
@@ -183,30 +184,48 @@ export async function POST(
       async start(controller) {
         let fullContent = "";
         try {
+          let hasEmittedContent = false;
           for await (const chunk of stream) {
             const data = (chunk as any).data || chunk;
             const choice = data.choices?.[0];
-            const content = choice?.delta?.content || "";
+            
+            // Extracts content regardless if it's a string or a multipart part
+            let content = "";
+            const rawContent = choice?.delta?.content;
+            if (typeof rawContent === "string") {
+              content = rawContent;
+            } else if (rawContent && typeof rawContent === "object") {
+              content = (rawContent as any).text || "";
+            }
             
             if (content) {
-              fullContent += content;
-              try {
-                controller.enqueue(encoder.encode(content));
-              } catch (e) {
-                // Controller likely closed by client disconnect
-                return;
+              // Filter out technical debris
+              if (content.startsWith("web_search") || content.startsWith("thought")) {
+                continue; 
               }
+
+              fullContent += content;
+              hasEmittedContent = true;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                choices: [{ delta: { content } }]
+              })}\n\n`));
             }
 
-            // Log tool calls privately and keep stream alive
+            // Handle tool calls privately
             const toolCalls = choice?.delta?.toolCalls || choice?.message?.toolCalls;
             if (toolCalls && toolCalls.length > 0) {
-              const toolNames = toolCalls.map((tc: any) => tc.function?.name).join(", ");
-              console.log(`[API Session] 🛠️ AI requested tools: ${toolNames}`);
-              // Silent keep-alive pulse
-              controller.enqueue(encoder.encode(" "));
+              if (!hasEmittedContent) {
+                // Pulse pulse to keep stream alive
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                  choices: [{ delta: { content: "" } }]
+                })}\n\n`));
+                hasEmittedContent = true;
+              }
             }
           }
+
+          // Mark as done
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
 
           // Save assistant message to DB after stream completes
           if (fullContent) {
@@ -274,7 +293,7 @@ async function callMistralAIStream(
   level?: string
 ): Promise<AsyncIterable<any>> {
   if (!MISTRAL_API_KEY) {
-    throw new Error("Mistral API Key not cconfigured");
+    throw new Error("Mistral API Key not configured");
   }
 
   const mistralMessages: any[] = messages.map((msg) => {
@@ -316,7 +335,7 @@ async function callMistralAIStream(
   if (mode === "search" || enableSearch) {
     mistralMessages.unshift({
       role: "system",
-      content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information or specific details, use your web search tool.",
+      content: "SEARCH MODE ACTIVE: You have access to web search tools. If the user's question requires up-to-date information, use your web search tool. IMPORTANT: Do not output any technical tool-call JSON, code, or internal thought process markers like 'web_search' or 'thought' as text in your final response. Only provide the final, helpful answer to the user.",
     });
   }
 

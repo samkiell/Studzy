@@ -175,6 +175,7 @@ export function ChatPanel({
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantContent = "";
+      let buffer = ""; // SSE buffer
       
       const assistantMsgId = `assistant-${Date.now()}`;
       setMessages((prev) => [
@@ -194,19 +195,37 @@ export function ChatPanel({
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        assistantContent += chunk;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep last partial line
 
-        setMessages((prev) => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg.id === assistantMsgId) {
-            return [
-              ...prev.slice(0, -1),
-              { ...lastMsg, content: assistantContent }
-            ];
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
+          
+          const data = trimmedLine.slice(6);
+          if (data === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content || "";
+            if (content) {
+              assistantContent += content;
+              setMessages((prev) => {
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg.id === assistantMsgId) {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...lastMsg, content: assistantContent }
+                  ];
+                }
+                return prev;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing stream chunk:", e);
           }
-          return prev;
-        });
+        }
       }
     } catch (error) {
       console.error("Auto-trigger Error:", error);
@@ -345,6 +364,7 @@ export function ChatPanel({
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantContent = "";
+      let buffer = ""; // SSE buffer
       
       // Create a stable assistant message structure
       const assistantMsgId = `assistant-${Date.now()}`;
@@ -367,19 +387,37 @@ export function ChatPanel({
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        assistantContent += chunk;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep last partial line
 
-        setMessages((prev) => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg.id === assistantMsgId) {
-            return [
-              ...prev.slice(0, -1),
-              { ...lastMsg, content: assistantContent }
-            ];
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
+          
+          const data = trimmedLine.slice(6);
+          if (data === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content || "";
+            if (content) {
+              assistantContent += content;
+              setMessages((prev) => {
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg.id === assistantMsgId) {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...lastMsg, content: assistantContent }
+                  ];
+                }
+                return prev;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing stream chunk:", e);
           }
-          return prev;
-        });
+        }
       }
 
     } catch (error) {
