@@ -99,10 +99,11 @@ function formatRAGPrompt(data: any[]): string {
 ${contextBlocks}
 
 INSTRUCTIONS FOR USING STUDY MATERIALS:
-- When the student's question relates to the study materials above, use them to provide accurate answers.
-- Cite which source the information comes from when possible.
-- If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
-- Format responses with markdown for readability.`;
+1. START YOUR RESPONSE by listing the names of the files/sources found below (e.g., "I've found relevant information in [File Name]...").
+2. Use the provided study materials to answer the student's question accurately.
+3. Cite which source the information comes from when possible.
+4. If the study materials don't cover the topic, answer from your general knowledge or search tools, but clarify what is and isn't from the uploaded materials.
+5. Format responses with markdown for readability.`;
 }
 
 export async function POST(request: NextRequest) {
@@ -197,17 +198,7 @@ export async function POST(request: NextRequest) {
     const finalMessages = validateMessages(mistralMessages);
 
     try {
-      if (shouldUseWebSearch) {
-        console.log("[API] 🌐 Search Mode Active: Using automatic web_search via Chat API");
-        const response = await (client.chat.stream as any)({
-          model: "mistral-large-latest",
-          messages: finalMessages,
-          web_search: true,
-        });
-        return streamResponse(response, mode);
-      }
-
-      // ✅ Standard Agent Logic
+      // ✅ Standard Agent Logic (Mistral Agents handle tool/search execution automatically)
       const response = await client.agents.stream({
         agentId: MISTRAL_AI_AGENT_ID,
         messages: finalMessages,

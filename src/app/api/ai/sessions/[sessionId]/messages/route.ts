@@ -82,10 +82,11 @@ function formatRAGPrompt(data: any[]): string {
 ${contextBlocks}
 
 INSTRUCTIONS FOR USING STUDY MATERIALS:
-- When the student's question relates to the study materials above, use them to provide accurate answers.
-- Cite which source the information comes from when possible.
-- If the study materials don't cover the topic, you may still answer from your general knowledge but mention that the answer is not from their uploaded materials.
-- Format responses with markdown for readability.`;
+1. START YOUR RESPONSE by listing the names of the files/sources found below (e.g., "I've found relevant information in [File Name]...").
+2. Use the provided study materials to answer the student's question accurately.
+3. Cite which source the information comes from when possible.
+4. If the study materials don't cover the topic, answer from your general knowledge or search tools, but clarify what is and isn't from the uploaded materials.
+5. Format responses with markdown for readability.`;
 }
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
@@ -302,10 +303,9 @@ async function callMistralAIStream(
       if (ragContext) {
         mistralMessages.unshift({ role: "system", content: ragContext });
       } else {
-        // Fallback instruction
         mistralMessages.unshift({
           role: "system",
-          content: "Note: No specific study materials were found in the database. Please answer based on your general knowledge or available web search tools.",
+          content: "Note: No specific study materials were found in the database. Please answer based on your general knowledge or available web search tools. If searching, explicitly tell the user.",
         });
       }
     } catch (err) {
@@ -324,18 +324,9 @@ async function callMistralAIStream(
     throw new Error("Mistral Agent ID not configured");
   }
 
-  const shouldUseWebSearch = enableSearch || mode === "search";
-
   const finalMessages = validateMessages(mistralMessages);
 
-  if (shouldUseWebSearch) {
-    return (client.chat.stream as any)({
-      model: "mistral-large-latest",
-      messages: finalMessages,
-      web_search: true,
-    });
-  }
-
+  // ✅ Always use the Agent API (handles search/tools automatically)
   return client.agents.stream({
     agentId: MISTRAL_AI_AGENT_ID,
     messages: finalMessages,

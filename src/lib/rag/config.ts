@@ -21,10 +21,10 @@ export const EMBEDDING_BATCH_SIZE = 15;
 export const EMBEDDING_TOKEN_LIMIT = 16000;
 
 /** Default number of results from similarity search */
-export const TOP_K = 5;
+export const TOP_K = 12;
 
 /** Minimum similarity threshold for relevant results */
-export const SIMILARITY_THRESHOLD = 0.3;
+export const SIMILARITY_THRESHOLD = 0.22;
 
 /** Supabase Storage bucket name for RAG and general dumps */
 export const STORAGE_BUCKET = "RAG";
