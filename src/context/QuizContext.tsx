@@ -54,7 +54,20 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     
     if (existingSession && !existingSession.completed) {
       if (existingSession.sessionId === sessionId) {
-        setSession(existingSession);
+        // Compatibility check: are the session IDs actually in the fetched questions?
+        const isCompatible = existingSession.orderedQuestionIds.length > 0 && 
+                            existingSession.orderedQuestionIds.every(id => questionIds.includes(id));
+        
+        if (isCompatible) {
+          setSession(existingSession);
+        } else {
+          console.warn("[QuizContext] ⚠️ Session/Question mismatch detected. Resetting question order to match server truth.");
+          // Merge: use existing answers but server's question order
+          setSession({
+            ...existingSession,
+            orderedQuestionIds: questionIds,
+          });
+        }
         setHasExistingSession(false);
       } else {
         setHasExistingSession(true);

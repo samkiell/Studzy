@@ -13,7 +13,7 @@ export function createQuizSession(params: {
   return {
     sessionId: params.sessionId,
     courseId: params.courseId,
-    orderedQuestionIds: shuffle(params.questionIds),
+    orderedQuestionIds: params.questionIds,
     currentIndex: 0,
     answers: {},
     startedAt: new Date().toISOString(),
