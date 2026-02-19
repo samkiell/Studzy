@@ -127,6 +127,7 @@ export async function startCbtAttempt({
       score: 0,
       duration_seconds: 0,
       time_limit_seconds: timeLimitMinutes * 60,
+      question_ids: shuffledIds,
     })
     .select()
     .single();

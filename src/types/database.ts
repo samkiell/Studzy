@@ -256,6 +256,7 @@ export interface Database {
           score: number;
           duration_seconds: number;
           time_limit_seconds: number;
+          question_ids: string[];
           completed_at: string | null;
           created_at: string;
         };
@@ -269,6 +270,7 @@ export interface Database {
           score?: number;
           duration_seconds?: number;
           time_limit_seconds?: number;
+          question_ids?: string[];
           completed_at?: string | null;
           created_at?: string;
         };

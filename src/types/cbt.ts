@@ -26,6 +26,7 @@ export interface Attempt {
   duration_seconds: number;
   time_limit_seconds: number;
   started_at: string;
+  question_ids?: string[];
   completed_at: string | null;
 }
 
