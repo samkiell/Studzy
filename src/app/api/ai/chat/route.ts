@@ -173,16 +173,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 🌐 Search Mode: Add specific instructions if in search mode
     if (mode === "search" || enable_search) {
       mistralMessages.unshift({
         role: "system",
         content: `SEARCH MODE ACTIVE. 
 CRITICAL INSTRUCTIONS:
-1. Your tools (web_search) are internal. DO NOT output any technical log data, function names (like "web_search"), thought process markers, or raw JSON in your final answer.
-2. If you find no relevant information, explain that normally without technical jargon.
-3. Provide ONLY a clean, markdown-formatted final response for the student.
-4. Stop immediately once the answer is complete. Avoid trailing dots or repetitive characters.`
+1. Use your search tools internally as needed. 
+2. ALWAYS provide a "SEARCH HIGHLIGHTS" or "SOURCES" section at the top of your final answer showing what you found.
+3. Synthesize the findings into a COMPREHENSIVE FINAL ANSWER for the student.
+4. Use clean markdown (bold, lists, headers).
+5. NEVER output raw technical logs, function names (like "web_search" as code), or internal JSON.
+6. If no search results are found, explain briefly but still provide a helpful answer from your general knowledge.`,
       });
     }
 
@@ -287,12 +288,10 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
           
           if (content) {
             // 2. Surgical Filtering for Technical Debris
-            const noiseMatch = content.match(/^(\s*web_search\s*$|^thought\s*$|^\{"query"|^\s*\[\s*\{"query")/i);
-            if (noiseMatch) {
-              console.log(`[API] 🧹 Filtered internal noise chunk: "${content.substring(0, 50)}..."`);
-              const remaining = content.replace(noiseMatch[0], "").trim();
-              if (!remaining) continue; 
-              content = remaining;
+            const isPureNoise = /^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i.test(content.trim());
+            if (isPureNoise) {
+              console.log(`[API] 🧹 Filtered internal noise: "${content.substring(0, 50)}"`);
+              continue; 
             }
 
             // 3. Repetitive Character Guard

@@ -215,14 +215,12 @@ export async function POST(
             
             if (content) {
               // 2. Surgical Filtering for Technical Debris
-              // We only skip if the chunk is PURELY technical noise.
-              // We use exact string matches for "web_search" and "thought" to avoid catching real sentences.
-              const noiseMatch = content.match(/^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i);
-              if (noiseMatch) {
+              // We only skip if the chunk is PURELY technical noise (raw logs).
+              // We use exact anchored matches to avoid skipping real sentences.
+              const isPureNoise = /^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i.test(content.trim());
+              if (isPureNoise) {
                 console.log(`[API Session] 🧹 Filtered internal noise: "${content.substring(0, 50)}"`);
-                const remaining = content.replace(noiseMatch[0], "").trim();
-                if (!remaining) continue; 
-                content = remaining;
+                continue; 
               }
 
               // 3. Repetitive Character Guard
@@ -367,11 +365,12 @@ async function callMistralAIStream(
       role: "system",
       content: `SEARCH MODE ACTIVE. 
 CRITICAL INSTRUCTIONS:
-1. Use your search tools internally. 
-2. AFTER searching, provide a COMPREHENSIVE FINAL ANSWER to the student in clean markdown.
-3. NEVER output internal labels like "web_search", "thought", or raw tool-use JSON.
-4. Always provide an answer, even if brief. Do not leave the user with an empty response.
-5. Stop immediately after the final answer.`,
+1. Use your search tools internally as needed. 
+2. ALWAYS provide a "SEARCH HIGHLIGHTS" or "SOURCES" section at the top of your final answer showing what you found.
+3. Synthesize the findings into a COMPREHENSIVE FINAL ANSWER for the student.
+4. Use clean markdown (bold, lists, headers).
+5. NEVER output raw technical logs, function names (like "web_search" as code), or internal JSON.
+6. If no search results are found, explain briefly but still provide a helpful answer from your general knowledge.`,
     });
   }
 
