@@ -329,7 +329,8 @@ export async function POST(
  * Ensures all messages (especially assistant ones) are valid for Mistral API.
  */
 function validateMessages(messages: any[]): any[] {
-  return messages.filter((msg, index) => {
+  // 1. Filter out invalid messages
+  const filtered = messages.filter((msg, index) => {
     if (msg.role !== "assistant") return true;
 
     const hasContent = (msg.content && typeof msg.content === "string" && msg.content.trim().length > 0) || 
@@ -344,6 +345,16 @@ function validateMessages(messages: any[]): any[] {
 
     return true;
   });
+
+  // 2. Mistral CRITICAL: The last message must be from the 'user' (or tool).
+  // If the conversation ends with an assistant message, we pop it because we are 
+  // currently trying to generate a NEW assistant response.
+  while (filtered.length > 0 && filtered[filtered.length - 1].role === "assistant") {
+    console.warn(`[API Session] 🧹 Removing trailing assistant message to satisfy Mistral API constraints.`);
+    filtered.pop();
+  }
+
+  return filtered;
 }
 
 interface DBMessage {
