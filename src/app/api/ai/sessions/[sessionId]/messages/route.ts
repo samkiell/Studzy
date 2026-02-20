@@ -273,7 +273,14 @@ export async function POST(
         }
       },
     });
-
+    
+    return new Response(readableStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error: any) {
     console.error("Messages POST error:", error);
     

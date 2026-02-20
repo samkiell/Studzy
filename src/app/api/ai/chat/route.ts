@@ -36,6 +36,10 @@ async function getRAGContext(
   courseCode?: string,
   level?: string
 ): Promise<string | null> {
+  // 🔴 TEMPORARILY DISABLED BY USER REQUEST (TOKENS SAVING)
+  console.log(`[RAG] 🚫 RAG is temporarily disabled in chat route.`);
+  return null;
+
   try {
     console.log(`[RAG] 🔍 Querying embeddings for: "${question.substring(0, 100)}..."`);
     const queryEmbedding = await embedText(question);
