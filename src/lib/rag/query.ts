@@ -73,8 +73,8 @@ async function searchEmbeddings(
   });
 
   if (error) {
-    console.error(`[RAG Search] ❌ Embedding search failed: ${error.message}`);
-    throw new Error(`Embedding search failed: ${error.message}`);
+    console.error(`[RAG Search] ❌ Embedding search failed: ${error?.message || 'Unknown error'}`);
+    throw new Error(`Embedding search failed: ${error?.message || 'Unknown error'}`);
   }
 
   const results = (data || []).map((row: any) => ({

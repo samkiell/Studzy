@@ -5,10 +5,12 @@ import { embedText } from "@/lib/rag/embeddings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TOP_K, SIMILARITY_THRESHOLD } from "@/lib/rag/config";
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
-
-const client = new Mistral({ apiKey: MISTRAL_API_KEY });
+// Initialize client lazily to pick up env updates
+function getMistralClient() {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) throw new Error("Mistral API Key not configured");
+  return new Mistral({ apiKey });
+}
 
 /**
  * Search study material embeddings for context relevant to the user's question.
@@ -172,7 +174,9 @@ export async function POST(
     }
 
     // 🚀 Call Mistral AI with streaming
+    const mistralClient = getMistralClient();
     const stream = await callMistralAIStream(
+      mistralClient,
       allMessages || [], 
       mode, 
       enable_search || mode === "search", 
@@ -314,7 +318,10 @@ export async function POST(
       console.warn("Failed to parse SDK error body:", parseErr);
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal server error" }, 
+      { status: error.statusCode || 500 }
+    );
   }
 }
 
@@ -346,6 +353,7 @@ interface DBMessage {
 }
 
 async function callMistralAIStream(
+  client: Mistral,
   messages: DBMessage[],
   mode: string,
   enableSearch: boolean,
@@ -354,8 +362,9 @@ async function callMistralAIStream(
   courseCode?: string,
   level?: string
 ): Promise<AsyncIterable<any>> {
-  if (!MISTRAL_API_KEY) {
-    throw new Error("Mistral API Key not configured");
+  const agentId = process.env.MISTRAL_AI_AGENT_ID;
+  if (!agentId) {
+    throw new Error("Mistral Agent ID not configured");
   }
 
   const mistralMessages: any[] = messages.map((msg) => {
@@ -407,7 +416,7 @@ CRITICAL:
     });
   }
 
-  if (!MISTRAL_AI_AGENT_ID) {
+  if (!agentId) {
     throw new Error("Mistral Agent ID not configured");
   }
 
@@ -415,7 +424,7 @@ CRITICAL:
 
   // ✅ Always use the Agent API (handles search/tools automatically)
   return client.agents.stream({
-    agentId: MISTRAL_AI_AGENT_ID,
+    agentId: agentId,
     messages: finalMessages,
   });
 }
