@@ -19,6 +19,10 @@ async function getRAGContext(
   courseCode?: string,
   level?: string
 ): Promise<string | null> {
+  // 🔴 TEMPORARILY DISABLED BY USER REQUEST (TOKENS SAVING)
+  console.log(`[RAG] 🚫 RAG is temporarily disabled. Skipping context retrieval.`);
+  return null;
+
   try {
     console.log(`[RAG] 🔍 Querying embeddings for: "${question.substring(0, 100)}..."`);
     const queryEmbedding = await embedText(question);
@@ -276,7 +280,7 @@ export async function POST(
     // Handle Mistral SDK Errors (Rate limits, Invalid keys, etc.)
     if (error.statusCode === 429) {
       return NextResponse.json(
-        { error: "Mistral AI Rate Limit reached. Please try again later or check your monthly tokens." },
+        { error: "I'm cooking beans, I can't answer now." },
         { status: 429 }
       );
     }
