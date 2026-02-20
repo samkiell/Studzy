@@ -48,7 +48,7 @@ export default function ExplainPage() {
           setError("The request timed out. Please try again.");
           setIsLoading(false);
         }
-      }, 15000);
+      }, 45000); // Increased from 15s: RAG retrieval + large context generation can take longer
 
       const response = await fetch("/api/ai/chat", {
         method: "POST",
