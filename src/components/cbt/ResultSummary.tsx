@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { createExplanationSession } from "@/lib/cbt/ai-utils";
 import { Question } from "@/types/cbt";
+import { toast } from "react-hot-toast";
 
 interface QuestionResult {
   id: string;
@@ -71,8 +72,9 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
       );
       
       router.push(`/studzyai/chat/${sessionId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create AI session:", error);
+      toast.error(error.message || "Failed to start AI session. Please try again later.");
     } finally {
       setLoadingQuestionId(null);
     }

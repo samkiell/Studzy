@@ -270,15 +270,39 @@ export async function POST(
       },
     });
 
-    return new Response(readableStream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Messages POST error:", error);
+    
+    // Handle Mistral SDK Errors (Rate limits, Invalid keys, etc.)
+    if (error.statusCode === 429) {
+      return NextResponse.json(
+        { error: "Mistral AI Rate Limit reached. Please try again later or check your monthly tokens." },
+        { status: 429 }
+      );
+    }
+
+    if (error.statusCode === 401 || error.statusCode === 403) {
+      return NextResponse.json(
+        { error: "AI Service authentication failed. Please contact the administrator." },
+        { status: error.statusCode }
+      );
+    }
+
+    // Try to extract error message from SDK error body if available
+    try {
+      if (error.body) {
+        const sdkErrorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+        if (sdkErrorBody.message) {
+          return NextResponse.json(
+            { error: `AI Error: ${sdkErrorBody.message}` },
+            { status: error.statusCode || 500 }
+          );
+        }
+      }
+    } catch (parseErr) {
+      console.warn("Failed to parse SDK error body:", parseErr);
+    }
+
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

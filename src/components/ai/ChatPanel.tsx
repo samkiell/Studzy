@@ -169,7 +169,18 @@ export function ChatPanel({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to get response");
+      if (!response.ok) {
+        let errorMsg = "Failed to get response";
+        try {
+          const errData = await response.json();
+          errorMsg = errData.error || errorMsg;
+        } catch (e) {
+          // Fallback to text if JSON parse fails
+          const text = await response.text().catch(() => "");
+          if (text) errorMsg = text;
+        }
+        throw new Error(errorMsg);
+      }
       if (!response.body) throw new Error("No response body");
 
       const reader = response.body.getReader();
@@ -235,7 +246,7 @@ export function ChatPanel({
           id: `error-${Date.now()}`,
           session_id: sessionId,
           role: "assistant", // Using assistant role for error message
-          content: "Sorry, I encountered an error responding to your request.",
+          content: error instanceof Error ? error.message : "Sorry, I encountered an error responding to your request.",
           mode,
           image_url: null,
           created_at: new Date().toISOString(),
@@ -359,9 +370,15 @@ export function ChatPanel({
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("API Error Body:", errText);
-        throw new Error(`Failed to get response: ${errText} (${response.status})`);
+        let errorMsg = "Failed to get response";
+        try {
+          const errData = await response.json();
+          errorMsg = errData.error || errorMsg;
+        } catch (e) {
+          const text = await response.text().catch(() => "");
+          if (text) errorMsg = text;
+        }
+        throw new Error(errorMsg);
       }
       if (!response.body) throw new Error("No response body");
 
@@ -439,7 +456,7 @@ export function ChatPanel({
           id: `error-${Date.now()}`,
           session_id: sessionId,
           role: "assistant",
-          content: "Sorry, I encountered an error. Please try again.",
+          content: error instanceof Error ? error.message : "Sorry, I encountered an error. Please try again.",
           mode,
           image_url: null,
           created_at: new Date().toISOString(),
