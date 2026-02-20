@@ -1,5 +1,8 @@
+"use client";
+
 import { CourseCard } from "./CourseCard";
 import type { Course } from "@/types/database";
+import { getExamForCourse } from "@/lib/exam-schedule";
 
 interface CourseGridProps {
   courses: Course[];
@@ -34,11 +37,57 @@ export function CourseGrid({ courses }: CourseGridProps) {
     );
   }
 
+  const now = new Date();
+
+  // Split into upcoming (or no date) and passed
+  const upcoming: Course[] = [];
+  const passed: Course[] = [];
+
+  for (const course of courses) {
+    const exam = getExamForCourse(course.code);
+    if (exam && new Date(exam.endTime) <= now) {
+      passed.push(course);
+    } else {
+      upcoming.push(course);
+    }
+  }
+
+  // Sort upcoming by exam start time (soonest first), courses with no exam go last
+  upcoming.sort((a, b) => {
+    const examA = getExamForCourse(a.code);
+    const examB = getExamForCourse(b.code);
+    if (!examA && !examB) return 0;
+    if (!examA) return 1;
+    if (!examB) return -1;
+    return new Date(examA.startTime).getTime() - new Date(examB.startTime).getTime();
+  });
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {courses.map((course) => (
-        <CourseCard key={course.id} course={course} />
-      ))}
+    <div className="space-y-6">
+      {/* Upcoming courses */}
+      {upcoming.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {upcoming.map((course) => (
+            <CourseCard key={course.id} course={course} isPassed={false} now={now} />
+          ))}
+        </div>
+      )}
+
+      {/* Passed courses section */}
+      {passed.length > 0 && (
+        <div>
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+            <span className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+            Exams Done
+            <span className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {passed.map((course) => (
+              <CourseCard key={course.id} course={course} isPassed={true} now={now} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

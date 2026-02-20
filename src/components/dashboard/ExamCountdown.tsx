@@ -1,83 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Clock, MapPin, Calendar, Timer } from "lucide-react";
-
-interface Exam {
-  code: string;
-  title: string;
-  location: string;
-  date: string; // ISO string or parsable date
-  time: string; // Display string for time
-  startTime: string; // ISO string for countdown
-  endTime: string; // ISO string to know when to remove
-}
-
-const EXAM_DATA: Exam[] = [
-  {
-    code: "CSC 201",
-    title: "Introduction to Python Programming",
-    location: "ICT Hall",
-    date: "Friday, 20th Feb, 2026",
-    time: "5:00pm – 6:00pm",
-    startTime: "2026-02-20T17:00:00",
-    endTime: "2026-02-20T18:00:00",
-  },
-  {
-    code: "MTH 201",
-    title: "Mathematical Foundations",
-    location: "ICT Hall",
-    date: "Saturday, 21st Feb, 2026",
-    time: "8:00am – 9:00am",
-    startTime: "2026-02-21T08:00:00",
-    endTime: "2026-02-21T09:00:00",
-  },
-  {
-    code: "STT 201",
-    title: "Statistics & Probability",
-    location: "ICT Hall",
-    date: "Wednesday, 4th March, 2026",
-    time: "1:00pm – 2:00pm",
-    startTime: "2026-03-04T13:00:00",
-    endTime: "2026-03-04T14:00:00",
-  },
-  {
-    code: "CPE 203",
-    title: "Computer Engineering Foundations",
-    location: "Chemical Engineering LT",
-    date: "Wednesday, 4th March, 2026",
-    time: "4:00pm – 7:00pm",
-    startTime: "2026-03-04T16:00:00",
-    endTime: "2026-03-04T19:00:00",
-  },
-  {
-    code: "SEN 205",
-    title: "Software Engineering Principles",
-    location: "BOO B",
-    date: "Saturday, 7th March, 2026",
-    time: "12:00pm – 3:00pm",
-    startTime: "2026-03-07T12:00:00",
-    endTime: "2026-03-07T15:00:00",
-  },
-  {
-    code: "SEN 203",
-    title: "Data Structures & Algorithms",
-    location: "Seminar Room (A, B, C, D)",
-    date: "Tuesday, 10th March, 2026",
-    time: "8:00am – 11:00am",
-    startTime: "2026-03-10T08:00:00",
-    endTime: "2026-03-10T11:00:00",
-  },
-  {
-    code: "SEN 201",
-    title: "Introduction to Software Engineering",
-    location: "Seminar Room (A, B, C, D)",
-    date: "Friday, 13th March, 2026",
-    time: "4:00pm – 7:00pm",
-    startTime: "2026-03-13T16:00:00",
-    endTime: "2026-03-13T19:00:00",
-  },
-];
+import { Clock, MapPin, Calendar, Timer, CheckCircle2 } from "lucide-react";
+import { EXAM_DATA, type Exam } from "@/lib/exam-schedule";
 
 export function ExamCountdown() {
   const [now, setNow] = useState(new Date());
@@ -87,13 +12,22 @@ export function ExamCountdown() {
     return () => clearInterval(timer);
   }, []);
 
-  const upcomingExams = useMemo(() => {
-    return EXAM_DATA.filter((exam) => new Date(exam.endTime) > now)
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-      .slice(0, 2);
+  // Show upcoming exams + recently passed exams (ended within last 2 days)
+  const { upcoming, recentlyPassed } = useMemo(() => {
+    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    const sorted = [...EXAM_DATA].sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+
+    return {
+      upcoming: sorted.filter((e) => new Date(e.endTime) > now).slice(0, 2),
+      recentlyPassed: sorted
+        .filter((e) => new Date(e.endTime) <= now && new Date(e.endTime) >= twoDaysAgo)
+        .slice(0, 2),
+    };
   }, [now]);
 
-  if (upcomingExams.length === 0) return null;
+  if (upcoming.length === 0 && recentlyPassed.length === 0) return null;
 
   return (
     <div className="space-y-4">
@@ -106,11 +40,69 @@ export function ExamCountdown() {
           Harmattan Session
         </span>
       </div>
-      
-      <div className="grid gap-4 sm:grid-cols-2">
-        {upcomingExams.map((exam) => (
-          <ExamCard key={exam.code} exam={exam} now={now} />
-        ))}
+
+      {/* Recently passed exams shown first with a "Passed" badge */}
+      {recentlyPassed.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {recentlyPassed.map((exam) => (
+            <PassedExamCard key={exam.code} exam={exam} />
+          ))}
+        </div>
+      )}
+
+      {/* Upcoming exams */}
+      {upcoming.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {upcoming.map((exam) => (
+            <ExamCard key={exam.code} exam={exam} now={now} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PassedExamCard({ exam }: { exam: Exam }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-neutral-200/60 bg-neutral-50 dark:border-neutral-800/60 dark:bg-neutral-900/50 opacity-75">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded uppercase">
+                {exam.code}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded uppercase">
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Passed
+              </span>
+            </div>
+            <h3 className="mt-1 text-sm font-bold text-neutral-500 dark:text-neutral-400 line-clamp-1">
+              {exam.title}
+            </h3>
+            <p className="mt-0.5 text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+              Exam completed
+            </p>
+          </div>
+          <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 shrink-0">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-1.5">
+          <div className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{exam.date}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
+            <Clock className="h-3.5 w-3.5" />
+            <span>{exam.time}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
+            <MapPin className="h-3.5 w-3.5" />
+            <span className="truncate">{exam.location}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -139,8 +131,8 @@ function ExamCard({ exam, now }: { exam: Exam; now: Date }) {
 
   return (
     <div className={`relative group overflow-hidden rounded-2xl border transition-all duration-300 ${
-      isSoon 
-        ? "border-primary-200 bg-primary-50/50 dark:border-primary-800/50 dark:bg-primary-900/10 shadow-lg shadow-primary-500/5 scale-[1.02]" 
+      isSoon
+        ? "border-primary-200 bg-primary-50/50 dark:border-primary-800/50 dark:bg-primary-900/10 shadow-lg shadow-primary-500/5 scale-[1.02]"
         : "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 hover:shadow-md"
     }`}>
       <div className="p-4 sm:p-5">
@@ -180,13 +172,13 @@ function ExamCard({ exam, now }: { exam: Exam; now: Date }) {
           </div>
         </div>
       </div>
-      
+
       {/* Animated progress bar for remaining time (visual only) */}
       {isSoon && timeLeft !== "In Progress" && (
         <div className="absolute bottom-0 left-0 h-1 bg-primary-500/20 w-full overflow-hidden">
-          <div 
-            className="h-full bg-primary-500 animate-pulse transition-all duration-1000" 
-            style={{ width: `${(Math.random() * 20) + 80}%` }} // Simplified visual logic
+          <div
+            className="h-full bg-primary-500 animate-pulse transition-all duration-1000"
+            style={{ width: `${(Math.random() * 20) + 80}%` }}
           />
         </div>
       )}
