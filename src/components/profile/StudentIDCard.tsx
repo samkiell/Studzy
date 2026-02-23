@@ -13,7 +13,8 @@ import {
   Printer, 
   RotateCcw,
   Camera,
-  Loader2
+  Loader2,
+  Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
@@ -138,6 +139,11 @@ export function StudentIDCard({
         }
       }
     });
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`https://studzy.me/id/${username}`);
+    toast.success("Link copied to clipboard!");
   };
 
   // --- Export Logic ---
@@ -298,11 +304,16 @@ export function StudentIDCard({
         </div>
 
         <div className="mt-auto pt-4 flex justify-between items-center border-t border-white/5">
-           <p className="text-[9px] text-neutral-400 font-bold opacity-90 italic tracking-tighter leading-none">
+           <p className="text-[9px] text-neutral-400 font-bold opacity-90 italic tracking-tighter leading-none pr-2">
               &quot;Study smarter. bag 5.0.&quot;
            </p>
-           <div className="bg-white p-1 rounded-lg">
-              <QRCode value={isExport ? `https://studzy.me/id/${username}` : `https://studzy.me/id/${username}`} size={44} level="H" />
+           <div className="bg-white p-1 rounded-lg w-12 h-12 flex items-center justify-center shrink-0">
+              <QRCode 
+                value={`https://studzy.me/id/${username}`} 
+                size={256}
+                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                level="L" 
+              />
            </div>
         </div>
       </div>
@@ -398,12 +409,15 @@ export function StudentIDCard({
         {!isViewOnly && (
           <div className="flex flex-col xs:flex-row gap-2">
             <Button onClick={() => handleExport("png")} disabled={isExporting || isUploading} className="flex-1 bg-neutral-900 text-white">
-              {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
-              Download PNG
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+              PNG
             </Button>
             <Button onClick={() => handleExport("pdf")} disabled={isExporting || isUploading} className="flex-1 bg-primary-600 text-white">
-              {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3 mr-2" />}
-              Download PDF
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4 mr-2" />}
+              PDF
+            </Button>
+            <Button onClick={handleCopyLink} disabled={isExporting || isUploading} className="w-10 bg-neutral-800 text-white p-0 flex items-center justify-center shrink-0 border border-white/10" title="Copy ID Link">
+              <Copy className="w-4 h-4" />
             </Button>
           </div>
         )}
