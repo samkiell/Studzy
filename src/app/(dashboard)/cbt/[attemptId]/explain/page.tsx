@@ -48,7 +48,7 @@ export default function ExplainPage() {
           setError("The request timed out. Please try again.");
           setIsLoading(false);
         }
-      }, 45000); // Increased from 15s: RAG retrieval + large context generation can take longer
+      }, 60000); // 60s timeout for complex explanations
 
       const response = await fetch("/api/ai/chat", {
         method: "POST",
@@ -108,6 +108,10 @@ export default function ExplainPage() {
             if (content) {
               totalContentLength += content.length;
               accumulatedContent += content;
+              setAiExplanation(accumulatedContent);
+              
+              // Clear loading state as soon as first content arrives
+              if (isLoading) setIsLoading(false);
             }
           } catch (e) {
             console.error("[AI Stream] ❌ Error parsing stream chunk:", e, "Line:", trimmedLine);
@@ -282,7 +286,7 @@ export default function ExplainPage() {
 
             <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
               <div className="bg-white/5 border border-white/5 p-6 rounded-2xl min-h-[140px] relative">
-                {isLoading && (
+                {(isLoading && !aiExplanation) && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/[0.02] backdrop-blur-[2px] rounded-2xl z-20">
                     <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
                     <p className="text-xs text-indigo-400 font-medium animate-pulse">Analyzing question...</p>
@@ -296,7 +300,7 @@ export default function ExplainPage() {
                   </div>
                 )}
 
-                <div className={isLoading ? "opacity-0 invisible" : "opacity-100 visible"}>
+                <div className={(isLoading && !aiExplanation) ? "opacity-0 invisible" : "opacity-100 visible"}>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{

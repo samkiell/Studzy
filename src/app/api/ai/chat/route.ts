@@ -270,6 +270,9 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
   
   const stream = new ReadableStream({
     async start(controller) {
+      const STREAM_TIMEOUT = 120000; // 2 minutes max for a single stream
+      const streamStart = Date.now();
+      
       try {
         let hasEmittedContent = false;
         let lastChar = '';
@@ -284,6 +287,13 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
 
         let chunkCount = 0;
         for await (const chunk of response) {
+          // Check for stream timeout
+          if (Date.now() - streamStart > STREAM_TIMEOUT) {
+            console.error(`[API] ⏱️ Stream timed out after ${STREAM_TIMEOUT}ms`);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Stream timed out" })}\n\n`));
+            break;
+          }
+
           chunkCount++;
           const data = (chunk as any).data || chunk;
           const choice = data.choices?.[0];
