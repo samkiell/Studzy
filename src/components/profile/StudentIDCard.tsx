@@ -207,7 +207,7 @@ export function StudentIDCard({
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-primary-950/30 to-transparent z-0" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       
-      <div className="relative z-10 h-full flex flex-col p-6 text-white justify-between">
+      <div className="relative z-10 h-full flex flex-col p-5 text-white justify-between">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
@@ -223,9 +223,9 @@ export function StudentIDCard({
           </div>
         </div>
 
-        <div className="text-center space-y-5">
+        <div className="text-center space-y-3">
           <div 
-            className={`relative mx-auto w-32 h-32 group/avatar ${isViewOnly ? '' : 'cursor-pointer'}`}
+            className={`relative mx-auto w-28 h-28 group/avatar ${isViewOnly ? '' : 'cursor-pointer'}`}
             onClick={!isExport ? handleAvatarClick : undefined}
           >
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
@@ -292,18 +292,18 @@ export function StudentIDCard({
           
           
           <div className="flex flex-col gap-2 w-full pt-1">
-            <div className="flex justify-between items-center px-4 py-4 rounded-xl bg-white/5 border border-white/5">
+            <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5">
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">Department</span>
               <span className="text-[11px] font-bold text-white/95">Software Engineering</span>
             </div>
-            <div className="flex justify-between items-center px-4 py-4 rounded-xl bg-white/5 border border-white/5">
+            <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5">
               <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest">ClassName</span>
               <span className="text-[11px] font-bold text-white/95 truncate max-w-[140px]">DevCore&apos;23</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-auto pt-4 flex justify-between items-center border-t border-white/5">
+        <div className="mt-auto pt-3 flex justify-between items-center border-t border-white/5">
            <p className="text-[9px] text-neutral-400 font-bold opacity-90 italic tracking-tighter leading-none pr-2">
               &quot;Study smarter. bag 5.0.&quot;
            </p>
