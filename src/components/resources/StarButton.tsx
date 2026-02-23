@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface StarButtonProps {
   resourceId: string;
@@ -12,6 +13,7 @@ export function StarButton({ resourceId }: StarButtonProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const checkBookmark = async () => {
@@ -35,6 +37,7 @@ export function StarButton({ resourceId }: StarButtonProps) {
     if (res.ok) {
       const { bookmarked } = await res.json();
       setIsBookmarked(bookmarked);
+      router.refresh();
     }
   };
 
