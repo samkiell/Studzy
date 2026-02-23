@@ -163,14 +163,16 @@ export async function POST(request: NextRequest) {
         
         // Use a timeout to prevent RAG hanging the entire request
         const ragPromise = getRAGContext(lastUserMessage.content, course_code, level);
-        const timeoutPromise = new Promise<null>((resolve) => 
-          setTimeout(() => {
+        let timeoutId: any;
+        const timeoutPromise = new Promise<null>((resolve) => {
+          timeoutId = setTimeout(() => {
             console.warn("[API] ⏱️ RAG retrieval timed out after 12s. Falling back to base AI.");
             resolve(null);
-          }, 12000) // Increased from 6s: allows more time for cold DB starts and embedding calls
-        );
+          }, 12000);
+        });
 
         const ragContext = await Promise.race([ragPromise, timeoutPromise]);
+        clearTimeout(timeoutId);
 
         if (ragContext) {
           // Prepend as system message so the AI has study material context
