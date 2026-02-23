@@ -72,7 +72,7 @@ export default async function ProfilePage() {
                 stats={{
                   resourcesViewed: uniqueViews,
                   hours: Math.floor((profile?.total_study_seconds || 0) / 60), // Math done in mins
-                  rank: profile?.rank || 0,
+                  rank: 0,
                   bookmarks: bookmarksCount || 0
                 }}
               />

@@ -77,7 +77,7 @@ export default async function PublicIDPage({ params }: PageProps) {
             stats={{
               resourcesViewed: uniqueViews,
               hours: Math.floor(totalSeconds / 60), // Math done in mins
-              rank: profile.rank || 0, 
+              rank: 0, 
               bookmarks: bookmarksCount || 0
             }}
           />
