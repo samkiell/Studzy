@@ -24,6 +24,18 @@ export default async function ProfilePage() {
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  // Fetch all activity to calculate views
+  const { data: activityLogs } = await supabase
+    .from("user_activity")
+    .select("resource_id, action_type")
+    .eq("user_id", user.id);
+
+  const uniqueViews = new Set(
+    activityLogs
+      ?.filter(a => a.action_type === "view_resource" && a.resource_id)
+      .map(a => a.resource_id)
+  ).size;
+
   const displayName = profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Student";
   const username = profile?.username || user.email?.split("@")[0] || "student";
 
@@ -57,9 +69,9 @@ export default async function ProfilePage() {
               role={profile?.role === "admin" ? "Admin" : "Student"}
               avatarUrl={profile?.avatar_url}
               stats={{
-                streak: profile?.current_streak || 0,
+                resourcesViewed: uniqueViews,
                 hours: Math.floor((profile?.total_study_seconds || 0) / 3600),
-                rank: 0,
+                rank: profile?.rank || 0,
                 bookmarks: bookmarksCount || 0
               }}
             />

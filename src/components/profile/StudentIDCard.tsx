@@ -14,7 +14,8 @@ import {
   RotateCcw,
   Camera,
   Loader2,
-  Copy
+  Copy,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
@@ -27,7 +28,7 @@ interface StudentIDCardProps {
   isViewOnly?: boolean;
   initialStack?: string;
   stats?: {
-    streak: number;
+    resourcesViewed: number;
     hours: number;
     rank: number;
     bookmarks: number;
@@ -41,7 +42,7 @@ export function StudentIDCard({
   role = "Student",
   isViewOnly = false,
   initialStack = "Frontend Dev",
-  stats = { streak: 0, hours: 0, rank: 0, bookmarks: 0 }
+  stats = { resourcesViewed: 0, hours: 0, rank: 0, bookmarks: 0 }
 }: StudentIDCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -233,9 +234,9 @@ export function StudentIDCard({
           </div>
         </div>
 
-        <div className="text-center space-y-3">
+        <div className={`text-center ${isExport ? 'space-y-1' : 'space-y-3'}`}>
           <div 
-            className={`relative mx-auto w-28 h-28 group/avatar ${isViewOnly ? '' : 'cursor-pointer'}`}
+            className={`relative mx-auto group/avatar ${isViewOnly ? '' : 'cursor-pointer'} ${isExport ? 'w-20 h-20' : 'w-28 h-28'}`}
             onClick={!isExport ? handleAvatarClick : undefined}
           >
              <div className="absolute inset-0 rounded-full border border-dashed border-primary-500/30 animate-[spin_15s_linear_infinite]" />
@@ -349,9 +350,9 @@ export function StudentIDCard({
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
-            <Flame className="w-5 h-5 text-orange-500" />
-            <span className="text-2xl font-black tabular-nums leading-none">{stats.streak}</span>
-            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Streak</span>
+            <BookOpen className="w-5 h-5 text-orange-500" />
+            <span className="text-2xl font-black tabular-nums leading-none">{stats.resourcesViewed}</span>
+            <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Views</span>
           </div>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Clock className="w-5 h-5 text-primary-400" />
@@ -360,7 +361,7 @@ export function StudentIDCard({
           </div>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">
             <Trophy className="w-5 h-5 text-yellow-500" />
-            <span className="text-2xl font-black tabular-nums leading-none">#{stats.rank}</span>
+            <span className="text-2xl font-black tabular-nums leading-none">{stats.rank > 0 ? `#${stats.rank}` : "N/A"}</span>
             <span className="text-[9px] uppercase text-neutral-500 font-black tracking-widest leading-none">Rank</span>
           </div>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center gap-1.5 backdrop-blur-sm">

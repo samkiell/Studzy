@@ -68,7 +68,7 @@ export default async function DashboardPage() {
   // Fetch profile for study time, streak, and personalization
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username, role, is_verified")
+    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username, role, is_verified, rank")
     .eq("id", user.id)
     .single();
 
@@ -168,9 +168,9 @@ export default async function DashboardPage() {
               role={profile?.role === "admin" ? "Admin" : "Student"}
               avatarUrl={avatarUrl}
               stats={{
-                streak: currentStreak,
+                resourcesViewed: uniqueViews,
                 hours: Math.floor(totalSeconds / 3600),
-                rank: 0, 
+                rank: profile?.rank || 0, 
                 bookmarks: bookmarksCount || 0
               }}
             />
