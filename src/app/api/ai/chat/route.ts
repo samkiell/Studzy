@@ -122,7 +122,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body: ChatRequest = await request.json();
+    let body: ChatRequest;
+    try {
+      body = await request.json();
+    } catch (err: any) {
+      if (err instanceof SyntaxError || err.name === 'AbortError') {
+        console.warn("[API] ⚠️ Failed to parse request body or client disconnected early.");
+        return NextResponse.json({ error: "Invalid request or client disconnected" }, { status: 400 });
+      }
+      throw err;
+    }
+
     const { messages, mode, enable_search, images, course_code, level } = body;
 
     // Check if we have any images in the request or history
@@ -236,7 +246,19 @@ CRITICAL:
           maxTokens: 2048,
         });
         
-        const content = response.choices?.[0]?.message?.content || "";
+        const rawContent = response.choices?.[0]?.message?.content;
+        let content = "";
+
+        if (typeof rawContent === "string") {
+          content = rawContent;
+        } else if (Array.isArray(rawContent)) {
+          content = rawContent
+            .map(part => (typeof part === 'string' ? part : (part as any).text || ""))
+            .join("");
+        } else if (rawContent && typeof rawContent === "object") {
+          content = (rawContent as any).text || "";
+        }
+
         return NextResponse.json({ content });
       }
     } catch (apiError: any) {

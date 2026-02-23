@@ -144,23 +144,36 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     setActiveCourseId(courseId);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    session,
+    questions: orderedQuestions,
+    isHydrated,
+    hasExistingSession,
+    updateSession,
+    setAnswer,
+    setCurrentIndex,
+    completeSession,
+    clearSession,
+    resumeExisting,
+    startFresh,
+    initialize,
+  }), [
+    session,
+    orderedQuestions,
+    isHydrated,
+    hasExistingSession,
+    updateSession,
+    setAnswer,
+    setCurrentIndex,
+    completeSession,
+    clearSession,
+    resumeExisting,
+    startFresh,
+    initialize
+  ]);
+
   return (
-    <QuizContext.Provider
-      value={{
-        session,
-        questions: orderedQuestions,
-        isHydrated,
-        hasExistingSession,
-        updateSession,
-        setAnswer,
-        setCurrentIndex,
-        completeSession,
-        clearSession,
-        resumeExisting,
-        startFresh,
-        initialize,
-      }}
-    >
+    <QuizContext.Provider value={contextValue}>
       {children}
     </QuizContext.Provider>
   );

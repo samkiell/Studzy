@@ -50,6 +50,7 @@ export default function ExplainPage() {
         }
       }, 60000); // 60s timeout for complex explanations
 
+      console.log("[AI] 📡 Fetching explanation (non-streaming)...");
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,8 +66,13 @@ export default function ExplainPage() {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) throw new Error("Failed to reach Studzy AI");
+      if (!response.ok) {
+        console.error("[AI] ❌ API response not OK:", response.status, response.statusText);
+        throw new Error(`Failed to reach Studzy AI (${response.status})`);
+      }
+
       const data = await response.json();
+      console.log("[AI] ✅ Received response. Content length:", data.content?.length || 0);
       
       if (data.content) {
         setAiExplanation(data.content);
