@@ -231,16 +231,7 @@ export default function ExplainPage() {
                 </div>
               </div>
               
-              {!isLoading && aiExplanation && (
-                <Button 
-                  onClick={fetchAiExplanation}
-                  variant="ghost"
-                  className="h-8 px-3 text-[10px] text-gray-500 hover:text-white gap-1.5"
-                >
-                  <RefreshCcw className="w-3 h-3" />
-                  Regenerate
-                </Button>
-              )}
+
             </div>
 
             <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-neutral-900 prose-pre:text-neutral-100">
