@@ -83,6 +83,12 @@ export default async function DashboardPage() {
 
   const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
 
+  console.log("=== DB COUNTS DEBUG ===");
+  console.log("Bookmarks:", bookmarksCount);
+  console.log("totalSeconds:", totalSeconds);
+  console.log("higherRankCount:", higherRankCount);
+  console.log("userRank:", userRank);
+
   const currentStreak = profile?.current_streak || 0;
   const bio = profile?.bio || null;
   const learningGoal = profile?.learning_goal || null;
