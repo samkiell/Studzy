@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   // Fetch profile data
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*, is_verified")
+    .select("*")
     .eq("id", user.id)
     .single();
 
