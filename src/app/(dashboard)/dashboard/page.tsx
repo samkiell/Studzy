@@ -169,7 +169,7 @@ export default async function DashboardPage() {
               avatarUrl={avatarUrl}
               stats={{
                 resourcesViewed: uniqueViews,
-                hours: Math.floor(totalSeconds / 3600),
+                hours: Math.floor(totalSeconds / 60), // Math done in mins
                 rank: profile?.rank || 0, 
                 bookmarks: bookmarksCount || 0
               }}
