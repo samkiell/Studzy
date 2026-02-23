@@ -80,6 +80,7 @@ export default async function ProfilePage() {
                 username={username}
                 role={profile?.role === "admin" ? "Admin" : "Student"}
                 avatarUrl={profile?.avatar_url}
+                initialStack={user?.user_metadata?.stack || "Frontend Dev"}
                 stats={{
                   resourcesViewed: uniqueViews,
                   hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -58,6 +59,15 @@ export default async function PublicIDPage({ params }: PageProps) {
 
   const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
 
+  // Fetch true stack from user\_metadata securely using admin key on server
+  const adminAuthClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  
+  const { data: { user: adminUserRef } } = await adminAuthClient.auth.admin.getUserById(profile.id);
+  const userStack = adminUserRef?.user_metadata?.stack || "Frontend Dev";
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decor */}
@@ -83,6 +93,7 @@ export default async function PublicIDPage({ params }: PageProps) {
             avatarUrl={profile.avatar_url}
             isViewOnly={true}
             role={profile.role === "admin" ? "Admin" : "Student"}
+            initialStack={userStack}
             stats={{
               resourcesViewed: uniqueViews,
               hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours

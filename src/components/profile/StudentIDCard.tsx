@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
+import { createClient } from "@/lib/supabase/client";
 
 interface StudentIDCardProps {
   displayName: string;
@@ -285,11 +286,22 @@ export function StudentIDCard({
                   {stackOptions.map((opt) => (
                     <button
                       key={opt}
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
                         setStack(opt);
                         setShowStackMenu(false);
-                        toast.success(`Role set to ${opt}`);
+                        const loadingToast = toast.loading(`Saving role as ${opt}...`);
+                        
+                        const supabase = createClient();
+                        const { error } = await supabase.auth.updateUser({
+                          data: { stack: opt }
+                        });
+                        
+                        if (error) {
+                          toast.error("Failed to save role", { id: loadingToast });
+                        } else {
+                          toast.success(`Role saved as ${opt}`, { id: loadingToast });
+                        }
                       }}
                       className={`w-full text-left px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-colors ${stack === opt ? 'text-primary-400 bg-white/5' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}
                     >
