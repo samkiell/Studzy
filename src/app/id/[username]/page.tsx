@@ -49,6 +49,15 @@ export default async function PublicIDPage({ params }: PageProps) {
   const currentStreak = profile.current_streak || 0;
   const totalSeconds = profile.total_study_seconds || 0;
 
+  // Fetch rank based on study time among non-admins
+  const { count: higherRankCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .gt("total_study_seconds", totalSeconds)
+    .neq("role", "admin");
+
+  const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decor */}
@@ -76,8 +85,8 @@ export default async function PublicIDPage({ params }: PageProps) {
             role={profile.role === "admin" ? "Admin" : "Student"}
             stats={{
               resourcesViewed: uniqueViews,
-              hours: Math.floor(totalSeconds / 60), // Math done in mins
-              rank: 0, 
+              hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours
+              rank: userRank, 
               bookmarks: bookmarksCount || 0
             }}
           />

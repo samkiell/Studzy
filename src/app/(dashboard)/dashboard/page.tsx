@@ -73,6 +73,16 @@ export default async function DashboardPage() {
     .single();
 
   const totalSeconds = profile?.total_study_seconds || 0;
+
+  // Fetch rank based on study time among non-admins
+  const { count: higherRankCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .gt("total_study_seconds", totalSeconds)
+    .neq("role", "admin");
+
+  const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
+
   const currentStreak = profile?.current_streak || 0;
   const bio = profile?.bio || null;
   const learningGoal = profile?.learning_goal || null;
@@ -169,8 +179,8 @@ export default async function DashboardPage() {
               avatarUrl={avatarUrl}
               stats={{
                 resourcesViewed: uniqueViews,
-                hours: Math.floor(totalSeconds / 60), // Math done in mins
-                rank: 0, 
+                hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours
+                rank: userRank, 
                 bookmarks: bookmarksCount || 0
               }}
             />

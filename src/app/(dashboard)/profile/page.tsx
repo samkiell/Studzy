@@ -24,6 +24,17 @@ export default async function ProfilePage() {
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  const totalSeconds = profile?.total_study_seconds || 0;
+
+  // Fetch rank based on study time among non-admins
+  const { count: higherRankCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .gt("total_study_seconds", totalSeconds)
+    .neq("role", "admin");
+
+  const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
+
   // Fetch all activity to calculate views
   const { data: activityLogs } = await supabase
     .from("user_activity")
@@ -71,8 +82,8 @@ export default async function ProfilePage() {
                 avatarUrl={profile?.avatar_url}
                 stats={{
                   resourcesViewed: uniqueViews,
-                  hours: Math.floor((profile?.total_study_seconds || 0) / 60), // Math done in mins
-                  rank: 0,
+                  hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours
+                  rank: userRank,
                   bookmarks: bookmarksCount || 0
                 }}
               />
