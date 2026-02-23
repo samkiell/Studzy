@@ -59,67 +59,20 @@ export default function ExplainPage() {
           mode: "chat",
           enable_search: false,
           enable_code: false,
+          stream: false,
         }),
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error("Failed to reach Studzy AI");
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let chunkCount = 0;
-      let totalContentLength = 0;
-
-      console.log("[AI Stream] 🚀 Started reading stream...");
-
-      let accumulatedContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log(`[AI Stream] ✅ Reader done. Total chunks: ${chunkCount}, Total length: ${totalContentLength}`);
-          setAiExplanation(accumulatedContent);
-          break;
-        }
-
-        chunkCount++;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
-          
-          const data = trimmedLine.slice(6);
-          if (data === "[DONE]") {
-            console.log(`[AI Stream] 🏁 [DONE] signal received at chunk ${chunkCount}`);
-            setAiExplanation(accumulatedContent);
-            setIsLoading(false);
-            return;
-          }
-
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content || "";
-            if (content) {
-              totalContentLength += content.length;
-              accumulatedContent += content;
-              setAiExplanation(accumulatedContent);
-              
-              // Clear loading state as soon as first content arrives
-              if (isLoading) setIsLoading(false);
-            }
-          } catch (e) {
-            console.error("[AI Stream] ❌ Error parsing stream chunk:", e, "Line:", trimmedLine);
-          }
-        }
-      }
+      const data = await response.json();
       
-      setAiExplanation(accumulatedContent);
+      if (data.content) {
+        setAiExplanation(data.content);
+      } else {
+        throw new Error("No explanation received");
+      }
       
       // Final scroll on completion
       if (scrollRef.current) {

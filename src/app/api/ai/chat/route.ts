@@ -213,19 +213,32 @@ CRITICAL:
     }
 
     const shouldUseWebSearch = enable_search || mode === "search";
-    console.log(`[API] AI Request - Mode: ${mode}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
+    const shouldStream = (body as any).stream !== false;
+    console.log(`[API] AI Request - Mode: ${mode}, Streaming: ${shouldStream}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
     
     // 🛡️ SECURITY: Validate and filter messages before sending to API
     const finalMessages = validateMessages(mistralMessages);
 
     try {
-      // ✅ Standard Agent Logic (Mistral Agents handle tool/search execution automatically)
-      const response = await client.agents.stream({
-        agentId: MISTRAL_AI_AGENT_ID,
-        messages: finalMessages,
-        maxTokens: 2048, // Increase token limit for longer explanations
-      });
-      return streamResponse(response, mode, shouldUseWebSearch);
+      if (shouldStream) {
+        // ✅ Standard Agent Logic (Streaming)
+        const response = await client.agents.stream({
+          agentId: MISTRAL_AI_AGENT_ID,
+          messages: finalMessages,
+          maxTokens: 2048,
+        });
+        return streamResponse(response, mode, shouldUseWebSearch);
+      } else {
+        // 📥 Non-Streaming Logic
+        const response = await client.agents.complete({
+          agentId: MISTRAL_AI_AGENT_ID,
+          messages: finalMessages,
+          maxTokens: 2048,
+        });
+        
+        const content = response.choices?.[0]?.message?.content || "";
+        return NextResponse.json({ content });
+      }
     } catch (apiError: any) {
       console.error("[API] ❌ Mistral failure:", apiError);
       return NextResponse.json(
