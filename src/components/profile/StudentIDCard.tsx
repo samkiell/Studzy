@@ -119,6 +119,8 @@ export function StudentIDCard({
       logging: false,
       width: 300,
       height: 450,
+      windowWidth: 300,
+      windowHeight: 450,
       imageTimeout: 5000, // Wait longer for images to render
       onclone: (doc) => {
         const el = doc.getElementById(element.id);
@@ -127,6 +129,11 @@ export function StudentIDCard({
           el.style.opacity = "1";
           el.style.visibility = "visible";
           el.style.display = "block";
+          
+          // Force exact dimensions on the exported element for html2canvas to respect
+          el.style.width = "300px";
+          el.style.height = "450px";
+          el.style.position = "relative";
           
           // Remove all backdrop-blurs as they fail in html2canvas
           const blurs = el.querySelectorAll(".backdrop-blur-md, .backdrop-blur-sm, .backdrop-blur-xl");
@@ -203,11 +210,14 @@ export function StudentIDCard({
   const cardFaceClasses = "relative h-[450px] w-[300px] overflow-hidden rounded-3xl shadow-2xl border border-white/5 ring-1 ring-white/5";
 
   const FrontFaceContent = ({ isExport = false }: { isExport?: boolean }) => (
-    <div id={isExport ? "export-id-front" : "id-front"} className={`${cardFaceClasses} bg-[#0a0a0a]`}>
+    <div 
+      id={isExport ? "export-id-front" : "id-front"} 
+      className={`${cardFaceClasses} bg-[#0a0a0a] ${isExport ? 'w-[300px] h-[450px] block relative' : ''}`}
+    >
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-primary-950/30 to-transparent z-0" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       
-      <div className="relative z-10 h-full flex flex-col p-5 text-white justify-between">
+      <div className={`relative z-10 h-full flex flex-col p-5 text-white justify-between ${isExport ? 'w-[300px] h-[450px] overflow-hidden box-border' : ''}`}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
@@ -307,7 +317,7 @@ export function StudentIDCard({
            <p className="text-[9px] text-neutral-400 font-bold opacity-90 italic tracking-tighter leading-none pr-2">
               &quot;Study smarter. bag 5.0.&quot;
            </p>
-           <div className="bg-white p-1 rounded-lg w-12 h-12 flex items-center justify-center shrink-0">
+           <div className={`bg-white p-1 rounded-lg flex items-center justify-center shrink-0 ${isExport ? 'w-[48px] h-[48px]' : 'w-12 h-12'}`}>
               <QRCode 
                 value={`https://studzy.me/id/${username}`} 
                 size={256}
@@ -321,11 +331,14 @@ export function StudentIDCard({
   );
 
   const BackFaceContent = ({ isExport = false }: { isExport?: boolean }) => (
-    <div id={isExport ? "export-id-back" : "id-back"} className={`${cardFaceClasses} bg-[#0a0a0a]`}>
+    <div 
+      id={isExport ? "export-id-back" : "id-back"} 
+      className={`${cardFaceClasses} bg-[#0a0a0a] ${isExport ? 'w-[300px] h-[450px] block relative' : ''}`}
+    >
       <div className="absolute inset-0 bg-gradient-to-t from-primary-950/20 to-transparent z-10" />
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-900 via-transparent to-transparent z-0" />
       
-      <div className="relative z-20 h-full p-6 flex flex-col text-white">
+      <div className={`relative z-20 h-full p-6 flex flex-col text-white ${isExport ? 'w-[300px] h-[450px] overflow-hidden box-border' : ''}`}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-black flex items-center gap-2 tracking-widest text-white/90">
             <Trophy className="w-4 h-4 text-primary-400" />
@@ -371,9 +384,9 @@ export function StudentIDCard({
       {!isViewOnly && <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />}
 
       {/* Hidden Flat Renderers for Perfect Export */}
-      <div className="fixed left-[-9999px] top-[-9999px] pointer-events-none opacity-0 overflow-hidden" aria-hidden="true">
-        <div ref={exportFrontRef} id="export-id-front"><FrontFaceContent isExport={true} /></div>
-        <div ref={exportBackRef} id="export-id-back"><BackFaceContent isExport={true} /></div>
+      <div className="fixed left-[-9999px] top-[-9999px] pointer-events-none opacity-0 overflow-hidden" aria-hidden="true" style={{ width: 300, height: 450 }}>
+        <div ref={exportFrontRef} id="export-id-front" style={{ width: 300, height: 450 }}><FrontFaceContent isExport={true} /></div>
+        <div ref={exportBackRef} id="export-id-back" style={{ width: 300, height: 450 }}><BackFaceContent isExport={true} /></div>
       </div>
 
       <div className="flex w-full flex-col items-center overflow-x-visible">
