@@ -70,7 +70,15 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
         }
         setHasExistingSession(false);
       } else {
-        setHasExistingSession(true);
+        // Session ID mismatch - usually happens when clicking a NEW "Continue" button for a different attempt
+        // We initialize fresh for the NEW sessionId automatically to avoid the broken continuation prompt
+        const newSession = quizSessionService.initializeNewSession({
+          sessionId,
+          courseId,
+          questionIds,
+        });
+        setSession(newSession);
+        setHasExistingSession(false);
       }
     } else {
       const newSession = quizSessionService.initializeNewSession({
