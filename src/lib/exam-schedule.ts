@@ -43,11 +43,11 @@ export const EXAM_DATA: Exam[] = [
   {
     code: "CPE 203",
     title: "Computer Engineering Foundations",
-    location: "Chemical Engineering LT",
+    location: "ICT Hall",
     date: "Wednesday, 25th Feb, 2026",
-    time: "4:00pm – 7:00pm",
-    startTime: "2026-02-25T16:00:00",
-    endTime: "2026-02-25T19:00:00",
+    time: "TBA",
+    startTime: "2026-02-25T00:00:00",
+    endTime: "2026-02-25T23:59:59",
   },
   {
     code: "SEN 205",
