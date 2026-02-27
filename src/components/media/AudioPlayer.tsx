@@ -24,6 +24,7 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
   const [copied, setCopied] = useState(false);
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   // Mark as complete when 90% listened
   const markComplete = useCallback(async () => {
@@ -57,6 +58,14 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
     await downloadFile(src, `${title.replace(/\s+/g, "_")}.mp3`);
     setIsDownloading(false);
   };
+
+  const togglePlaybackRate = useCallback(() => {
+    if (audioRef.current) {
+      const nextRate = playbackRate === 1 ? 1.25 : playbackRate === 1.25 ? 1.5 : playbackRate === 1.5 ? 2 : 1;
+      audioRef.current.playbackRate = nextRate;
+      setPlaybackRate(nextRate);
+    }
+  }, [playbackRate]);
 
   const togglePlay = useCallback(() => {
     if (audioRef.current) {
@@ -341,6 +350,15 @@ export function AudioPlayer({ src, title, resourceId, onComplete }: AudioPlayerP
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
+          {/* Playback Rate */}
+          <button
+            onClick={togglePlaybackRate}
+            className="flex items-center justify-center rounded-lg bg-neutral-200 px-3 py-2 text-sm font-mono font-bold text-neutral-700 transition-colors hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600 sm:px-4"
+            title="Playback Speed"
+          >
+            {playbackRate}x
+          </button>
+
           {/* Download Button */}
           <button
             onClick={handleDownload}

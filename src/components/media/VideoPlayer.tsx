@@ -40,6 +40,7 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   // Auto-hide controls
   const resetControlsTimeout = useCallback(() => {
@@ -100,6 +101,15 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
     await downloadFile(src, `${title.replace(/\s+/g, "_")}.mp4`);
     setIsDownloading(false);
   };
+
+  const togglePlaybackRate = useCallback(() => {
+    if (videoRef.current) {
+      const nextRate = playbackRate === 1 ? 1.25 : playbackRate === 1.25 ? 1.5 : playbackRate === 1.5 ? 2 : 1;
+      videoRef.current.playbackRate = nextRate;
+      setPlaybackRate(nextRate);
+    }
+    resetControlsTimeout();
+  }, [playbackRate, resetControlsTimeout]);
 
   const togglePlay = useCallback(() => {
     if (videoRef.current) {
@@ -421,6 +431,15 @@ export function VideoPlayer({ src, title, resourceId, onComplete }: VideoPlayerP
               />
             </div>
           </div>
+
+          {/* Playback Rate */}
+          <button
+            onClick={togglePlaybackRate}
+            className="p-2 text-white font-mono text-xs sm:text-sm font-bold transition-colors hover:bg-white/20 rounded-lg h-8 sm:h-auto min-w-[2.5rem] sm:min-w-[3rem] focus:outline-none focus:ring-2 focus:ring-white/50"
+            title="Playback Speed"
+          >
+            {playbackRate}x
+          </button>
 
           {/* Share */}
           <button
