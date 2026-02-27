@@ -356,7 +356,7 @@ export function UploadForm({ courses }: UploadFormProps) {
         type: "success",
         text: `Successfully uploaded ${uploadedCount} file${uploadedCount > 1 ? "s" : ""} to RAG storage!`,
       });
-      setTimeout(() => router.push("/admin"), 1500);
+      setTimeout(() => setFiles([]), 1500);
       return;
     }
 
@@ -437,11 +437,11 @@ export function UploadForm({ courses }: UploadFormProps) {
     if (errorCount === 0 && successCount > 0) {
       setGlobalMessage({
         type: "success",
-        text: `Successfully saved ${successCount} resource${successCount > 1 ? "s" : ""}! Redirecting...`,
+        text: `Successfully saved ${successCount} resource${successCount > 1 ? "s" : ""}!`,
       });
-      // Redirect after a short delay
+      // Clear uploaded files after a short delay
       setTimeout(() => {
-        router.push("/admin");
+        setFiles([]);
       }, 1500);
     } else if (errorCount > 0) {
       setGlobalMessage({
