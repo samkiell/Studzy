@@ -32,6 +32,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -55,7 +56,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   const itemsPerPage = 10;
 
   const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
+    const filtered = users.filter((u) => {
       const name = u.full_name || "";
       const email = u.email || "";
       const username = u.username || "";
@@ -69,7 +70,23 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
         (filterStatus === "suspended" && u.status === 'suspended');
       return matchesSearch && matchesStatus;
     });
-  }, [users, search, filterStatus]);
+
+    return filtered.sort((a, b) => {
+      if (sortBy === "newest") {
+        return (new Date(b.created_at || 0).getTime() || 0) - (new Date(a.created_at || 0).getTime() || 0);
+      }
+      if (sortBy === "oldest") {
+        return (new Date(a.created_at || 0).getTime() || 0) - (new Date(b.created_at || 0).getTime() || 0);
+      }
+      if (sortBy === "recent_login") {
+        return (new Date(b.last_login || 0).getTime() || 0) - (new Date(a.last_login || 0).getTime() || 0);
+      }
+      if (sortBy === "oldest_login") {
+        return (new Date(a.last_login || 0).getTime() || 0) - (new Date(b.last_login || 0).getTime() || 0);
+      }
+      return 0;
+    });
+  }, [users, search, filterStatus, sortBy]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice(
@@ -167,6 +184,16 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={sortBy}
+            onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+            className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium focus:outline-none dark:border-neutral-800 dark:bg-neutral-950"
+          >
+            <option value="newest">Newest Joined</option>
+            <option value="oldest">Oldest Joined</option>
+            <option value="recent_login">Recent Login</option>
+            <option value="oldest_login">Oldest Login</option>
+          </select>
           <select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}

@@ -51,7 +51,7 @@ export const EXAM_DATA: Exam[] = [
   },
   {
     code: "SEN 205",
-    title: "Software Engineering Principles",
+    title: "Software Requirement and Design",
     location: "BOO B",
     date: "Saturday, 7th March, 2026",
     time: "12:00pm – 3:00pm",
@@ -60,7 +60,7 @@ export const EXAM_DATA: Exam[] = [
   },
   {
     code: "SEN 203",
-    title: "Data Structures & Algorithms",
+    title: "Discrete Structures",
     location: "Seminar Room (A, B, C, D)",
     date: "Tuesday, 10th March, 2026",
     time: "8:00am – 11:00am",
@@ -69,7 +69,7 @@ export const EXAM_DATA: Exam[] = [
   },
   {
     code: "SEN 201",
-    title: "Introduction to Software Engineering",
+    title: "Software Construction",
     location: "Seminar Room (A, B, C, D)",
     date: "Friday, 13th March, 2026",
     time: "4:00pm – 7:00pm",
