@@ -189,6 +189,7 @@ export async function submitCbtAttempt({
   answers: SubmitAnswer[];
   durationSeconds: number;
   theoryAnswers?: Record<string, { main?: string; sub: Record<string, string> }>;
+  questionDurations?: Record<string, number>;
 }) {
   const { scoreQuiz } = await import("@/lib/cbt/quizScorer");
 
@@ -216,7 +217,7 @@ export async function submitCbtAttempt({
         selected_option: null,
         theory_answer: answer.main || null,
         theory_sub_answers: Object.keys(answer.sub).length > 0 ? answer.sub : null,
-        duration_seconds: 0,
+        duration_seconds: questionDurations?.[questionId] || 0,
       });
     }
   }

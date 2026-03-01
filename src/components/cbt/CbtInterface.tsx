@@ -183,6 +183,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         answers: formattedAnswers,
         durationSeconds: initialAttempt.mode === 'exam' ? ((initialAttempt.time_limit_seconds || 1800) - timeLeft) : 0,
         theoryAnswers: Object.keys(theoryAnswers).length > 0 ? theoryAnswers : undefined,
+        questionDurations,
       });
       // @ts-ignore - The response object structure is correct now
       setResults(res);
