@@ -462,7 +462,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                           <p className="text-xs text-gray-400">
                             {answers[currentQuestion.id] === currentQuestion.correct_option 
                               ? "Excellent understanding. Keep the momentum going!"
-                              : `The correct answer is ${currentQuestion.correct_option.toUpperCase()}. Review the explanation below.`}
+                              : `The correct answer is ${currentQuestion.correct_option?.toUpperCase() || 'N/A'}. Review the explanation below.`}
                           </p>
                         </div>
                       </div>

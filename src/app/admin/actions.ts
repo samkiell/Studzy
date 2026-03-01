@@ -451,13 +451,7 @@ export async function uploadCBTQuestions(formData: FormData) {
       .upsert(
         validatedQuestions.map((q, idx) => ({
           course_id: courseData.id, 
-          course_code: courseCode, // Required for unique constraint
-          // If the JSON provided a specific ID, we try to respect relative ordering but shift it.
-          // However, simple 1-based indexing from the file + maxId is the safest additive strategy.
-          // We'll use the validated question_id (which falls back to index+1) and add the offset.
-          // BUT: If the user provides specific IDs (e.g. 101, 102), we might want to keep them if they don't collide.
-          // The safest approach for "appending" is strictly: (index + 1) + currentMaxId.
-          // This ignores gaps in the uploaded file's IDs but guarantees uniqueness and continuity.
+          course_code: courseCode,
           question_id: currentMaxId + (idx + 1), 
           difficulty: q.difficulty,
           topic: q.topic,
@@ -465,6 +459,12 @@ export async function uploadCBTQuestions(formData: FormData) {
           options: q.options,
           correct_option: q.correct_option,
           explanation: q.explanation,
+          // Theory-specific fields (null for MCQs)
+          question_type: q.question_type || 'mcq',
+          model_answer: q.model_answer || null,
+          key_points: q.key_points || null,
+          rubric: q.rubric || null,
+          sub_questions: q.sub_questions || null,
         })),
         { onConflict: "course_code,question_id" } 
       )
