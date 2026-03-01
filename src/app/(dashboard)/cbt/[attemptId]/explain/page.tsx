@@ -226,7 +226,7 @@ export default function ExplainPage() {
                   <p className="text-[10px] text-gray-400">
                     {isCorrect 
                       ? "Your logic holds up. Here's why this is correct:" 
-                      : `The correct answer is ${currentQuestion.correct_option.toUpperCase()}. Let's break it down:`}
+                      : `The correct answer is ${currentQuestion.correct_option?.toUpperCase() ?? "N/A"}. Let's break it down:`}
                   </p>
                 </div>
               </div>
