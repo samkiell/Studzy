@@ -1,5 +1,6 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type CbtMode = 'study' | 'exam';
+export type QuestionType = 'mcq' | 'theory';
 
 export interface Question {
   id: string;
@@ -9,9 +10,15 @@ export interface Question {
   topic: string | null;
   question_text: string;
   options: Record<string, string>;
-  correct_option: string;
+  correct_option: string | null;
   explanation: string | null;
   created_at: string;
+  // Theory question fields (optional, only present for theory questions)
+  question_type?: QuestionType;
+  model_answer?: string | null;
+  key_points?: string[] | null;
+  rubric?: string | null;
+  sub_questions?: { label: string; content: string }[] | null;
 }
 
 export interface Attempt {
@@ -63,13 +70,27 @@ export interface CBTQuestion {
   difficulty: Difficulty;
   topic: string;
   question_text: string;
+  question_type: QuestionType;
   options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-    [key: string]: string; // Allow for flexible number of options if needed
+    A?: string;
+    B?: string;
+    C?: string;
+    D?: string;
+    [key: string]: string | undefined;
   };
-  correct_option: string;
-  explanation: string;
+  correct_option: string | null;
+  explanation: string | null;
+  // Theory question fields (optional)
+  model_answer?: string | null;
+  key_points?: string[] | null;
+  rubric?: string | null;
+  sub_questions?: { label: string; content: string }[] | null;
+}
+
+/** Helper to detect if a question is theory type */
+export function isTheoryQuestion(question: Question | CBTQuestion): boolean {
+  if ('question_type' in question && question.question_type === 'theory') return true;
+  const opts = question.options;
+  const hasOptions = opts && typeof opts === 'object' && Object.keys(opts).length > 0;
+  return !hasOptions;
 }
