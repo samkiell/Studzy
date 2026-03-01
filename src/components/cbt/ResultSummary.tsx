@@ -270,20 +270,22 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                   ) : (
                     <XCircle className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleExplainWithAi(q)}
-                    disabled={!!loadingQuestionId}
-                    className="h-7 px-2 text-[10px] font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 gap-1.5"
-                  >
-                    {loadingQuestionId === qId ? (
-                      <div className="w-3 h-3 border border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3 h-3" />
-                    )}
-                    EXPLAIN
-                  </Button>
+                  {!theory && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleExplainWithAi(q)}
+                      disabled={!!loadingQuestionId}
+                      className="h-7 px-2 text-[10px] font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 gap-1.5"
+                    >
+                      {loadingQuestionId === qId ? (
+                        <div className="w-3 h-3 border border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3" />
+                      )}
+                      EXPLAIN
+                    </Button>
+                  )}
                 </div>
               </div>
 
