@@ -105,6 +105,9 @@ IMPORTANT:
         .join("");
     }
 
+    // Strip markdown code fences if the agent wraps the JSON in ```json ... ```
+    content = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+
     const parsed: AIGradingResponse = JSON.parse(content);
 
     // Clamp score to max marks — never trust AI to respect limits
