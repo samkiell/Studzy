@@ -82,6 +82,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   const [copyingId, setCopyingId] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,8 +92,8 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const handleScroll = () => {
-    if (!containerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    if (!scrollAreaRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
     setIsAtBottom(isNearBottom);
   };
@@ -114,9 +115,10 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
     };
   }, [isOpen]);
 
+  // Auto-scroll to bottom smoothly when new messages arrive
   useEffect(() => {
-    if (isAtBottom && containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (isAtBottom && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isLoading, isAtBottom]);
 
@@ -411,7 +413,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
 
         {/* Scrollable Messages Area */}
         <div 
-          ref={containerRef}
+          ref={scrollAreaRef}
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto px-4 pt-[60px] pb-[120px] sm:px-6 sm:pt-4 sm:pb-4 scroll-smooth"
         >

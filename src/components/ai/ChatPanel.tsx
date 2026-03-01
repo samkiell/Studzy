@@ -93,10 +93,10 @@ export function ChatPanel({
     setIsAtBottom(isNearBottom);
   };
 
-  // Auto-scroll logic: only if user is already at bottom
+  // Auto-scroll to bottom smoothly when new messages arrive
   useEffect(() => {
-    if (isAtBottom && scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    if (isAtBottom && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isLoading, isAtBottom]);
 
