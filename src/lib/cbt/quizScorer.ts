@@ -276,9 +276,6 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
     throw new Error("Failed to update attempt");
   }
 
-  // Normalize score to 100
-  const normalizedScore = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
-
   const result: QuizResult = {
     score: normalizedScore,
     totalQuestions: 100, // Always out of 100
