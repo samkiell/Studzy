@@ -284,7 +284,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                       ) : (
                         <Sparkles className="w-3 h-3" />
                       )}
-                      EXPLAIN
+                      Explain well weell 
                     </Button>
                   )}
                 </div>
