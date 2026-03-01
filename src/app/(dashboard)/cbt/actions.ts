@@ -184,6 +184,7 @@ export async function submitCbtAttempt({
   answers,
   durationSeconds,
   theoryAnswers,
+  questionDurations,
 }: {
   attemptId: string;
   answers: SubmitAnswer[];
