@@ -180,6 +180,8 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
     const isTheory = isTheoryQuestion(question);
     const topic = question.topic || "General";
 
+    console.log(`[QuizScorer] Q:${question.id.slice(0,8)} type=${isTheory ? 'theory' : 'mcq'} hasTheoryAnswer=${!!ans.theory_answer} hasSubAnswers=${!!ans.theory_sub_answers} selectedOption=${ans.selected_option}`);
+
     if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
     topicStats[topic].total++;
     topicStats[topic].avgTime += ans.duration_seconds;

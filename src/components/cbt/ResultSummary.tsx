@@ -23,14 +23,22 @@ import { toast } from "react-hot-toast";
 
 interface QuestionResult {
   id: string;
+  question_id?: string;
   question_text: string;
   options: Record<string, string>;
-  correct_option: string;
-  selected_option: string;
+  correct_option: string | null;
+  selected_option: string | null;
   is_correct: boolean;
   duration_seconds: number;
   explanation: string | null;
   topic: string | null;
+  ai_feedback?: {
+    score: number;
+    max_marks: number;
+    strengths: string[];
+    weaknesses: string[];
+    improvement: string;
+  } | null;
 }
 
 interface ResultSummaryProps {
@@ -54,12 +62,14 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
   };
 
   const handleExplainWithAi = async (question: QuestionResult) => {
+    const qId = question.id || question.question_id || "";
     if (loadingQuestionId) return;
-    setLoadingQuestionId(question.id);
+    setLoadingQuestionId(qId);
     try {
       // Create a compatible question object for the utility
       const compatibleQuestion = {
         ...question,
+        id: qId,
         course_id: "", // Not strictly needed for prompt but required by type
         question_id: 0,
         difficulty: 'medium' as any,
@@ -68,7 +78,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
 
       const { sessionId } = await createExplanationSession(
         compatibleQuestion,
-        question.selected_option
+        question.selected_option || ""
       );
       
       router.push(`/studzyai/chat/${sessionId}`);
@@ -89,6 +99,9 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
   const getMetricIcon = (topic: string) => {
     return <Target className="w-4 h-4 text-indigo-400" />;
   };
+
+  // Detect if a question is theory (no options)
+  const isTheory = (q: QuestionResult) => !q.options || Object.keys(q.options).length === 0;
 
   return (
     <div className="space-y-6 pb-12 px-2 md:px-0">
@@ -217,9 +230,13 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
         </h3>
 
         <div className="space-y-4">
-          {results.questionsWithAnswers.map((q, idx) => (
+          {results.questionsWithAnswers.map((q, idx) => {
+            const qId = q.id || q.question_id || `q-${idx}`;
+            const theory = isTheory(q);
+
+            return (
             <motion.div 
-              key={q.id}
+              key={qId}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -238,7 +255,9 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                   <div className="min-w-0">
                     <h4 className="font-semibold text-sm md:text-lg leading-relaxed text-gray-100">{q.question_text}</h4>
                     <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
-                      <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded">Topic: {q.topic || 'General'}</span>
+                      <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded">
+                        {theory ? "Theory" : "MCQ"} • {q.topic || 'General'}
+                      </span>
                       <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded">
                         <Timer className="w-2.5 h-2.5" /> {q.duration_seconds}s
                       </span>
@@ -258,7 +277,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                     disabled={!!loadingQuestionId}
                     className="h-7 px-2 text-[10px] font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 gap-1.5"
                   >
-                    {loadingQuestionId === q.id ? (
+                    {loadingQuestionId === qId ? (
                       <div className="w-3 h-3 border border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
                     ) : (
                       <Sparkles className="w-3 h-3" />
@@ -268,23 +287,70 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
-                {Object.entries(q.options).map(([key, val]) => {
-                  const isSelected = q.selected_option === key;
-                  const isCorrect = q.correct_option === key;
-                  
-                  let styles = "bg-white/5 border-white/10";
-                  if (isCorrect) styles = "bg-green-500/10 border-green-500/30 text-green-400";
-                  else if (isSelected && !isCorrect) styles = "bg-red-500/10 border-red-500/30 text-red-400";
+              {/* MCQ: show options */}
+              {!theory && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
+                  {Object.entries(q.options).map(([key, val]) => {
+                    const isSelected = q.selected_option === key;
+                    const isCorrectOpt = q.correct_option === key;
+                    
+                    let styles = "bg-white/5 border-white/10";
+                    if (isCorrectOpt) styles = "bg-green-500/10 border-green-500/30 text-green-400";
+                    else if (isSelected && !isCorrectOpt) styles = "bg-red-500/10 border-red-500/30 text-red-400";
 
-                  return (
-                    <div key={key} className={`p-3 md:p-4 rounded-xl border text-xs md:text-sm flex gap-3 transition-colors ${styles}`}>
-                      <span className="font-bold opacity-50 shrink-0">{key.toUpperCase()}</span>
-                      <span className="flex-1">{val}</span>
+                    return (
+                      <div key={key} className={`p-3 md:p-4 rounded-xl border text-xs md:text-sm flex gap-3 transition-colors ${styles}`}>
+                        <span className="font-bold opacity-50 shrink-0">{key.toUpperCase()}</span>
+                        <span className="flex-1">{val}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Theory: show AI feedback */}
+              {theory && q.ai_feedback && (
+                <div className="mt-5 space-y-3">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                    <div className={`text-lg font-bold ${q.ai_feedback.score >= q.ai_feedback.max_marks * 0.7 ? 'text-green-400' : q.ai_feedback.score >= q.ai_feedback.max_marks * 0.4 ? 'text-amber-400' : 'text-red-400'}`}>
+                      {q.ai_feedback.score}/{q.ai_feedback.max_marks}
                     </div>
-                  );
-                })}
-              </div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">AI Score</span>
+                  </div>
+
+                  {q.ai_feedback.strengths.length > 0 && (
+                    <div className="p-3 rounded-xl bg-green-500/5 border border-green-500/10">
+                      <p className="text-[10px] font-bold text-green-400 uppercase tracking-wider mb-1.5">Strengths</p>
+                      <ul className="text-xs text-gray-300 space-y-1">
+                        {q.ai_feedback.strengths.map((s, i) => <li key={i}>• {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {q.ai_feedback.weaknesses.length > 0 && (
+                    <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10">
+                      <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1.5">Weaknesses</p>
+                      <ul className="text-xs text-gray-300 space-y-1">
+                        {q.ai_feedback.weaknesses.map((w, i) => <li key={i}>• {w}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {q.ai_feedback.improvement && (
+                    <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1.5">How to Improve</p>
+                      <p className="text-xs text-gray-300">{q.ai_feedback.improvement}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Theory with no feedback (empty answer) */}
+              {theory && !q.ai_feedback && (
+                <div className="mt-5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-xs text-amber-300">
+                  No answer was submitted for this theory question.
+                </div>
+              )}
 
               {q.explanation && (
                 <div className="mt-5 p-3.5 md:p-4 rounded-xl bg-white/5 border border-white/5 text-[11px] md:text-sm text-gray-400 leading-relaxed italic border-l-2 border-l-indigo-500/40">
@@ -293,7 +359,8 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                 </div>
               )}
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
