@@ -42,6 +42,7 @@ export interface Course {
   description: string | null;
   created_at: string;
   is_cbt: boolean;
+  exam_type?: string | null;
 }
 
 export interface Resource {
