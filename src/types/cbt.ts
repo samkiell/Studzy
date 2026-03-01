@@ -13,6 +13,8 @@ export interface Question {
   correct_option: string | null;
   explanation: string | null;
   created_at: string;
+  // Marks per question (MCQ defaults to 1, theory can be higher)
+  marks?: number;
   // Theory question fields (optional, only present for theory questions)
   question_type?: QuestionType;
   model_answer?: string | null;

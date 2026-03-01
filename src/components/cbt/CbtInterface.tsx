@@ -181,7 +181,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       const res = await submitCbtAttempt({
         attemptId: initialAttempt.id,
         answers: formattedAnswers,
-        durationSeconds: initialAttempt.mode === 'exam' ? ((initialAttempt.time_limit_seconds || 1800) - timeLeft) : 0
+        durationSeconds: initialAttempt.mode === 'exam' ? ((initialAttempt.time_limit_seconds || 1800) - timeLeft) : 0,
+        theoryAnswers: Object.keys(theoryAnswers).length > 0 ? theoryAnswers : undefined,
       });
       // @ts-ignore - The response object structure is correct now
       setResults(res);

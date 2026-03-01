@@ -173,184 +173,60 @@ export async function getCbtMetadata(courseId: string) {
 
 /**
  * Submits a CBT attempt.
- * Validates answers server-side, calculates the score, and updates the database.
+ * Handles both MCQ and theory questions via the modular quiz scorer.
+ * MCQs are scored deterministically; theory questions are graded by AI.
  */
 export async function submitCbtAttempt({
   attemptId,
   answers,
   durationSeconds,
+  theoryAnswers,
 }: {
   attemptId: string;
   answers: SubmitAnswer[];
   durationSeconds: number;
+  theoryAnswers?: Record<string, { main?: string; sub: Record<string, string> }>;
 }) {
-  const supabase = await createClient();
+  const { scoreQuiz, QuizSubmittedAnswer } = await import("@/lib/cbt/quizScorer");
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  // Merge MCQ answers and theory answers into the unified format
+  const submittedAnswers: any[] = [];
 
-  if (authError || !user) {
-    throw new Error("Unauthorized");
-  }
-
-  // 1. Fetch the attempt to verify ownership and avoid double submission
-  const { data: attempt, error: attemptError } = await supabase
-    .from("attempts")
-    .select("*")
-    .eq("id", attemptId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (attemptError || !attempt) {
-    throw new Error("Attempt not found or unauthorized");
-  }
-
-  if (attempt.completed_at) {
-    // Attempt already completed. Return the existing results to make this idempotent.
-    const { data: existingAnswers, error: answersErr } = await supabase
-      .from("attempt_answers")
-      .select("question_id, selected_option, is_correct")
-      .eq("attempt_id", attemptId);
-
-    if (answersErr) {
-      console.error("Error fetching existing answers:", {
-        code: answersErr.code,
-        message: answersErr.message,
-        details: answersErr.details,
-        hint: answersErr.hint
-      });
-      throw new Error(`Attempt already completed and failed to fetch results: ${answersErr.message}`);
-    }
-
-    // Fetch question details for the summary
-    const { data: questions, error: questError } = await supabase
-      .from("questions")
-      .select("id, question_text, options, correct_option, topic, difficulty, explanation")
-      .in("id", existingAnswers.map(a => a.question_id));
-
-    if (questError || !questions) {
-      throw new Error("Failed to fetch results metadata");
-    }
-
-    const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
-    const questionsWithAnswers = existingAnswers.map(ans => {
-      const question = questions.find(q => q.id === ans.question_id);
-      const topic = question?.topic || "General";
-      
-      if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
-      topicStats[topic].total++;
-      if (ans.is_correct) topicStats[topic].correct++;
-      return {
-        ...question,
-        selected_option: ans.selected_option,
-        is_correct: ans.is_correct,
-        duration_seconds: 0 // Default to 0 as it's missing in DB
-      };
-    });
-
-    Object.keys(topicStats).forEach(topic => {
-      topicStats[topic].avgTime = Math.round(topicStats[topic].avgTime / topicStats[topic].total);
-    });
-
-    return {
-      score: attempt.score,
-      totalQuestions: attempt.total_questions,
-      completedAt: attempt.completed_at,
-      topicStats,
-      questionsWithAnswers
-    };
-  }
-
-  // 2. Fetch correct answers for the questions in this attempt
-  const questionIds = answers.map((a) => a.question_id);
-  const { data: questions, error: questError } = await supabase
-    .from("questions")
-    .select("id, question_text, options, correct_option, topic, difficulty, explanation")
-    .in("id", questionIds);
-
-  if (questError || !questions) {
-    throw new Error("Failed to validate answers");
-  }
-
-  // 3. Calculate score and prepare analytics
-  let score = 0;
-  const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
-  const questionsWithAnswers: any[] = [];
-
-  const attemptAnswersPayload = answers.map((ans) => {
-    const question = questions.find((q) => q.id === ans.question_id);
-    const isCorrect = question?.correct_option === ans.selected_option;
-    if (isCorrect) score++;
-
-    if (question) {
-      const topic = question.topic || "General";
-
-      // Topic stats
-      if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
-      topicStats[topic].total++;
-      if (isCorrect) topicStats[topic].correct++;
-      topicStats[topic].avgTime += ans.duration_seconds;
-
-      questionsWithAnswers.push({
-        ...question,
-        selected_option: ans.selected_option,
-        is_correct: isCorrect,
-        duration_seconds: ans.duration_seconds
-      });
-    }
-
-    return {
-      attempt_id: attemptId,
+  // MCQ answers
+  for (const ans of answers) {
+    submittedAnswers.push({
       question_id: ans.question_id,
       selected_option: ans.selected_option,
-      is_correct: isCorrect,
-      // Removed duration_seconds as it's missing in DB
-    };
-  });
+      theory_answer: null,
+      theory_sub_answers: null,
+      duration_seconds: ans.duration_seconds,
+    });
+  }
 
-  // Finalize topic average times
-  Object.keys(topicStats).forEach(topic => {
-    topicStats[topic].avgTime = Math.round(topicStats[topic].avgTime / topicStats[topic].total);
-  });
-
-  // 4. Insert individual answers (Do this BEFORE updating attempt to avoid race condition in idempotency check)
-  const { error: answersError } = await supabase
-    .from("attempt_answers")
-    .insert(attemptAnswersPayload);
-
-  if (answersError) {
-    console.error("Error inserting attempt answers:", answersError);
-    // If it's a conflict error, it means another request already inserted them, which is fine for idempotency
-    if (answersError.code !== '23505') { 
-      throw new Error("Failed to save attempt answers");
+  // Theory answers
+  if (theoryAnswers) {
+    for (const [questionId, answer] of Object.entries(theoryAnswers)) {
+      // Don't duplicate if already in MCQ answers
+      if (submittedAnswers.find(a => a.question_id === questionId)) continue;
+      submittedAnswers.push({
+        question_id: questionId,
+        selected_option: null,
+        theory_answer: answer.main || null,
+        theory_sub_answers: Object.keys(answer.sub).length > 0 ? answer.sub : null,
+        duration_seconds: 0,
+      });
     }
   }
 
-  // 5. Update attempt record
-  const { error: updateError } = await supabase
-    .from("attempts")
-    .update({
-      score,
-      duration_seconds: durationSeconds,
-      completed_at: new Date().toISOString(),
-    })
-    .eq("id", attemptId);
-
-  if (updateError) {
-    console.error("Error updating attempt:", updateError);
-    throw new Error("Failed to update attempt score");
-  }
+  const result = await scoreQuiz({
+    attemptId,
+    answers: submittedAnswers,
+    durationSeconds,
+  });
 
   revalidatePath("/dashboard/cbt");
   revalidatePath(`/cbt/${attemptId}`);
 
-  return {
-    score,
-    totalQuestions: attempt.total_questions,
-    completedAt: new Date().toISOString(),
-    topicStats,
-    questionsWithAnswers
-  };
+  return result;
 }
+
