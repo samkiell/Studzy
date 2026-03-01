@@ -378,3 +378,85 @@ BEGIN
     LIMIT match_count;
 END;
 $$;
+
+-- ============================================
+-- THEORY EXAM ENGINE TABLES
+-- ============================================
+
+-- Add exam_type column to courses table
+-- ALTER TABLE courses ADD COLUMN IF NOT EXISTS exam_type TEXT DEFAULT NULL;
+
+CREATE TABLE theory_exams (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    instructions TEXT,
+    exam_mode TEXT NOT NULL DEFAULT 'study' CHECK (exam_mode IN ('study', 'exam')),
+    max_selectable_questions INT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_theory_exams_course_id ON theory_exams(course_id);
+
+CREATE TABLE theory_questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    exam_id UUID NOT NULL REFERENCES theory_exams(id) ON DELETE CASCADE,
+    question_number INT NOT NULL,
+    main_question TEXT NOT NULL,
+    marks INT NOT NULL DEFAULT 10,
+    model_answer TEXT NOT NULL,
+    key_points JSONB NOT NULL DEFAULT '[]'::jsonb,
+    rubric TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_theory_questions_exam_id ON theory_questions(exam_id);
+
+CREATE TABLE theory_sub_questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    question_id UUID NOT NULL REFERENCES theory_questions(id) ON DELETE CASCADE,
+    label TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_theory_sub_questions_question_id ON theory_sub_questions(question_id);
+
+CREATE TABLE theory_attempts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    exam_id UUID NOT NULL REFERENCES theory_exams(id) ON DELETE CASCADE,
+    answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+    total_score INT DEFAULT 0,
+    max_score INT DEFAULT 0,
+    feedback JSONB,
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_theory_attempts_user_id ON theory_attempts(user_id);
+CREATE INDEX idx_theory_attempts_exam_id ON theory_attempts(exam_id);
+
+ALTER TABLE theory_exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE theory_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE theory_sub_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE theory_attempts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated users to read theory exams"
+    ON theory_exams FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow authenticated users to read theory questions"
+    ON theory_questions FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow authenticated users to read theory sub questions"
+    ON theory_sub_questions FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Users can read own theory attempts"
+    ON theory_attempts FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own theory attempts"
+    ON theory_attempts FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own theory attempts"
+    ON theory_attempts FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
