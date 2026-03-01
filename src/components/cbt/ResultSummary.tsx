@@ -39,6 +39,7 @@ interface QuestionResult {
     weaknesses: string[];
     improvement: string;
   } | null;
+  theory_answer?: string | null;
 }
 
 interface ResultSummaryProps {
@@ -310,7 +311,14 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                 </div>
               )}
 
-              {/* Theory: show AI feedback */}
+              {/* Theory: show student's answer + AI feedback */}
+              {theory && q.theory_answer && (
+                <div className="mt-5 p-3.5 md:p-4 rounded-xl bg-white/5 border border-white/10">
+                  <span className="font-bold text-gray-400 block mb-2 text-[10px] md:text-xs uppercase tracking-wider">Your Answer</span>
+                  <p className="text-xs md:text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{q.theory_answer}</p>
+                </div>
+              )}
+
               {theory && q.ai_feedback && (
                 <div className="mt-5 space-y-3">
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">

@@ -39,6 +39,8 @@ export interface QuestionResult {
     weaknesses: string[];
     improvement: string;
   } | null;
+  /** Theory-only: student's written answer text */
+  theory_answer?: string | null;
 }
 
 /** Full quiz submission result */
@@ -235,6 +237,7 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
       duration_seconds: ans.duration_seconds,
       explanation: question.explanation,
       ai_feedback: aiFeedback,
+      theory_answer: isTheory ? (ans.theory_answer || Object.values(ans.theory_sub_answers || {}).filter(Boolean).join('\n\n') || null) : null,
     });
 
     attemptAnswersPayload.push({
