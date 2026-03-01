@@ -146,18 +146,20 @@ export async function startCbtAttempt({
 export async function getCbtMetadata(courseId: string) {
   const supabase = await createClient();
   
-  // Get unique topics and question counts per topic
+  // Get unique topics, question counts, and detect theory questions
   const { data: topicsData, error } = await supabase
     .from("questions")
-    .select("topic")
+    .select("topic, question_type")
     .eq("course_id", courseId);
     
-  if (error) return { topics: [], totalQuestions: 0 };
+  if (error) return { topics: [], totalQuestions: 0, hasTheoryQuestions: false };
   
   const topicCounts: Record<string, number> = {};
+  let hasTheoryQuestions = false;
   topicsData.forEach(q => {
     const t = q.topic || "General";
     topicCounts[t] = (topicCounts[t] || 0) + 1;
+    if (q.question_type === "theory") hasTheoryQuestions = true;
   });
   
   const topics = Object.entries(topicCounts).map(([name, count]) => ({
@@ -167,7 +169,8 @@ export async function getCbtMetadata(courseId: string) {
   
   return {
     topics,
-    totalQuestions: topicsData.length
+    totalQuestions: topicsData.length,
+    hasTheoryQuestions
   };
 }
 

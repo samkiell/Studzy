@@ -31,7 +31,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const [isWeakAreasOnly, setIsWeakAreasOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
-  const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number } | null>(null);
+  const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number; hasTheoryQuestions: boolean } | null>(null);
   const [timeLimit, setTimeLimit] = useState(30);
   const [error, setError] = useState<string | null>(null);
 
@@ -166,15 +166,20 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                     <button
-                      onClick={() => setMode("study")}
+                      onClick={() => !metadata?.hasTheoryQuestions && setMode("study")}
+                      disabled={metadata?.hasTheoryQuestions}
                       className={`p-3 md:p-4 rounded-xl border transition-all text-left ${
-                        mode === "study" 
+                        metadata?.hasTheoryQuestions
+                        ? "bg-white/5 border-white/5 opacity-40 cursor-not-allowed"
+                        : mode === "study" 
                         ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50" 
                         : "bg-white/5 border-white/10 hover:border-white/20"
                       }`}
                     >
-                      <h3 className={`font-semibold text-sm md:text-base ${mode === "study" ? "text-indigo-400" : "text-white"}`}>Study Mode</h3>
-                      <p className="text-xs text-gray-400 mt-0.5 md:mt-1">Instant feedback & explanations</p>
+                      <h3 className={`font-semibold text-sm md:text-base ${mode === "study" && !metadata?.hasTheoryQuestions ? "text-indigo-400" : "text-white"}`}>Study Mode</h3>
+                      <p className="text-xs text-gray-400 mt-0.5 md:mt-1">
+                        {metadata?.hasTheoryQuestions ? "Not available for theory questions" : "Instant feedback & explanations"}
+                      </p>
                     </button>
                     <button
                       onClick={() => setMode("exam")}
