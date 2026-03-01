@@ -60,13 +60,14 @@ export interface ScoreQuizInput {
 // ─── AI GRADING ─────────────────────────────────────────────
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
 
 async function gradeTheoryAnswer(
   question: Question,
   studentAnswer: string
 ): Promise<{ score: number; max_marks: number; strengths: string[]; weaknesses: string[]; improvement: string }> {
-  if (!MISTRAL_API_KEY) {
-    console.error("[QuizScorer] MISTRAL_API_KEY not set, returning zero score");
+  if (!MISTRAL_API_KEY || !MISTRAL_AI_AGENT_ID) {
+    console.error("[QuizScorer] MISTRAL_API_KEY or MISTRAL_AI_AGENT_ID not set, returning zero score");
     return { score: 0, max_marks: question.marks ?? 10, strengths: [], weaknesses: ["AI grading unavailable."], improvement: "Please resubmit." };
   }
 
@@ -99,12 +100,10 @@ Return only valid JSON with this exact structure:
 IMPORTANT: score MUST be between 0 and ${marks}. Be strict. Return ONLY the JSON object.`;
 
   try {
-    const response = await client.chat.complete({
-      model: "mistral-small-latest",
+    const response = await client.agents.complete({
+      agentId: MISTRAL_AI_AGENT_ID,
       messages: [{ role: "user", content: prompt }],
-      responseFormat: { type: "json_object" },
       maxTokens: 512,
-      temperature: 0.1,
     });
 
     const rawContent = response.choices?.[0]?.message?.content;

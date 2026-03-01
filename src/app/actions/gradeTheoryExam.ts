@@ -11,6 +11,7 @@ import type {
 } from "@/types/theory";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
 const client = new Mistral({ apiKey: MISTRAL_API_KEY });
 
 /**
@@ -81,13 +82,16 @@ IMPORTANT:
 - Be strict and fair
 - Return ONLY the JSON object, nothing else`;
 
+  if (!MISTRAL_AI_AGENT_ID) {
+    console.error("[TheoryGrading] MISTRAL_AI_AGENT_ID not set");
+    return { score: 0, strengths: [], weaknesses: ["AI grading unavailable."], improvement: "Agent not configured." };
+  }
+
   try {
-    const response = await client.chat.complete({
-      model: "mistral-small-latest",
+    const response = await client.agents.complete({
+      agentId: MISTRAL_AI_AGENT_ID,
       messages: [{ role: "user", content: prompt }],
-      responseFormat: { type: "json_object" },
       maxTokens: 512,
-      temperature: 0.1,
     });
 
     const rawContent = response.choices?.[0]?.message?.content;
