@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { Question, Attempt, SubmitAnswer } from "@/types/cbt";
+import { Question, Attempt, SubmitAnswer, isTheoryQuestion } from "@/types/cbt";
 import { submitCbtAttempt } from "@/app/(dashboard)/cbt/actions";
 import { useRouter, useParams } from "next/navigation";
 
@@ -63,6 +63,8 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCreatingAiSession, setIsCreatingAiSession] = useState(false);
   const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
+  // Theory answer state: { questionId: { main: string, sub: { label: value } } }
+  const [theoryAnswers, setTheoryAnswers] = useState<Record<string, { main?: string; sub: Record<string, string> }>>({});
 
   const currentIndex = session?.currentIndex || 0;
   const answers = session?.answers || {};
@@ -140,6 +142,17 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     }
   };
 
+  // Theory answer handlers
+  const updateTheoryAnswer = (questionId: string, field: string, value: string, isSub = false) => {
+    setTheoryAnswers(prev => {
+      const existing = prev[questionId] || { sub: {} };
+      if (isSub) {
+        return { ...prev, [questionId]: { ...existing, sub: { ...existing.sub, [field]: value } } };
+      }
+      return { ...prev, [questionId]: { ...existing, main: value } };
+    });
+  };
+
   const nextQuestion = () => {
     if (currentIndex < orderedQuestions.length - 1) {
       setSessionCurrentIndex(currentIndex + 1);
@@ -208,9 +221,12 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     );
   }
 
-  const answeredCount = Object.keys(answers).length;
-  const currentAccuracy = answeredCount > 0 
-    ? Math.round((orderedQuestions.filter(q => answers[q.id] === q.correct_option).length / answeredCount) * 100) 
+  // Count MCQ answers + theory answers
+  const mcqAnsweredCount = Object.keys(answers).length;
+  const theoryAnsweredCount = Object.values(theoryAnswers).filter(a => a.main?.trim() || Object.values(a.sub).some(v => v?.trim())).length;
+  const answeredCount = mcqAnsweredCount + theoryAnsweredCount;
+  const currentAccuracy = mcqAnsweredCount > 0 
+    ? Math.round((orderedQuestions.filter(q => !isTheoryQuestion(q) && answers[q.id] === q.correct_option).length / mcqAnsweredCount) * 100) 
     : 0;
 
   if (!currentQuestion && !isSubmitted) {
@@ -324,50 +340,92 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:gap-4">
-                {Object.entries(currentQuestion.options).map(([key, value]) => {
-                  const isSelected = answers[currentQuestion.id] === key;
-                  const isCorrect = key === currentQuestion.correct_option;
-                  const hasAnswered = !!answers[currentQuestion.id];
-                  
-                  let buttonStyles = "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.07]";
-                  if (isSelected) {
-                    buttonStyles = "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50";
-                  }
-                  
-                  if (initialAttempt.mode === 'study' && hasAnswered) {
-                    if (isCorrect) {
-                      buttonStyles = "bg-green-500/10 border-green-500/30 ring-1 ring-green-500/20";
-                    } else if (isSelected) {
-                      buttonStyles = "bg-red-500/10 border-red-500/30 ring-1 ring-red-500/20";
+              {/* Dynamic renderer: MCQ options OR Theory textareas */}
+              {isTheoryQuestion(currentQuestion) ? (
+                /* ── THEORY QUESTION RENDERER ─────────────────────── */
+                <div className="space-y-5">
+                  {/* Sub-questions */}
+                  {currentQuestion.sub_questions && currentQuestion.sub_questions.length > 0 ? (
+                    currentQuestion.sub_questions.map((sq) => (
+                      <div key={sq.label} className="bg-[#0E0E10] border border-white/5 rounded-xl p-4">
+                        <label className="block text-sm font-medium text-gray-200 mb-2">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-bold mr-2">
+                            {sq.label}
+                          </span>
+                          {sq.content}
+                        </label>
+                        <textarea
+                          value={theoryAnswers[currentQuestion.id]?.sub[sq.label] || ""}
+                          onChange={(e) => updateTheoryAnswer(currentQuestion.id, sq.label, e.target.value, true)}
+                          placeholder={`Answer for part ${sq.label}...`}
+                          rows={4}
+                          disabled={isSubmitted}
+                          className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all text-white placeholder-gray-600 resize-y min-h-[80px] text-sm"
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    /* Single main answer textarea */
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Your Answer</label>
+                      <textarea
+                        value={theoryAnswers[currentQuestion.id]?.main || ""}
+                        onChange={(e) => updateTheoryAnswer(currentQuestion.id, "main", e.target.value)}
+                        placeholder="Write your answer here..."
+                        rows={8}
+                        disabled={isSubmitted}
+                        className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all text-white placeholder-gray-600 resize-y min-h-[120px]"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ── MCQ RENDERER (existing) ──────────────────────── */
+                <div className="grid grid-cols-1 gap-3 md:gap-4">
+                  {Object.entries(currentQuestion.options).map(([key, value]) => {
+                    const isSelected = answers[currentQuestion.id] === key;
+                    const isCorrect = key === currentQuestion.correct_option;
+                    const hasAnswered = !!answers[currentQuestion.id];
+                    
+                    let buttonStyles = "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.07]";
+                    if (isSelected) {
+                      buttonStyles = "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50";
                     }
-                  }
+                    
+                    if (initialAttempt.mode === 'study' && hasAnswered) {
+                      if (isCorrect) {
+                        buttonStyles = "bg-green-500/10 border-green-500/30 ring-1 ring-green-500/20";
+                      } else if (isSelected) {
+                        buttonStyles = "bg-red-500/10 border-red-500/30 ring-1 ring-red-500/20";
+                      }
+                    }
 
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => handleSelectOption(key)}
-                      disabled={(initialAttempt.mode === 'study' && hasAnswered) || isSubmitted}
-                      className={`group p-4 md:p-5 rounded-2xl border transition-all text-left flex items-start gap-4 ${buttonStyles}`}
-                    >
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform group-active:scale-95 ${
-                        isSelected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-gray-500 border border-white/5'
-                      }`}>
-                        {key.toUpperCase()}
-                      </div>
-                      <div className="flex-1 py-1">
-                        <span className="text-gray-200 text-sm md:text-base leading-relaxed">{value}</span>
-                        {initialAttempt.mode === 'study' && hasAnswered && isCorrect && (
-                          <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-green-400 uppercase tracking-wider">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Correct Answer
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => handleSelectOption(key)}
+                        disabled={(initialAttempt.mode === 'study' && hasAnswered) || isSubmitted}
+                        className={`group p-4 md:p-5 rounded-2xl border transition-all text-left flex items-start gap-4 ${buttonStyles}`}
+                      >
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform group-active:scale-95 ${
+                          isSelected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-gray-500 border border-white/5'
+                        }`}>
+                          {key.toUpperCase()}
+                        </div>
+                        <div className="flex-1 py-1">
+                          <span className="text-gray-200 text-sm md:text-base leading-relaxed">{value}</span>
+                          {initialAttempt.mode === 'study' && hasAnswered && isCorrect && (
+                            <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-green-400 uppercase tracking-wider">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Correct Answer
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Study Mode Feedback */}
               {initialAttempt.mode === 'study' && answers[currentQuestion.id] && (
