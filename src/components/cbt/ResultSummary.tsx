@@ -325,7 +325,15 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                     <div className={`text-lg font-bold ${q.ai_feedback.score >= q.ai_feedback.max_marks * 0.7 ? 'text-green-400' : q.ai_feedback.score >= q.ai_feedback.max_marks * 0.4 ? 'text-amber-400' : 'text-red-400'}`}>
                       {q.ai_feedback.score}/{q.ai_feedback.max_marks}
                     </div>
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">AI Score</span>
+                    {
+                      q.ai_feedback.score >= q.ai_feedback.max_marks * 0.7 ? (
+                        <span className="text-xs text-green-500 uppercase tracking-wider">Shannaa, jaye lo</span>
+                      ) : q.ai_feedback.score >= q.ai_feedback.max_marks * 0.4 ? (
+                        <span className="text-xs text-amber-500 uppercase tracking-wider">you sha read small</span>
+                      ) : (
+                        <span className="text-xs text-red-500 uppercase tracking-wider">Omo, you no try oo, go back to those slides</span>
+                      )
+                    }
                   </div>
 
                   {q.ai_feedback.strengths.length > 0 && (
