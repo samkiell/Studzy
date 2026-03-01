@@ -21,10 +21,10 @@ Options:
 ${optionsText}
 
 Student's Selected Answer:
-"${selectedOption.toUpperCase()}"
+"${selectedOption?.toUpperCase() || 'N/A'}"
 
 Correct Answer:
-"${question.correct_option.toUpperCase()}"
+"${question.correct_option?.toUpperCase() || 'N/A'}"
  Explain clearly WHY the correct answer is correct.
  Explain WHY the other options are incorrect.
  Keep the tone encouraging and brief.`;
