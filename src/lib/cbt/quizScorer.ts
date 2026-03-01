@@ -109,6 +109,9 @@ IMPORTANT: score MUST be between 0 and ${marks}. Be strict. Return ONLY the JSON
     const rawContent = response.choices?.[0]?.message?.content;
     let content = typeof rawContent === "string" ? rawContent : Array.isArray(rawContent) ? rawContent.map((p: any) => typeof p === "string" ? p : p.text || "").join("") : "";
 
+    // Strip markdown code fences if the agent wraps the JSON in ```json ... ```
+    content = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+
     const parsed = JSON.parse(content);
     return {
       score: Math.max(0, Math.min(parsed.score ?? 0, marks)),
