@@ -43,7 +43,7 @@ export function AdminQuestionTable({
   const filteredQuestions = useMemo(() => {
     return questions.filter((q) => {
       const matchesSearch = q.question_text.toLowerCase().includes(search.toLowerCase()) || 
-                             q.correct_option.toLowerCase().includes(search.toLowerCase());
+                             (q.correct_option?.toLowerCase().includes(search.toLowerCase()) ?? false);
       const matchesCourse = filterCourse === "all" || q.course_id === filterCourse;
       return matchesSearch && matchesCourse;
     });
