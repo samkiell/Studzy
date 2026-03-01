@@ -257,12 +257,15 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
     throw new Error("Failed to save answers");
   }
 
+  // Normalize score to 100 before saving
+  const normalizedScore = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
+
   // Update attempt record
   const completedAt = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("attempts")
     .update({
-      score: totalScore,
+      score: normalizedScore,
       duration_seconds: durationSeconds,
       completed_at: completedAt,
     })
