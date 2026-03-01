@@ -47,6 +47,10 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
     try {
       const data = await getCbtMetadata(id);
       setMetadata(data);
+      // Auto-force exam mode for theory questions
+      if (data.hasTheoryQuestions) {
+        setMode("exam");
+      }
     } catch (err) {
       console.error("Failed to fetch metadata:", err);
     } finally {

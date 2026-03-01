@@ -190,7 +190,7 @@ export async function submitCbtAttempt({
   durationSeconds: number;
   theoryAnswers?: Record<string, { main?: string; sub: Record<string, string> }>;
 }) {
-  const { scoreQuiz, QuizSubmittedAnswer } = await import("@/lib/cbt/quizScorer");
+  const { scoreQuiz } = await import("@/lib/cbt/quizScorer");
 
   // Merge MCQ answers and theory answers into the unified format
   const submittedAnswers: any[] = [];
