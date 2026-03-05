@@ -32,6 +32,7 @@ interface QuestionResult {
   duration_seconds: number;
   explanation: string | null;
   topic: string | null;
+  difficulty?: string | null;
   ai_feedback?: {
     score: number;
     max_marks: number;
@@ -73,7 +74,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
         id: qId,
         course_id: "", // Not strictly needed for prompt but required by type
         question_id: 0,
-        difficulty: 'medium' as any,
+        difficulty: (question.difficulty || 'medium') as any,
         created_at: new Date().toISOString()
       } as Question;
 
@@ -259,6 +260,17 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                       <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded">
                         {theory ? "Theory" : "MCQ"} • {q.topic || 'General'}
                       </span>
+                      {q.difficulty && (
+                        <span className={`text-[9px] md:text-xs font-mono uppercase tracking-widest px-1.5 py-0.5 rounded border ${
+                          q.difficulty === 'easy'
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                            : q.difficulty === 'hard'
+                            ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                        }`}>
+                          {q.difficulty}
+                        </span>
+                      )}
                       <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded">
                         <Timer className="w-2.5 h-2.5" /> {q.duration_seconds}s
                       </span>
