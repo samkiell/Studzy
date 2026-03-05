@@ -63,8 +63,12 @@ export function validateCBTQuestion(
     question_id = index + 1;
   }
 
-  // Set default difficulty
-  const difficulty: Difficulty = "medium";
+  // Parse difficulty from JSON, default to "medium" if not provided or invalid
+  const validDifficulties: Difficulty[] = ["easy", "medium", "hard"];
+  const rawDifficulty = (question.difficulty || "medium").toLowerCase();
+  const difficulty: Difficulty = validDifficulties.includes(rawDifficulty as Difficulty)
+    ? (rawDifficulty as Difficulty)
+    : "medium";
 
   // Required field checks (shared)
   if (!course_code) throw new Error("Missing 'course_code'");
