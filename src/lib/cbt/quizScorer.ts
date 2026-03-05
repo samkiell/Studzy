@@ -25,6 +25,7 @@ export interface QuestionResult {
   question_id: string;
   question_text: string;
   topic: string | null;
+  difficulty?: string | null;
   options: Record<string, string>;
   correct_option: string | null;
   selected_option: string | null;
@@ -230,6 +231,7 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
       question_id: question.id,
       question_text: question.question_text,
       topic: question.topic,
+      difficulty: question.difficulty || null,
       options: question.options || {},
       correct_option: question.correct_option,
       selected_option: ans.selected_option,
@@ -300,7 +302,7 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
 
   const { data: questions } = await supabase
     .from("questions")
-    .select("id, question_text, options, correct_option, topic, explanation")
+    .select("id, question_text, options, correct_option, topic, difficulty, explanation")
     .in("id", (existingAnswers || []).map((a: any) => a.question_id));
 
   const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
@@ -314,6 +316,7 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
       question_id: ans.question_id,
       question_text: q?.question_text || "",
       topic: q?.topic || null,
+      difficulty: q?.difficulty || null,
       options: q?.options || {},
       correct_option: q?.correct_option || null,
       selected_option: ans.selected_option,
