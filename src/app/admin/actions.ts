@@ -506,17 +506,7 @@ export async function deleteQuestion(questionId: string | number): Promise<Uploa
     const { error } = await supabase
       .from("questions")
       .delete()
-      .eq("question_id", questionId); // Assuming question_id is the unique identifier, wait, looking at schema, "id" is usually the UUID. 
-      // Let me double check the schema or types. 
-      // The types/cbt.ts says "id: string" for Question.
-      // But uploadCBTQuestions uses "question_id" (number) and "course_code" as composite key for upsert. 
-      // If I delete by ID (uuid), that's safer.
-      // Let's check if the table has a UUID 'id' column. 
-      // The Type definition has 'id'.
-      // Wait, uploadCBTQuestions DOES NOT insert 'id', it relies on default generation. 
-      // So 'id' should be there. 
-      // However, the prompt for delete might pass the UUID.
-      // I'll assume UUID 'id' for now. If not, I'll delete by ID.
+      .eq("id", questionId);
 
     if (error) {
       return { success: false, message: `Failed to delete question: ${error.message}` };
