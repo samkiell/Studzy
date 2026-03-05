@@ -318,13 +318,24 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       Question {currentIndex + 1} of {orderedQuestions.length}
                     </span>
                     <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest leading-none">
                       {currentQuestion.topic || "General"}
                     </span>
+                    {currentQuestion.difficulty && (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                        currentQuestion.difficulty === 'easy'
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                          : currentQuestion.difficulty === 'hard'
+                          ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                          : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                      }`}>
+                        {currentQuestion.difficulty}
+                      </span>
+                    )}
                   </div>
                   
                   {initialAttempt.mode === 'exam' && (
