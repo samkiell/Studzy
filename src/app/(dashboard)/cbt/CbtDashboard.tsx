@@ -10,7 +10,8 @@ import {
   ShieldCheck, 
   ChevronRight,
   Info,
-  BrainCircuit
+  BrainCircuit,
+  Gauge
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -31,8 +32,9 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const [isWeakAreasOnly, setIsWeakAreasOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
-  const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number; hasTheoryQuestions: boolean } | null>(null);
+  const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number; hasTheoryQuestions: boolean; difficulties: { name: string; count: number }[] } | null>(null);
   const [timeLimit, setTimeLimit] = useState(30);
+  const [difficulty, setDifficulty] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
 
   // Fetch metadata when course changes
@@ -77,6 +79,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
         topic: topic === "all" ? undefined : topic,
         timeLimitMinutes: mode === "exam" ? timeLimit : 30,
         isWeakAreasOnly,
+        difficulty: difficulty === "all" ? undefined : difficulty,
       });
       
       router.push(`/cbt/${attempt.id}`);
@@ -161,6 +164,50 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                     </select>
                   </div>
                 </div>
+
+                {/* Difficulty Selector */}
+                {metadata && metadata.difficulties.length > 0 && (
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                      <Gauge className="w-4 h-4 text-indigo-400" />
+                      Difficulty Level
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setDifficulty("all")}
+                        className={`px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                          difficulty === "all"
+                            ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50 text-indigo-400"
+                            : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:text-white"
+                        }`}
+                      >
+                        All ({metadata.totalQuestions})
+                      </button>
+                      {metadata.difficulties.map((d) => {
+                        const colorMap: Record<string, { active: string; text: string }> = {
+                          easy: { active: "bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/50", text: "text-emerald-400" },
+                          medium: { active: "bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/50", text: "text-amber-400" },
+                          hard: { active: "bg-red-500/10 border-red-500/50 ring-1 ring-red-500/50", text: "text-red-400" },
+                        };
+                        const colors = colorMap[d.name] || colorMap.medium;
+                        const isActive = difficulty === d.name;
+                        return (
+                          <button
+                            key={d.name}
+                            onClick={() => setDifficulty(d.name)}
+                            className={`px-4 py-2 rounded-xl border text-sm font-semibold transition-all capitalize ${
+                              isActive
+                                ? `${colors.active} ${colors.text}`
+                                : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:text-white"
+                            }`}
+                          >
+                            {d.name} ({d.count})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Mode Selector */}
                 <div>

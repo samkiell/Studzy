@@ -19,6 +19,7 @@ export async function startCbtAttempt({
   topic,
   timeLimitMinutes = 30,
   isWeakAreasOnly = false,
+  difficulty,
 }: {
   courseId: string;
   mode: CbtMode;
@@ -26,6 +27,7 @@ export async function startCbtAttempt({
   topic?: string;
   timeLimitMinutes?: number;
   isWeakAreasOnly?: boolean;
+  difficulty?: string;
 }) {
   const supabase = await createClient();
 
@@ -90,6 +92,11 @@ export async function startCbtAttempt({
     }
   }
 
+  // Filter by difficulty if specified
+  if (difficulty && difficulty !== "all") {
+    query = query.eq("difficulty", difficulty);
+  }
+
   const { data: questionIds, error: questError } = await query;
 
   if (questError) {
@@ -146,23 +153,31 @@ export async function startCbtAttempt({
 export async function getCbtMetadata(courseId: string) {
   const supabase = await createClient();
   
-  // Get unique topics, question counts, and detect theory questions
+  // Get unique topics, question counts, difficulty distribution, and detect theory questions
   const { data: topicsData, error } = await supabase
     .from("questions")
-    .select("topic, question_type")
+    .select("topic, question_type, difficulty")
     .eq("course_id", courseId);
     
-  if (error) return { topics: [], totalQuestions: 0, hasTheoryQuestions: false };
+  if (error) return { topics: [], totalQuestions: 0, hasTheoryQuestions: false, difficulties: [] };
   
   const topicCounts: Record<string, number> = {};
+  const difficultyCounts: Record<string, number> = {};
   let hasTheoryQuestions = false;
   topicsData.forEach(q => {
     const t = q.topic || "General";
     topicCounts[t] = (topicCounts[t] || 0) + 1;
     if (q.question_type === "theory") hasTheoryQuestions = true;
+    const d = q.difficulty || "medium";
+    difficultyCounts[d] = (difficultyCounts[d] || 0) + 1;
   });
   
   const topics = Object.entries(topicCounts).map(([name, count]) => ({
+    name,
+    count
+  }));
+
+  const difficulties = Object.entries(difficultyCounts).map(([name, count]) => ({
     name,
     count
   }));
@@ -170,7 +185,8 @@ export async function getCbtMetadata(courseId: string) {
   return {
     topics,
     totalQuestions: topicsData.length,
-    hasTheoryQuestions
+    hasTheoryQuestions,
+    difficulties
   };
 }
 
