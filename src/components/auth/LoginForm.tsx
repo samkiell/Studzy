@@ -40,7 +40,11 @@ export function LoginForm() {
       } else {
         // Successful login will redirect from server
       }
-    } catch (err) {
+    } catch (err: any) {
+      // Next.js redirect() throws a special error — let it propagate
+      if (err?.digest?.startsWith("NEXT_REDIRECT")) {
+        throw err;
+      }
       console.error("Login catch error:", err);
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
