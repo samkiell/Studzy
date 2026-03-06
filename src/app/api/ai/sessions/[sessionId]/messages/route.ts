@@ -433,37 +433,38 @@ CRITICAL:
 
   const finalMessages = validateMessages(mistralMessages);
 
-  // 🖼️ Vision requests: Use direct chat API with pixtral model (Agents API doesn't support image inputs)
+  // System prompt to replicate the agent's behavior
+  const studzySystemPrompt = {
+    role: "system",
+    content: `You are Studzy AI, a helpful and knowledgeable study assistant for Nigerian university students.
+You help with exam preparation, coursework, lecture notes, and general academic questions.
+Guidelines:
+1. Explain concepts clearly and concisely, using examples when helpful.
+2. If it's an exam question, provide a well-structured answer.
+3. Format your response with markdown for readability (headers, lists, bold, code blocks).
+4. Be encouraging and supportive in your tone.
+5. When you don't know something, say so honestly.
+6. Keep responses focused and relevant to the student's question.`
+  };
+
+  // Prepend system prompt if not already present
+  if (finalMessages.length === 0 || finalMessages[0].role !== "system") {
+    finalMessages.unshift(studzySystemPrompt);
+  }
+
+  // 🖼️ Vision requests: Use pixtral model for image understanding
   if (hasImageRequest) {
     console.log("[AI] 🖼️ Image detected — using pixtral-large-latest for vision");
-    
-    // Inject a system prompt to replicate the agent's behavior
-    const visionSystemPrompt = {
-      role: "system",
-      content: `You are Studzy AI, a helpful and knowledgeable study assistant for Nigerian university students. 
-You can analyze images such as textbook pages, lecture slides, handwritten notes, diagrams, and exam questions.
-When analyzing images:
-1. Carefully read and transcribe any text visible in the image.
-2. Explain concepts shown in the image clearly and concisely.
-3. If it's an exam question, provide a well-structured answer.
-4. Format your response with markdown for readability.
-5. Be encouraging and supportive in your tone.`
-    };
-
-    // Prepend the system prompt if not already present
-    if (finalMessages.length === 0 || finalMessages[0].role !== "system") {
-      finalMessages.unshift(visionSystemPrompt);
-    }
-
     return client.chat.stream({
       model: "pixtral-large-latest",
       messages: finalMessages,
     });
   }
 
-  // ✅ Text-only: Use the Agent API (handles search/tools automatically)
-  return client.agents.stream({
-    agentId: agentId,
+  // ✅ Text-only: Use mistral-large for high-quality responses
+  console.log("[AI] 💬 Text-only — using mistral-large-latest");
+  return client.chat.stream({
+    model: "mistral-large-latest",
     messages: finalMessages,
   });
 }
