@@ -1,15 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { Mistral } from "@mistralai/mistralai";
-import { embedText } from "@/lib/rag/embeddings";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { TOP_K, SIMILARITY_THRESHOLD } from "@/lib/rag/config";
+import { GoogleGenerativeAI, Part } from "@google/generative-ai";
 
-// Initialize client lazily to pick up env updates
-function getMistralClient() {
-  const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) throw new Error("Mistral API Key not configured");
-  return new Mistral({ apiKey });
+function getGeminiAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("Gemini API Key not configured");
+  return new GoogleGenerativeAI(apiKey);
 }
 
 /**
@@ -173,86 +167,26 @@ export async function POST(
         .eq("id", sessionId);
     }
 
-    // 🚀 Call Mistral AI with streaming
-    const mistralClient = getMistralClient();
-    const stream = await callMistralAIStream(
-      mistralClient,
-      allMessages || [], 
-      mode, 
-      enable_search || mode === "search", 
-      !!(images && images.length > 0), 
-      content,
-      session.course_code,
-      session.level
-    );
+          // 🚀 Call Gemini AI with streaming
+          const genAI = getGeminiAI();
+          const response = await callGeminiAIStream(
+            genAI,
+            allMessages || [], 
+            mode, 
+            enable_search || mode === "search", 
+            !!(images && images.length > 0), 
+            content,
+            session.course_code,
+            session.level
+          );
 
-    const encoder = new TextEncoder();
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        let fullContent = "";
-        try {
-          let hasEmittedContent = false;
-          let lastChar = '';
-          let repeatCount = 0;
-
-          // 🌐 Connection keep-alive: Send an invisible pulse to prevent timeout during search
-          if (enable_search || mode === "search") {
-             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-               choices: [{ delta: { content: "" } }] 
-             })}\n\n`));
-          }
-
-          for await (const chunk of stream) {
-            const data = (chunk as any).data || chunk;
-            const choice = data.choices?.[0];
-            
-            let content = "";
-            const rawContent = choice?.delta?.content;
-            
-            // 1. Robust Content Extraction
-            if (typeof rawContent === "string") {
-              content = rawContent;
-            } else if (Array.isArray(rawContent)) {
-              content = rawContent
-                .map(part => (typeof part === 'string' ? part : (part as any).text || ""))
-                .join("");
-            } else if (rawContent && typeof rawContent === "object") {
-              content = (rawContent as any).text || "";
-            }
+          for await (const chunk of response.stream) {
+            const content = chunk.text();
             
             if (content) {
-              // 2. Surgical Filtering for Technical Debris
-              // We only skip if the chunk is PURELY technical noise (raw logs).
-              const trimmed = content.trim();
-              const isPureNoise = /^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i.test(trimmed);
-              if (isPureNoise && trimmed.length < 50) {
-                console.log(`[API Session] 🧹 Filtered internal noise: "${content.substring(0, 50)}"`);
-                continue; 
-              }
-
-              // 3. Repetitive Character Guard
-              if (content === lastChar && content.length === 1 && !/[a-zA-Z0-9]/.test(content)) {
-                repeatCount++;
-                if (repeatCount > 10) continue; 
-              } else {
-                lastChar = content.length === 1 ? content : '';
-                repeatCount = 0;
-              }
-
               fullContent += content;
-              hasEmittedContent = true;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({
                 choices: [{ delta: { content } }]
-              })}\n\n`));
-            }
-
-            // Handle tool calls privately
-            const toolCalls = choice?.delta?.tool_calls || choice?.delta?.toolCalls || 
-                            choice?.message?.tool_calls || choice?.message?.toolCalls;
-            if (toolCalls && toolCalls.length > 0) {
-              // Always pulse on tool calls to keep connection alive
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                choices: [{ delta: { content: "" } }]
               })}\n\n`));
             }
           }
@@ -288,15 +222,11 @@ export async function POST(
   } catch (error: any) {
     console.error("Messages POST error:", error);
     
-    // Log full diagnostic info for Mistral SDK Errors
-    console.error("[API Session] ❌ Diagnostic failure details:", {
-      status: error.status || error.statusCode,
-      message: error.message,
-      body: error.body
-    });
+    // Log full diagnostic info for Gemini SDK Errors
+    console.error("[API Session] ❌ Diagnostic failure details:", error);
 
-    // Handle Mistral SDK Errors (Rate limits, Invalid keys, etc.)
-    if (error.statusCode === 429) {
+    // Handle Gemini Errors
+    if (error.message?.includes("429")) {
       return NextResponse.json(
         { error: "I'm cooking beans, I can't answer now." },
         { status: 429 }

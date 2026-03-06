@@ -10,9 +10,10 @@ import type {
   AIGradingResponse,
 } from "@/types/theory";
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
-const client = new Mistral({ apiKey: MISTRAL_API_KEY });
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 /**
  * Builds the combined student answer string from main + sub answers.
@@ -82,31 +83,22 @@ IMPORTANT:
 - Be strict and fair
 - Return ONLY the JSON object, nothing else`;
 
-  if (!MISTRAL_AI_AGENT_ID) {
-    console.error("[TheoryGrading] MISTRAL_AI_AGENT_ID not set");
-    return { score: 0, strengths: [], weaknesses: ["AI grading unavailable."], improvement: "Agent not configured." };
+  if (!genAI) {
+    console.error("[TheoryGrading] GEMINI_API_KEY not set");
+    return { score: 0, strengths: [], weaknesses: ["AI grading unavailable."], improvement: "API not configured." };
   }
 
   try {
-    const response = await client.agents.complete({
-      agentId: MISTRAL_AI_AGENT_ID,
-      messages: [{ role: "user", content: prompt }],
-      maxTokens: 512,
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
     });
 
-    const rawContent = response.choices?.[0]?.message?.content;
-    let content = "";
+    const response = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
 
-    if (typeof rawContent === "string") {
-      content = rawContent;
-    } else if (Array.isArray(rawContent)) {
-      content = rawContent
-        .map((part) => (typeof part === "string" ? part : (part as any).text || ""))
-        .join("");
-    }
-
-    // Strip markdown code fences if the agent wraps the JSON in ```json ... ```
-    content = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    let content = response.response.text();
 
     const parsed: AIGradingResponse = JSON.parse(content);
 

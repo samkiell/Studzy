@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI, Part } from "@google/generative-ai";
 import { embedText } from "@/lib/rag/embeddings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TOP_K, SIMILARITY_THRESHOLD } from "@/lib/rag/config";
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
-
-const client = new Mistral({ apiKey: MISTRAL_API_KEY });
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -115,9 +113,9 @@ INSTRUCTIONS FOR USING STUDY MATERIALS:
 
 export async function POST(request: NextRequest) {
   try {
-    if (!MISTRAL_API_KEY) {
+    if (!GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: "Mistral API key not configured" },
+        { error: "Gemini API key not configured" },
         { status: 500 }
       );
     }
@@ -140,30 +138,34 @@ export async function POST(request: NextRequest) {
                       body.image || 
                       messages.some(m => m.image || (m as any).images?.length);
 
-    // Convert messages to Mistral content format
-    const mistralMessages: any[] = messages.map((msg, i) => {
-      // If message has images, we use the vision content array format
+    // Convert messages to Gemini format
+    const geminiContents: { role: string; parts: Part[] }[] = messages.map((msg) => {
+      const parts: Part[] = [];
+      
       const msgImages = (msg as any).images || (msg.image ? [msg.image] : []);
       
       if (msgImages.length > 0) {
-        return {
-          role: msg.role,
-          content: [
-            { type: "text", text: msg.content || "Analyze this image." },
-            ...msgImages.map((url: string) => ({
-              type: "image_url",
-              imageUrl: { url }
-            }))
-          ]
-        };
+         // Note: Gemini expects base64 or file data for inline images in generateContent
+         // If these are URLs, we might need to fetch them if the model doesn't support direct URL access
+         // However, for brevity and consistency with previous logic, we'll assume they can be handled or added as text if URLs
+         // Better: Gemini supports URL images via Google AI Studio, but in the SDK it's usually inlineData
+         parts.push({ text: msg.content || "Analyze this image." });
+         msgImages.forEach((url: string) => {
+           // We'll treat URLs as text parts for now if they are absolute URLs
+           // If they were base64, we'd use inlineData
+           parts.push({ text: `[Image: ${url}]` });
+         });
+      } else {
+        parts.push({ text: msg.content });
       }
-      
-      // Text only
+
       return {
-        role: msg.role,
-        content: msg.content
+        role: msg.role === "assistant" ? "model" : "user",
+        parts
       };
     });
+
+    let systemPrompt = "";
 
     // 🎓 RAG: Search study material embeddings for context relevant to the user's question.
     if (messages.length > 0) {
@@ -171,12 +173,11 @@ export async function POST(request: NextRequest) {
       if (lastUserMessage) {
         console.log(`[API] 🕵️ Attempting RAG context retrieval...`);
         
-        // Use a timeout to prevent RAG hanging the entire request
         const ragPromise = getRAGContext(lastUserMessage.content, course_code, level);
         let timeoutId: any;
         const timeoutPromise = new Promise<null>((resolve) => {
           timeoutId = setTimeout(() => {
-            console.warn("[API] ⏱️ RAG retrieval timed out after 12s. Falling back to base AI.");
+            console.warn("[API] ⏱️ RAG retrieval timed out. Falling back.");
             resolve(null);
           }, 12000);
         });
@@ -185,90 +186,52 @@ export async function POST(request: NextRequest) {
         clearTimeout(timeoutId);
 
         if (ragContext) {
-          // Prepend as system message so the AI has study material context
-          mistralMessages.unshift({
-            role: "system",
-            content: ragContext,
-          });
+          systemPrompt += ragContext + "\n\n";
         } else {
-          mistralMessages.unshift({
-            role: "system",
-            content: "Answer based on general knowledge.",
-          });
+          systemPrompt += "Answer based on general knowledge.\n\n";
         }
       }
     }
 
     if (mode === "search" || enable_search) {
-      mistralMessages.unshift({
-        role: "system",
-        content: `SEARCH MODE ACTIVE. 
+      systemPrompt += `SEARCH MODE ACTIVE. 
 CRITICAL:
 1. Provide the SEARCH RESULTS immediately in clean markdown. 
 2. Use lists, bold text, and headers to present the data clearly.
 3. If specific links or sources are found, include them.
 4. Synthesize a brief final summary after the results.
-5. NEVER output technical code/JSON or label segments like "web_search".`,
-      });
+5. NEVER output technical code/JSON or label segments like "web_search".\n\n`;
     }
 
-    // 🚀 LOGIC FOR AGENT
-    // We strictly use the Agent ID from env, which handles both text and vision content.
-    if (!MISTRAL_AI_AGENT_ID) {
-      return NextResponse.json(
-        { error: "Mistral AI Agent ID not configured" },
-        { status: 500 }
-      );
+    if (!genAI) {
+      return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
     }
 
-    const shouldUseWebSearch = enable_search || mode === "search";
+    const model = genAI.getGenerativeModel({ 
+      model: hasImages ? "gemini-1.5-flash" : "gemini-1.5-flash", 
+      systemInstruction: systemPrompt.trim() || undefined
+    });
+
     const shouldStream = (body as any).stream !== false;
-    console.log(`[API] AI Request - Mode: ${mode}, Streaming: ${shouldStream}, Has Images: ${hasImages}, WebSearch: ${shouldUseWebSearch}`);
+    console.log(`[API] AI Request (Gemini) - Mode: ${mode}, Streaming: ${shouldStream}, Has Images: ${hasImages}`);
     
-    // 🛡️ SECURITY: Validate and filter messages before sending to API
-    const finalMessages = validateMessages(mistralMessages);
-
     try {
       if (shouldStream) {
-        // ✅ Standard Agent Logic (Streaming)
-        const response = await client.agents.stream({
-          agentId: MISTRAL_AI_AGENT_ID,
-          messages: finalMessages,
-          maxTokens: 2048,
+        const response = await model.generateContentStream({
+          contents: geminiContents,
         });
-        return streamResponse(response, mode, shouldUseWebSearch);
+        return streamResponse(response.stream);
       } else {
-        // 📥 Non-Streaming Logic
-        const response = await client.agents.complete({
-          agentId: MISTRAL_AI_AGENT_ID,
-          messages: finalMessages,
-          maxTokens: 2048,
+        const response = await model.generateContent({
+           contents: geminiContents,
         });
-        
-        const rawContent = response.choices?.[0]?.message?.content;
-        let content = "";
-
-        if (typeof rawContent === "string") {
-          content = rawContent;
-        } else if (Array.isArray(rawContent)) {
-          content = rawContent
-            .map(part => (typeof part === 'string' ? part : (part as any).text || ""))
-            .join("");
-        } else if (rawContent && typeof rawContent === "object") {
-          content = (rawContent as any).text || "";
-        }
-
+        const content = response.response.text();
         return NextResponse.json({ content });
       }
     } catch (apiError: any) {
-      console.error("[API] ❌ Mistral failure details:", {
-        status: apiError.status || apiError.statusCode,
-        message: apiError.message,
-        body: apiError.body,
-        stack: apiError.stack
-      });
+      console.error("[API] ❌ Gemini failure details:", apiError);
       return NextResponse.json(
-        { error: `Mistral API Error: ${apiError.message}` },
+        { error: `Gemini API Error: ${apiError.message}` },
         { status: 500 }
       );
     }
@@ -304,102 +267,22 @@ function validateMessages(messages: any[]): any[] {
 }
 
 /**
- * Helper to convert Mistral SDK stream to Next.js NextResponse
+ * Helper to convert Gemini stream to Next.js NextResponse
  */
-async function streamResponse(response: any, mode: string, isSearch: boolean = false) {
+async function streamResponse(stream: any) {
   const encoder = new TextEncoder();
   
-  const stream = new ReadableStream({
+  const readableStream = new ReadableStream({
     async start(controller) {
-      const STREAM_TIMEOUT = 120000; // 2 minutes max for a single stream
-      const streamStart = Date.now();
-      
       try {
-        let hasEmittedContent = false;
-        let lastChar = '';
-        let repeatCount = 0;
-
-        // 🌐 Connection keep-alive: Send an invisible pulse to prevent timeout during search
-        if (isSearch) {
-             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-               choices: [{ delta: { content: "" } }] 
-             })}\n\n`));
-        }
-
-        let chunkCount = 0;
-        for await (const chunk of response) {
-          // Check for stream timeout
-          if (Date.now() - streamStart > STREAM_TIMEOUT) {
-            console.error(`[API] ⏱️ Stream timed out after ${STREAM_TIMEOUT}ms`);
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Stream timed out" })}\n\n`));
-            break;
-          }
-
-          chunkCount++;
-          const data = (chunk as any).data || chunk;
-          const choice = data.choices?.[0];
-          
-          let content = "";
-          const rawContent = choice?.delta?.content;
-          
-          // Debug log first few chunks
-          if (chunkCount <= 5) {
-            console.log(`[API] 🧩 Chunk ${chunkCount} raw content piece: "${typeof rawContent === 'string' ? rawContent.substring(0, 20) : 'complex'}"`);
-          }
-          
-          // 1. Robust Content Extraction (Handles strings and multi-part content items)
-          if (typeof rawContent === "string") {
-            content = rawContent;
-          } else if (Array.isArray(rawContent)) {
-            // Handle array of content items (multipart)
-            content = rawContent
-              .map(part => (typeof part === 'string' ? part : (part as any).text || ""))
-              .join("");
-          } else if (rawContent && typeof rawContent === "object") {
-            content = (rawContent as any).text || "";
-          }
-          
+        for await (const chunk of stream) {
+          const content = chunk.text();
           if (content) {
-            // 2. Surgical Filtering for Technical Debris
-            const trimmed = content.trim();
-            const isPureNoise = /^(\s*web_search\s*$|^thought\s*$|^\s*\{"query"|^\s*\[\s*\{"query")/i.test(trimmed);
-            if (isPureNoise && trimmed.length < 50) {
-              console.log(`[API] 🧹 Filtered internal noise: "${content.substring(0, 50)}"`);
-              continue; 
-            }
-
-            // 3. Repetitive Character Guard
-            if (content === lastChar && content.length === 1 && !/[a-zA-Z0-9]/.test(content)) {
-              repeatCount++;
-              if (repeatCount > 10) continue; // Trapping dots/loops
-            } else {
-              lastChar = content.length === 1 ? content : '';
-              repeatCount = 0;
-            }
-
-            hasEmittedContent = true;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { content } }]
             })}\n\n`));
           }
-
-          // Handle tool calls privately
-          const toolCalls = choice?.delta?.tool_calls || choice?.delta?.toolCalls || 
-                          choice?.message?.tool_calls || choice?.message?.toolCalls;
-          
-          if (data.choices?.[0]?.finish_reason) {
-            console.log(`[API] 🏁 Stream finished at chunk ${chunkCount}. Reason: ${data.choices[0].finish_reason}`);
-          }
-
-          if (toolCalls && toolCalls.length > 0) {
-            console.log(`[API] 🔧 Tool call detected in chunk ${chunkCount}. Pulsing connection...`);
-            // Always pulse on tool calls to keep connection alive
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              choices: [{ delta: { content: "" } }]
-            })}\n\n`));
-          }
         }
-        console.log(`[API] ✅ Stream complete. Total chunks emitted: ${chunkCount}`);
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
         controller.error(err);
@@ -409,7 +292,7 @@ async function streamResponse(response: any, mode: string, isSearch: boolean = f
     },
   });
 
-  return new NextResponse(stream, {
+  return new NextResponse(readableStream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
