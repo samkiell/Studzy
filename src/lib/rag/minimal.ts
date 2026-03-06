@@ -69,8 +69,6 @@ ${context}`;
     const model = genAI.getGenerativeModel({ 
       model: CHAT_MODEL,
       generationConfig: {
-        // @ts-ignore
-        thinking_level: "minimal"
       }
     });
     
