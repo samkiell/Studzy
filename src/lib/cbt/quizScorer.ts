@@ -283,8 +283,8 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
   }
 
   const result: QuizResult = {
-    score: normalizedScore,
-    totalQuestions: 100, // Always out of 100
+    score: totalScore,
+    totalQuestions: totalMaxScore,
     completedAt,
     topicStats,
     questionsWithAnswers,
@@ -303,7 +303,7 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
 
   const { data: questions } = await supabase
     .from("questions")
-    .select("id, question_text, options, correct_option, topic, difficulty, explanation")
+    .select("id, question_text, options, correct_option, topic, difficulty, explanation, marks")
     .in("id", (existingAnswers || []).map((a: any) => a.question_id));
 
   const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
@@ -329,9 +329,16 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
     };
   });
 
+  const totalMaxScore = (questions || []).reduce((acc: number, q: any) => acc + (q.marks || 1), 0);
+  const rawScore = (existingAnswers || []).reduce((acc: number, ans: any) => {
+    // For MCQ, is_correct = 1 pt. For Theory, we need the actual ai_feedback.score
+    if (ans.ai_feedback?.score !== undefined) return acc + ans.ai_feedback.score;
+    return acc + (ans.is_correct ? 1 : 0);
+  }, 0);
+
   return {
-    score: attempt.score,
-    totalQuestions: attempt.total_questions,
+    score: rawScore,
+    totalQuestions: totalMaxScore,
     completedAt: attempt.completed_at,
     topicStats,
     questionsWithAnswers,
