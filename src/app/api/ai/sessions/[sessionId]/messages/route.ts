@@ -250,41 +250,31 @@ async function callGeminiAIStream(
   courseCode?: string,
   level?: string
 ) {
-  const geminiContents: { role: string; parts: Part[] }[] = messages.reverse().filter((msg, index, self) => 
-    // Basic filter to ensure valid roles and map them
-    msg.role === "user" || msg.role === "assistant"
-  ).reverse().map((msg) => {
-    const parts: Part[] = [];
-    if (msg.image_url) {
-      parts.push({ text: msg.content || "Analyze this image." });
-      // In a real production app, we would fetch the image and send as base64
-      // For now, we'll just include the context as text
-      parts.push({ text: `[Context: Image provided at ${msg.image_url}]` });
-    } else {
-      parts.push({ text: msg.content });
-    }
-    return {
-      role: msg.role === "assistant" ? "model" : "user",
-      parts
-    };
-  });
+  // Optimize: filter once and map roles
+  const geminiContents = messages
+    .filter(msg => msg.role === "user" || msg.role === "assistant")
+    .map((msg) => {
+      const parts: Part[] = [];
+      if (msg.image_url) {
+        parts.push({ text: msg.content || "Analyze this image." });
+        parts.push({ text: `[Context: Image provided at ${msg.image_url}]` });
+      } else {
+        parts.push({ text: msg.content });
+      }
+      return {
+        role: msg.role === "assistant" ? "model" : "user",
+        parts
+      };
+    });
 
   let systemPrompt = `You are Studzy AI, a helpful and knowledgeable study assistant for Nigerian university students.
-You help with exam preparation, coursework, lecture notes, and general academic questions.
-Guidelines:
-1. Explain concepts clearly and concisely, using examples when helpful.
-2. If it's an exam question, provide a well-structured answer.
-3. Format your response with markdown for readability (headers, lists, bold, code blocks).
-4. Be encouraging and supportive in your tone.
-5. When you don't know something, say so honestly.
-6. Keep responses focused and relevant to the student's question.\n\n`;
+Explain concepts clearly, provide exam-style answers, and use markdown. Be supportive.\n\n`;
 
-  if (latestUserContent) {
-    const ragContext = await getRAGContext(latestUserContent, courseCode, level);
-    if (ragContext) {
-      systemPrompt += ragContext + "\n\n";
-    }
-  }
+  // SKIP RAG if disabled (as per current hardcoded logic in getRAGContext)
+  // if (latestUserContent) {
+  //   const ragContext = await getRAGContext(latestUserContent, courseCode, level);
+  //   if (ragContext) systemPrompt += ragContext + "\n\n";
+  // }
 
   if (mode === "search" || enableSearch) {
     systemPrompt += `SEARCH MODE ACTIVE. Provide findings clearly in markdown.\n\n`;
@@ -292,7 +282,11 @@ Guidelines:
 
   const model = client.getGenerativeModel({
     model: "gemini-3-flash-preview",
-    systemInstruction: systemPrompt.trim()
+    systemInstruction: systemPrompt.trim(),
+    generationConfig: {
+      // @ts-ignore - speed optimization for Gemini 3
+      thinking_level: "minimal"
+    }
   });
 
   return model.generateContentStream({
