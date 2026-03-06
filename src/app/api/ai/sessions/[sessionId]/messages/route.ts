@@ -287,7 +287,7 @@ Mission: Help DevCore'23 students (200L SWE) study smarter.
   }
 
   const model = client.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     systemInstruction: systemPrompt.trim(),
     generationConfig: {
     }
