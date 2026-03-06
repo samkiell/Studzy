@@ -1,5 +1,11 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI, Part } from "@google/generative-ai";
+import { embedText } from "@/lib/rag/embeddings";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { TOP_K, SIMILARITY_THRESHOLD } from "@/lib/rag/config";
 
+// Initialize Gemini
 function getGeminiAI() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Gemini API Key not configured");
@@ -8,7 +14,6 @@ function getGeminiAI() {
 
 /**
  * Search study material embeddings for context relevant to the user's question.
- * Returns a system prompt with the context, or null if no relevant chunks found.
  */
 async function getRAGContext(
   question: string,
@@ -82,11 +87,10 @@ function formatRAGPrompt(data: any[]): string {
 ${contextBlocks}
 
 INSTRUCTIONS FOR USING STUDY MATERIALS:
-1. START YOUR RESPONSE by acknowledging the materials found, but DO NOT show raw technical file paths (e.g., avoid "pdf/12345.pdf"). Instead, use descriptive terms if possible or just refer to them as "uploaded study materials".
+1. START YOUR RESPONSE by acknowledging the materials found, but DO NOT show raw technical file paths. Instead, use descriptive terms if possible or just refer to them as "uploaded study materials".
 2. Use the provided study materials to answer the student's question accurately.
-3. If the study materials don't cover the topic, answer from your general knowledge or search tools, but clarify what is and isn't from the uploaded materials.
-4. Format responses with markdown for readability.
-5. IMPORTANT: Do not output any technical tool-call JSON or internal markers like 'web_search' as text in your response.`;
+3. If the study materials don't cover the topic, answer from your general knowledge.
+4. Format responses with markdown for readability.`;
 }
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
@@ -127,7 +131,7 @@ export async function POST(
 
     // Save user message (SKIP if trigger_only is true)
     if (!trigger_only) {
-      const { data: userMsg, error: userMsgError } = await supabase
+      const { error: userMsgError } = await supabase
         .from("chat_messages")
         .insert({
           session_id: sessionId,
@@ -135,9 +139,7 @@ export async function POST(
           content: content || "",
           mode: mode || "chat",
           image_url: finalImageUrl || null,
-        })
-        .select()
-        .single();
+        });
 
       if (userMsgError) {
         console.error("Error saving user message:", userMsgError);
@@ -167,31 +169,35 @@ export async function POST(
         .eq("id", sessionId);
     }
 
-          // 🚀 Call Gemini AI with streaming
-          const genAI = getGeminiAI();
-          const response = await callGeminiAIStream(
-            genAI,
-            allMessages || [], 
-            mode, 
-            enable_search || mode === "search", 
-            !!(images && images.length > 0), 
-            content,
-            session.course_code,
-            session.level
-          );
+    // 🚀 Call Gemini AI with streaming
+    const genAI = getGeminiAI();
+    const encoder = new TextEncoder();
+    let fullContent = "";
 
-          for await (const chunk of response.stream) {
-            const content = chunk.text();
-            
-            if (content) {
-              fullContent += content;
+    const stream = await callGeminiAIStream(
+      genAI,
+      allMessages || [], 
+      mode, 
+      enable_search || mode === "search", 
+      !!(images && images.length > 0), 
+      content,
+      session.course_code,
+      session.level
+    );
+
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream.stream) {
+            const text = chunk.text();
+            if (text) {
+              fullContent += text;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                choices: [{ delta: { content } }]
+                choices: [{ delta: { content: text } }]
               })}\n\n`));
             }
           }
-
-          // Mark as done
+          
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
 
           // Save assistant message to DB after stream completes
@@ -203,8 +209,8 @@ export async function POST(
               mode: mode || "chat",
             });
           }
-        } catch (err) {
-          console.error("Streaming error:", err);
+        } catch (err: any) {
+          console.error("[Gemini Stream] Error:", err);
           controller.error(err);
         } finally {
           controller.close();
@@ -221,77 +227,11 @@ export async function POST(
     });
   } catch (error: any) {
     console.error("Messages POST error:", error);
-    
-    // Log full diagnostic info for Gemini SDK Errors
-    console.error("[API Session] ❌ Diagnostic failure details:", error);
-
-    // Handle Gemini Errors
-    if (error.message?.includes("429")) {
-      return NextResponse.json(
-        { error: "I'm cooking beans, I can't answer now." },
-        { status: 429 }
-      );
-    }
-
-    if (error.statusCode === 401 || error.statusCode === 403) {
-      return NextResponse.json(
-        { error: "AI Service authentication failed. Please contact the administrator." },
-        { status: error.statusCode }
-      );
-    }
-
-    // Try to extract error message from SDK error body if available
-    try {
-      if (error.body) {
-        const sdkErrorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        if (sdkErrorBody.message) {
-          return NextResponse.json(
-            { error: `AI Error: ${sdkErrorBody.message}` },
-            { status: error.statusCode || 500 }
-          );
-        }
-      }
-    } catch (parseErr) {
-      console.warn("Failed to parse SDK error body:", parseErr);
-    }
-
     return NextResponse.json(
       { error: error.message || "Internal server error" }, 
-      { status: error.statusCode || 500 }
+      { status: 500 }
     );
   }
-}
-
-/**
- * Ensures all messages (especially assistant ones) are valid for Mistral API.
- */
-function validateMessages(messages: any[]): any[] {
-  // 1. Filter out invalid messages
-  const filtered = messages.filter((msg, index) => {
-    if (msg.role !== "assistant") return true;
-
-    const hasContent = (msg.content && typeof msg.content === "string" && msg.content.trim().length > 0) || 
-                       (Array.isArray(msg.content) && msg.content.length > 0);
-    const hasToolCalls = (msg.tool_calls && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) ||
-                         (msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0);
-
-    if (!hasContent && !hasToolCalls) {
-      console.warn(`[API Session] 🧹 Removing invalid assistant message at index ${index}.`);
-      return false;
-    }
-
-    return true;
-  });
-
-  // 2. Mistral CRITICAL: The last message must be from the 'user' (or tool).
-  // If the conversation ends with an assistant message, we pop it because we are 
-  // currently trying to generate a NEW assistant response.
-  while (filtered.length > 0 && filtered[filtered.length - 1].role === "assistant") {
-    console.warn(`[API Session] 🧹 Removing trailing assistant message to satisfy Mistral API constraints.`);
-    filtered.pop();
-  }
-
-  return filtered;
 }
 
 interface DBMessage {
@@ -300,8 +240,8 @@ interface DBMessage {
   image_url?: string | null;
 }
 
-async function callMistralAIStream(
-  client: Mistral,
+async function callGeminiAIStream(
+  client: GoogleGenerativeAI,
   messages: DBMessage[],
   mode: string,
   enableSearch: boolean,
@@ -309,81 +249,53 @@ async function callMistralAIStream(
   latestUserContent?: string,
   courseCode?: string,
   level?: string
-): Promise<AsyncIterable<any>> {
-  const agentId = process.env.MISTRAL_AI_AGENT_ID;
-  if (!agentId) {
-    throw new Error("Mistral Agent ID not configured");
-  }
-
-  const mistralMessages: any[] = messages.map((msg) => {
+) {
+  const geminiContents: { role: string; parts: Part[] }[] = messages.reverse().filter((msg, index, self) => 
+    // Basic filter to ensure valid roles and map them
+    msg.role === "user" || msg.role === "assistant"
+  ).reverse().map((msg) => {
+    const parts: Part[] = [];
     if (msg.image_url) {
-      const contentArray: any[] = [{ type: "text", text: msg.content }];
-      if (msg.image_url.startsWith("[")) {
-        try {
-          const parsed = JSON.parse(msg.image_url);
-          parsed.forEach((url: string) => {
-            contentArray.push({ type: "image_url", imageUrl: { url } });
-          });
-        } catch (e) {
-          contentArray.push({ type: "image_url", imageUrl: { url: msg.image_url } });
-        }
-      } else {
-        contentArray.push({ type: "image_url", imageUrl: { url: msg.image_url } });
-      }
-      return { role: msg.role, content: contentArray };
+      parts.push({ text: msg.content || "Analyze this image." });
+      // In a real production app, we would fetch the image and send as base64
+      // For now, we'll just include the context as text
+      parts.push({ text: `[Context: Image provided at ${msg.image_url}]` });
+    } else {
+      parts.push({ text: msg.content });
     }
-    return { role: msg.role, content: msg.content };
+    return {
+      role: msg.role === "assistant" ? "model" : "user",
+      parts
+    };
   });
 
+  let systemPrompt = `You are Studzy AI, a helpful and knowledgeable study assistant for Nigerian university students.
+You help with exam preparation, coursework, lecture notes, and general academic questions.
+Guidelines:
+1. Explain concepts clearly and concisely, using examples when helpful.
+2. If it's an exam question, provide a well-structured answer.
+3. Format your response with markdown for readability (headers, lists, bold, code blocks).
+4. Be encouraging and supportive in your tone.
+5. When you don't know something, say so honestly.
+6. Keep responses focused and relevant to the student's question.\n\n`;
+
   if (latestUserContent) {
-    try {
-      const ragContext = await getRAGContext(latestUserContent, courseCode, level);
-      if (ragContext) {
-        mistralMessages.unshift({ role: "system", content: ragContext });
-      } else {
-        mistralMessages.unshift({
-          role: "system",
-          content: "Note: No specific study materials were found in the database. Please answer based on your general knowledge or available web search tools. If searching, explicitly tell the user.",
-        });
-      }
-    } catch (err) {
-      console.warn("[RAG] Context search failed:", err);
+    const ragContext = await getRAGContext(latestUserContent, courseCode, level);
+    if (ragContext) {
+      systemPrompt += ragContext + "\n\n";
     }
   }
 
   if (mode === "search" || enableSearch) {
-    mistralMessages.unshift({
-      role: "system",
-      content: `SEARCH MODE ACTIVE. 
-CRITICAL:
-1. Provide the SEARCH RESULTS immediately in clean markdown. 
-2. Use lists, bold text, and headers to present the data clearly.
-3. If specific links or sources are found, include them.
-4. Synthesize a brief final summary after the results.
-5. NEVER output technical code/JSON or label segments like "web_search".`,
-    });
+    systemPrompt += `SEARCH MODE ACTIVE. Provide findings clearly in markdown.\n\n`;
   }
 
-  if (!agentId) {
-    throw new Error("Mistral Agent ID not configured");
-  }
+  const model = client.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    systemInstruction: systemPrompt.trim()
+  });
 
-  const finalMessages = validateMessages(mistralMessages);
-
-  // 🖼️ Vision requests: Use pixtral model for image understanding
-  if (hasImageRequest) {
-    console.log("[AI] 🖼️ Vision — using pixtral-large-latest");
-    return client.chat.stream({
-      model: "pixtral-large-latest",
-      messages: finalMessages,
-    });
-  }
-
-  // ✅ Text-only: Use mistral-large for high-quality responses
-  // Bypasses the "Built-in connectors" error by using the direct Chat API
-  console.log("[AI] 💬 Text — using mistral-large-latest");
-  return client.chat.stream({
-    model: "mistral-large-latest",
-    messages: finalMessages,
+  return model.generateContentStream({
+    contents: geminiContents,
   });
 }
