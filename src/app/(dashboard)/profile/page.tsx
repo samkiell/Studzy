@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
+import { ProfileResetPwdSection } from "@/components/profile/ProfileResetPwdSection";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
@@ -141,6 +142,9 @@ export default async function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Change Password Section */}
+      <ProfileResetPwdSection />
     </div>
   );
 }
