@@ -159,12 +159,11 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
     return await getExistingResults(supabase, attempt);
   }
 
-  // Fetch questions
-  const questionIds = answers.map(a => a.question_id);
+  // Fetch ALL questions for this attempt
   const { data: questions, error: questError } = await supabase
     .from("questions")
     .select("*")
-    .in("id", questionIds);
+    .in("id", attempt.question_ids || []);
 
   if (questError || !questions) throw new Error("Failed to fetch questions");
 
@@ -175,17 +174,44 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
   const questionsWithAnswers: QuestionResult[] = [];
   const attemptAnswersPayload: any[] = [];
 
-  for (const ans of answers) {
-    const question = questions.find(q => q.id === ans.question_id);
-    if (!question) continue;
-
+  for (const question of questions) {
+    const ans = answers.find(a => a.question_id === question.id);
     const isTheory = isTheoryQuestion(question);
     const topic = question.topic || "General";
-
-    console.log(`[QuizScorer] Q:${question.id.slice(0,8)} type=${isTheory ? 'theory' : 'mcq'} hasTheoryAnswer=${!!ans.theory_answer} hasSubAnswers=${!!ans.theory_sub_answers} selectedOption=${ans.selected_option}`);
+    const marks = question.marks ?? 1; // Default to 1 mark if not specified
 
     if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0, avgTime: 0 };
     topicStats[topic].total++;
+    totalMaxScore += marks;
+
+    if (!ans) {
+      // Unanswered question
+      questionsWithAnswers.push({
+        question_id: question.id,
+        question_text: question.question_text,
+        topic: question.topic,
+        difficulty: question.difficulty || null,
+        options: question.options || {},
+        correct_option: question.correct_option,
+        selected_option: null,
+        is_correct: false,
+        duration_seconds: 0,
+        explanation: question.explanation,
+        ai_feedback: null,
+        theory_answer: null,
+      });
+
+      attemptAnswersPayload.push({
+        attempt_id: attemptId,
+        question_id: question.id,
+        selected_option: null,
+        is_correct: false,
+        theory_answer: null,
+        ai_feedback: null,
+      });
+      continue;
+    }
+
     topicStats[topic].avgTime += ans.duration_seconds;
 
     let isCorrect = false;
@@ -206,24 +232,20 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
       }
 
       const studentText = parts.join("\n\n");
-      const marks = question.marks ?? 10;
 
       if (studentText.trim()) {
         const grading = await gradeTheoryAnswer(question, studentText);
         aiFeedback = grading;
         totalScore += grading.score;
-        totalMaxScore += marks;
         isCorrect = grading.score >= marks * 0.5; // 50%+ = "correct" for topic stats
         if (isCorrect) topicStats[topic].correct++;
       } else {
         aiFeedback = { score: 0, max_marks: marks, strengths: [], weaknesses: ["Answer was empty."], improvement: "Provide a substantive answer." };
-        totalMaxScore += marks;
       }
     } else {
       // MCQ: deterministic scoring
       isCorrect = question.correct_option === ans.selected_option;
       if (isCorrect) { totalScore++; topicStats[topic].correct++; }
-      totalMaxScore++;
     }
 
     questionsWithAnswers.push({
@@ -243,7 +265,7 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
 
     attemptAnswersPayload.push({
       attempt_id: attemptId,
-      question_id: ans.question_id,
+      question_id: question.id,
       selected_option: ans.selected_option,
       is_correct: isCorrect,
       theory_answer: isTheory ? (ans.theory_answer || Object.values(ans.theory_sub_answers || {}).filter(Boolean).join('\n\n') || null) : null,
@@ -283,8 +305,8 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
   }
 
   const result: QuizResult = {
-    score: normalizedScore,
-    totalQuestions: 100, // Always out of 100
+    score: totalScore,
+    totalQuestions: totalMaxScore,
     completedAt,
     topicStats,
     questionsWithAnswers,
@@ -303,8 +325,8 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
 
   const { data: questions } = await supabase
     .from("questions")
-    .select("id, question_text, options, correct_option, topic, difficulty, explanation")
-    .in("id", (existingAnswers || []).map((a: any) => a.question_id));
+    .select("id, question_text, options, correct_option, topic, difficulty, explanation, marks")
+    .in("id", attempt.question_ids || []);
 
   const topicStats: Record<string, { correct: number; total: number; avgTime: number }> = {};
   const questionsWithAnswers: QuestionResult[] = (existingAnswers || []).map((ans: any) => {
@@ -329,9 +351,16 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
     };
   });
 
+  const totalMaxScore = (questions || []).reduce((acc: number, q: any) => acc + (q.marks || 1), 0);
+  const rawScore = (existingAnswers || []).reduce((acc: number, ans: any) => {
+    // For MCQ, is_correct = 1 pt. For Theory, we need the actual ai_feedback.score
+    if (ans.ai_feedback?.score !== undefined) return acc + ans.ai_feedback.score;
+    return acc + (ans.is_correct ? 1 : 0);
+  }, 0);
+
   return {
-    score: attempt.score,
-    totalQuestions: attempt.total_questions,
+    score: rawScore,
+    totalQuestions: totalMaxScore,
     completedAt: attempt.completed_at,
     topicStats,
     questionsWithAnswers,
