@@ -2,17 +2,15 @@
 // RAG Query Pipeline
 // ============================================
 
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText } from "./embeddings";
 import {
   CHAT_MODEL,
-  EMBEDDING_MODEL,
   TOP_K,
-  SIMILARITY_THRESHOLD,
 } from "./config";
 
-const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export interface QueryOptions {
   question: string;
@@ -173,33 +171,25 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
   const systemPrompt = buildSystemPrompt(chunks);
 
   // Step 4: Generate response
-  const agentId = process.env.MISTRAL_AI_AGENT_ID;
-  const messages = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: question },
-  ];
+  const model = genAI.getGenerativeModel({ 
+    model: CHAT_MODEL,
+    generationConfig: {
+      // @ts-ignore
+      thinking_level: "minimal"
+    }
+  });
 
-  let response;
-  if (agentId) {
-    response = await client.agents.complete({
-      agentId: agentId,
-      messages: messages as any,
-    });
-  } else {
-    response = await client.chat.complete({
-      model: CHAT_MODEL,
-      messages: messages as any,
-      temperature: 0.3,
-    });
-  }
+  const response = await model.generateContent({
+    contents: [
+      { role: "user", parts: [{ text: systemPrompt + "\n\nQuestion: " + question }] }
+    ],
+  });
 
-  const answer =
-    response.choices?.[0]?.message?.content || "Unable to generate a response.";
+  const answer = response.response.text();
 
   return {
-    answer: typeof answer === "string" ? answer : JSON.stringify(answer),
+    answer,
     sources: chunks,
-    tokensUsed: response.usage?.totalTokens,
   };
 }
 
@@ -242,39 +232,27 @@ export async function queryRAGStream(
   const systemPrompt = buildSystemPrompt(chunks);
 
   // Step 4: Create streaming response
-  const agentId = process.env.MISTRAL_AI_AGENT_ID;
-  const messages = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: question },
-  ];
+  const model = genAI.getGenerativeModel({ 
+    model: CHAT_MODEL,
+    generationConfig: {
+      // @ts-ignore
+      thinking_level: "minimal"
+    }
+  });
 
-  let mistralStream;
-  if (agentId) {
-    mistralStream = await client.agents.stream({
-      agentId: agentId,
-      messages: messages as any,
-    });
-  } else {
-    mistralStream = await client.chat.stream({
-      model: CHAT_MODEL,
-      messages: messages as any,
-      temperature: 0.3,
-    });
-  }
+  const streamResponse = await model.generateContentStream({
+    contents: [
+      { role: "user", parts: [{ text: systemPrompt + "\n\nQuestion: " + question }] }
+    ],
+  });
 
   const encoder = new TextEncoder();
 
   const readableStream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of mistralStream) {
-          if (signal?.aborted) {
-            controller.close();
-            return;
-          }
-
-          const data = (chunk as any).data || chunk;
-          const content = data.choices?.[0]?.delta?.content || "";
+        for await (const chunk of streamResponse.stream) {
+          const content = chunk.text();
           if (content) {
             controller.enqueue(
               encoder.encode(

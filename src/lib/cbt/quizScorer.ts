@@ -1,6 +1,6 @@
 "use server";
 
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 import { isTheoryQuestion } from "@/types/cbt";
 import type { Question, SubmitAnswer } from "@/types/cbt";
@@ -62,19 +62,18 @@ export interface ScoreQuizInput {
 
 // ─── AI GRADING ─────────────────────────────────────────────
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_AI_AGENT_ID = process.env.MISTRAL_AI_AGENT_ID;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 async function gradeTheoryAnswer(
   question: Question,
   studentAnswer: string
 ): Promise<{ score: number; max_marks: number; strengths: string[]; weaknesses: string[]; improvement: string }> {
-  if (!MISTRAL_API_KEY || !MISTRAL_AI_AGENT_ID) {
-    console.error("[QuizScorer] MISTRAL_API_KEY or MISTRAL_AI_AGENT_ID not set, returning zero score");
+  if (!GEMINI_API_KEY) {
+    console.error("[QuizScorer] GEMINI_API_KEY not set, returning zero score");
     return { score: 0, max_marks: question.marks ?? 10, strengths: [], weaknesses: ["AI grading unavailable."], improvement: "Please resubmit." };
   }
 
-  const client = new Mistral({ apiKey: MISTRAL_API_KEY });
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const marks = question.marks ?? 10;
   const keyPoints = Array.isArray(question.key_points) ? question.key_points.map((kp, i) => `${i + 1}. ${kp}`).join("\n") : "None specified";
 
@@ -103,18 +102,20 @@ Return only valid JSON with this exact structure:
 IMPORTANT: score MUST be between 0 and ${marks}. Be strict. Return ONLY the JSON object.`;
 
   try {
-    const response = await client.agents.complete({
-      agentId: MISTRAL_AI_AGENT_ID,
-      messages: [{ role: "user", content: prompt }],
-      maxTokens: 512,
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-3-flash-preview",
+      generationConfig: { 
+        responseMimeType: "application/json",
+        // @ts-ignore
+        thinking_level: "minimal"
+      }
     });
 
-    const rawContent = response.choices?.[0]?.message?.content;
-    let content = typeof rawContent === "string" ? rawContent : Array.isArray(rawContent) ? rawContent.map((p: any) => typeof p === "string" ? p : p.text || "").join("") : "";
+    const response = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
 
-    // Strip markdown code fences if the agent wraps the JSON in ```json ... ```
-    content = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-
+    const content = response.response.text();
     const parsed = JSON.parse(content);
     return {
       score: Math.max(0, Math.min(parsed.score ?? 0, marks)),

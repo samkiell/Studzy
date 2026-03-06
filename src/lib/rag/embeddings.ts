@@ -2,11 +2,11 @@
 // Embedding Generation via Mistral API
 // ============================================
 
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { EMBEDDING_MODEL, EMBEDDING_BATCH_SIZE, EMBEDDING_TOKEN_LIMIT, TOKENS_PER_WORD } from "./config";
+import { EMBEDDING_MODEL, EMBEDDING_BATCH_SIZE } from "./config";
 
-const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 /**
  * Generate embeddings for a single piece of text with retry logic.
@@ -16,37 +16,20 @@ export async function embedText(text: string): Promise<number[]> {
   const INITIAL_DELAY = 1000;
   let retryCount = 0;
 
-  while (retryCount <= MAX_RETRIES) {
-    try {
-      const embeddingPromise = client.embeddings.create({
-        model: EMBEDDING_MODEL,
-        inputs: [text],
-      });
-
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Mistral embedding request timed out")), 15000)
-      );
-
-      const response = await Promise.race([embeddingPromise, timeoutPromise]);
-
-      const embedding = response.data?.[0]?.embedding;
-      if (!embedding) {
-        throw new Error("Failed to generate embedding: no data returned");
-      }
-
-      return embedding as number[];
-    } catch (error: any) {
-      if ((error.statusCode === 429 || error.status === 429) && retryCount < MAX_RETRIES) {
-        retryCount++;
-        const delay = INITIAL_DELAY * Math.pow(2, retryCount - 1) + (Math.random() * 1000);
-        console.warn(`[RAG] Rate limited (429) during query. Retrying in ${Math.round(delay)}ms... (Attempt ${retryCount}/${MAX_RETRIES})`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      } else {
-        throw error;
-      }
+  try {
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const result = await model.embedContent(text);
+    const embedding = result.embedding.values;
+    
+    if (!embedding) {
+      throw new Error("Failed to generate embedding: no data returned");
     }
+
+    return embedding;
+  } catch (error: any) {
+    console.error("[RAG] Embedding generation failed:", error);
+    throw error;
   }
-  throw new Error("Failed to generate embedding after retries");
 }
 
 /**
@@ -68,87 +51,30 @@ function estimateTokens(text: string): number {
  */
 export async function embedBatch(texts: string[]): Promise<number[][]> {
   const allEmbeddings: number[][] = [];
-  const MAX_RETRIES = 5;
-  const INITIAL_DELAY = 1000;
+  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
 
-  // Track processing index
-  let currentIdx = 0;
-  const totalChunks = texts.length;
-  let batchNum = 1;
-
-  while (currentIdx < totalChunks) {
-    // 1. Determine base batch size (up to EMBEDDING_BATCH_SIZE)
-    let endIdx = Math.min(currentIdx + EMBEDDING_BATCH_SIZE, totalChunks);
-    let batch = texts.slice(currentIdx, endIdx);
-
-    // 2. Token-aware check and adaptive splitting
-    let estimatedTokens = batch.reduce((sum, text) => sum + estimateTokens(text), 0);
+  // Process in chunks of EMBEDDING_BATCH_SIZE
+  for (let i = 0; i < texts.length; i += EMBEDDING_BATCH_SIZE) {
+    const batch = texts.slice(i, i + EMBEDDING_BATCH_SIZE);
+    console.log(`[RAG] Embedding batch ${Math.floor(i / EMBEDDING_BATCH_SIZE) + 1} (${batch.length} items)...`);
     
-    // If batch exceeds token limit, shrink until it fits (or we hit 1 chunk)
-    while (estimatedTokens > EMBEDDING_TOKEN_LIMIT && batch.length > 1) {
-      console.warn(`[RAG] Batch ${batchNum} exceeds token limit (${estimatedTokens} > ${EMBEDDING_TOKEN_LIMIT}). Splitting...`);
-      endIdx--;
-      batch = texts.slice(currentIdx, endIdx);
-      estimatedTokens = batch.reduce((sum, text) => sum + estimateTokens(text), 0);
-    }
+    try {
+      const result = await model.batchEmbedContents({
+        requests: batch.map((text) => ({
+          taskType: "RETRIEVAL_DOCUMENT" as any,
+          content: { role: "user", parts: [{ text }] },
+        })),
+      });
 
-    const avgTokens = Math.round(estimatedTokens / batch.length);
-    
-    // 3. Log stats before sending
-    console.log(`[RAG] Embedding batch ${batchNum}:`);
-    console.log(`- Chunks: ${batch.length}`);
-    console.log(`- Estimated total tokens: ${estimatedTokens}`);
-    console.log(`- Average tokens per chunk: ${avgTokens}`);
-
-    let retryCount = 0;
-    let success = false;
-
-    while (!success && retryCount < MAX_RETRIES) {
-      try {
-        const response = await client.embeddings.create({
-          model: EMBEDDING_MODEL,
-          inputs: batch,
-        });
-
-        if (!response.data || response.data.length !== batch.length) {
-          throw new Error(
-            `Embedding batch ${batchNum} returned ${response.data?.length ?? 0} results, expected ${batch.length}`
-          );
-        }
-
-        for (const item of response.data) {
-          allEmbeddings.push(item.embedding as number[]);
-        }
-        
-        success = true;
-
-        // Progress update
-        currentIdx += batch.length;
-        batchNum++;
-
-        // Throttling for 60 RPM limit
-        if (currentIdx < totalChunks) {
-          await new Promise((resolve) => setTimeout(resolve, 1100));
-        }
-      } catch (error: any) {
-        // Handle Rate Limiting (429)
-        if (error.statusCode === 429 || error.status === 429) {
-          retryCount++;
-          const delay = INITIAL_DELAY * Math.pow(2, retryCount-1) + (Math.random() * 1000);
-          console.warn(`[RAG] Rate limited (429). Retrying batch ${batchNum} in ${Math.round(delay)}ms... (Attempt ${retryCount}/${MAX_RETRIES})`);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        } else {
-          // If message says "Too many tokens", let's try an invasive split if we haven't already
-          if (error.message?.includes("tokens") && batch.length > 2) {
-             console.error("[RAG] API reported token overflow despite extraction. Performing emergency split.");
-          }
-          throw error;
-        }
+      result.embeddings.forEach((e) => allEmbeddings.push(e.values));
+      
+      // Small throttle to avoid rate limits
+      if (i + EMBEDDING_BATCH_SIZE < texts.length) {
+        await new Promise(r => setTimeout(r, 500));
       }
-    }
-
-    if (!success) {
-      throw new Error(`Failed to embed batch ${batchNum} after ${MAX_RETRIES} attempts.`);
+    } catch (err) {
+      console.error("[RAG] Batch embedding failed:", err);
+      throw err;
     }
   }
 
