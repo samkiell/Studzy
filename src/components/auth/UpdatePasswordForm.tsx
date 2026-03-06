@@ -26,7 +26,7 @@ export function UpdatePasswordForm() {
     } else {
       setSuccess(result.message || "Password updated!");
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/profile");
       }, 2000);
     }
     setLoading(false);
