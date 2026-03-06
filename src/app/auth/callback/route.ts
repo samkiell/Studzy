@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       if (searchParams.get('type') === 'recovery') {
-        return NextResponse.redirect(`${origin}/dashboard/settings/password`);
+        return NextResponse.redirect(`${origin}/profile#reset-pwd`);
       }
       
       // If it's a signup confirmation, show the success page
