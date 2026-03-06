@@ -304,11 +304,12 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
     throw new Error("Failed to update attempt");
   }
 
+  const totalCorrect = Object.values(topicStats).reduce((acc, s) => acc + s.correct, 0);
+  const totalQuestionsCount = Object.values(topicStats).reduce((acc, s) => acc + s.total, 0);
+
   const result: QuizResult = {
-    score: totalScore,
-    totalQuestions: totalMaxScore,
-    score: totalScore,
-    totalQuestions: totalMaxScore,
+    score: totalCorrect,
+    totalQuestions: totalQuestionsCount,
     completedAt,
     topicStats,
     questionsWithAnswers,
@@ -353,25 +354,12 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
     };
   });
 
-  const totalMaxScore = (questions || []).reduce((acc: number, q: any) => acc + (q.marks || 1), 0);
-  const rawScore = (existingAnswers || []).reduce((acc: number, ans: any) => {
-    // For MCQ, is_correct = 1 pt. For Theory, we need the actual ai_feedback.score
-    if (ans.ai_feedback?.score !== undefined) return acc + ans.ai_feedback.score;
-    return acc + (ans.is_correct ? 1 : 0);
-  }, 0);
-
-  const totalMaxScore = (questions || []).reduce((acc: number, q: any) => acc + (q.marks || 1), 0);
-  const rawScore = (existingAnswers || []).reduce((acc: number, ans: any) => {
-    // For MCQ, is_correct = 1 pt. For Theory, we need the actual ai_feedback.score
-    if (ans.ai_feedback?.score !== undefined) return acc + ans.ai_feedback.score;
-    return acc + (ans.is_correct ? 1 : 0);
-  }, 0);
+  const totalCorrect = Object.values(topicStats).reduce((acc, s) => acc + s.correct, 0);
+  const totalQuestionsCount = Object.values(topicStats).reduce((acc, s) => acc + s.total, 0);
 
   return {
-    score: rawScore,
-    totalQuestions: totalMaxScore,
-    score: rawScore,
-    totalQuestions: totalMaxScore,
+    score: totalCorrect,
+    totalQuestions: totalQuestionsCount,
     completedAt: attempt.completed_at,
     topicStats,
     questionsWithAnswers,
