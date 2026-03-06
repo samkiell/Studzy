@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
       if (type === "recovery") {
         return NextResponse.redirect(
-          `${origin}/dashboard/settings/password`
+          `${origin}/profile#reset-pwd`
         );
       }
 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
       if (searchParams.get("type") === "recovery") {
         return NextResponse.redirect(
-          `${origin}/dashboard/settings/password`
+          `${origin}/profile#reset-pwd`
         );
       }
 
