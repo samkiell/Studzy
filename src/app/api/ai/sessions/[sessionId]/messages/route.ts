@@ -452,19 +452,26 @@ Guidelines:
     finalMessages.unshift(studzySystemPrompt);
   }
 
-  // 🖼️ Vision requests: Use pixtral model for image understanding
+  // 🖼️ Vision requests: Use pixtral model for image understanding (Agents don't support vision)
   if (hasImageRequest) {
     console.log("[AI] 🖼️ Image detected — using pixtral-large-latest for vision");
+    
+    // Inject system prompt to replicate agent behavior for vision
+    if (finalMessages.length === 0 || finalMessages[0].role !== "system") {
+      finalMessages.unshift(studzySystemPrompt);
+    }
+
     return client.chat.stream({
       model: "pixtral-large-latest",
       messages: finalMessages,
     });
   }
 
-  // ✅ Text-only: Use mistral-large for high-quality responses
-  console.log("[AI] 💬 Text-only — using mistral-large-latest");
-  return client.chat.stream({
-    model: "mistral-large-latest",
+  // ✅ Text-only: Use the Agent API (handles search/tools automatically)
+  // This uses the quota pool associated with your agent ID
+  console.log(`[AI] 🤖 Text-only — using Agent ID: ${agentId}`);
+  return client.agents.stream({
+    agentId: agentId,
     messages: finalMessages,
   });
 }
