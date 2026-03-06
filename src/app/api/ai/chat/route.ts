@@ -167,31 +167,15 @@ export async function POST(request: NextRequest) {
 
     let systemPrompt = "";
 
-    // 🎓 RAG: Search study material embeddings for context relevant to the user's question.
-    if (messages.length > 0) {
-      const lastUserMessage = messages.filter(m => m.role === "user").pop();
-      if (lastUserMessage) {
-        console.log(`[API] 🕵️ Attempting RAG context retrieval...`);
-        
-        const ragPromise = getRAGContext(lastUserMessage.content, course_code, level);
-        let timeoutId: any;
-        const timeoutPromise = new Promise<null>((resolve) => {
-          timeoutId = setTimeout(() => {
-            console.warn("[API] ⏱️ RAG retrieval timed out. Falling back.");
-            resolve(null);
-          }, 12000);
-        });
-
-        const ragContext = await Promise.race([ragPromise, timeoutPromise]);
-        clearTimeout(timeoutId);
-
+        // 🎓 RAG: Search study material embeddings for context relevant to the user's question.
+        // SKIP if RAG is disabled (currently hardcoded as disabled at function level)
+        // const ragContext = await getRAGContext(lastUserMessage.content, course_code, level);
+        const ragContext = null; // Forced null for speed as RAG is currently disabled by user request
         if (ragContext) {
           systemPrompt += ragContext + "\n\n";
         } else {
           systemPrompt += "Answer based on general knowledge.\n\n";
         }
-      }
-    }
 
     if (mode === "search" || enable_search) {
       systemPrompt += `SEARCH MODE ACTIVE. 
@@ -209,7 +193,11 @@ CRITICAL:
 
     const model = genAI.getGenerativeModel({ 
       model: hasImages ? "gemini-3-flash-preview" : "gemini-3-flash-preview", 
-      systemInstruction: systemPrompt.trim() || undefined
+      systemInstruction: systemPrompt.trim() || undefined,
+      generationConfig: {
+        // @ts-ignore - thinking_level is a feature of Gemini 3 Flash for extreme speed
+        thinking_level: "minimal"
+      }
     });
 
     const shouldStream = (body as any).stream !== false;

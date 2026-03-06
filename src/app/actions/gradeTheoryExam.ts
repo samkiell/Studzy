@@ -1,6 +1,5 @@
 "use server";
 
-import { Mistral } from "@mistralai/mistralai";
 import { createClient } from "@/lib/supabase/server";
 import type {
   TheoryAnswers,
@@ -41,7 +40,7 @@ function buildStudentAnswerText(
 }
 
 /**
- * Grades a single theory question using Mistral AI.
+ * Grades a single theory question using Gemini AI.
  * Returns a strict JSON response clamped to max marks.
  */
 async function gradeTheoryQuestion(
@@ -91,7 +90,11 @@ IMPORTANT:
   try {
     const model = genAI.getGenerativeModel({ 
       model: "gemini-3-flash-preview",
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { 
+        responseMimeType: "application/json",
+        // @ts-ignore
+        thinking_level: "minimal"
+      }
     });
 
     const response = await model.generateContent({
@@ -219,10 +222,10 @@ export async function gradeTheoryExam({
       continue;
     }
 
-    // 🕒 Rate Limit Protection: Wait 1.2s between calls to stay under RPM limits
+    // 🕒 Rate Limit Protection: Wait 0.5s between calls for Gemini (higher quotas than Mistral)
     if (questionFeedbacks.length > 0) {
-      console.log(`[TheoryGrading] 🕒 Waiting 1.2s to respect rate limits...`);
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      console.log(`[TheoryGrading] 🕒 Waiting 0.5s to respect rate limits...`);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     const grading = await gradeTheoryQuestion(question, studentAnswerText);
