@@ -91,9 +91,7 @@ IMPORTANT:
     const model = genAI.getGenerativeModel({ 
       model: "gemini-3-flash-preview",
       generationConfig: { 
-        responseMimeType: "application/json",
-        // @ts-ignore
-        thinking_level: "minimal"
+        responseMimeType: "application/json"
       }
     });
 

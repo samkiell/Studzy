@@ -105,9 +105,7 @@ IMPORTANT: score MUST be between 0 and ${marks}. Be strict. Return ONLY the JSON
     const model = genAI.getGenerativeModel({ 
       model: "gemini-3-flash-preview",
       generationConfig: { 
-        responseMimeType: "application/json",
-        // @ts-ignore
-        thinking_level: "minimal"
+        responseMimeType: "application/json"
       }
     });
 

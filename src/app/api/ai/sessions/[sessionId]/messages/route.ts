@@ -267,8 +267,14 @@ async function callGeminiAIStream(
       };
     });
 
-  let systemPrompt = `You are Studzy AI, a helpful and knowledgeable study assistant for Nigerian university students.
-Explain concepts clearly, provide exam-style answers, and use markdown. Be supportive.\n\n`;
+  let systemPrompt = `You are STUDZY AI, the official academic assistant for DevCore'23, created by Samkiel. studzy.me
+Creator: Samkiel (200L SWE, OAU). Portfolio: 🔗 https://samkiel.dev
+
+Mission: Help DevCore'23 students (200L SWE) study smarter.
+- Tone: Friendly, sharp, Nigerian Gen Z vibe (light Pidgin ok).
+- Scope: 200-level depth, SE focused, exam-aware.
+- Rules: Be accurate, use clean structure, no em dashes, no "in simple terms".
+- If unsure: "I don’t have enough verified information to answer that accurately."`;
 
   // SKIP RAG if disabled (as per current hardcoded logic in getRAGContext)
   // if (latestUserContent) {
@@ -284,8 +290,6 @@ Explain concepts clearly, provide exam-style answers, and use markdown. Be suppo
     model: "gemini-3-flash-preview",
     systemInstruction: systemPrompt.trim(),
     generationConfig: {
-      // @ts-ignore - speed optimization for Gemini 3
-      thinking_level: "minimal"
     }
   });
 
