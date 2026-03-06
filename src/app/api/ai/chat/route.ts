@@ -208,7 +208,7 @@ CRITICAL:
     }
 
     const model = genAI.getGenerativeModel({ 
-      model: hasImages ? "gemini-1.5-flash" : "gemini-1.5-flash", 
+      model: hasImages ? "gemini-3-flash-preview" : "gemini-3-flash-preview", 
       systemInstruction: systemPrompt.trim() || undefined
     });
 
@@ -244,27 +244,6 @@ CRITICAL:
   }
 }
 
-/**
- * Ensures all messages (especially assistant ones) are valid for Mistral API.
- * Mistral requires assistant messages to have EITHER content OR tool_calls.
- */
-function validateMessages(messages: any[]): any[] {
-  return messages.filter((msg, index) => {
-    if (msg.role !== "assistant") return true;
-
-    const hasContent = (msg.content && typeof msg.content === "string" && msg.content.trim().length > 0) || 
-                       (Array.isArray(msg.content) && msg.content.length > 0);
-    const hasToolCalls = (msg.tool_calls && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) ||
-                         (msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0);
-
-    if (!hasContent && !hasToolCalls) {
-      console.warn(`[API] 🧹 Removing invalid assistant message at index ${index}: No content and no tool_calls.`);
-      return false;
-    }
-
-    return true;
-  });
-}
 
 /**
  * Helper to convert Gemini stream to Next.js NextResponse
