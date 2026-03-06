@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { createExplanationSession } from "@/lib/cbt/ai-utils";
-import { Question } from "@/types/cbt";
+import { Question, isTheoryQuestion } from "@/types/cbt";
 import { toast } from "react-hot-toast";
 
 interface QuestionResult {
@@ -102,8 +102,6 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
     return <Target className="w-4 h-4 text-indigo-400" />;
   };
 
-  // Detect if a question is theory (no options)
-  const isTheory = (q: QuestionResult) => !q.options || Object.keys(q.options).length === 0;
 
   return (
     <div className="space-y-6 pb-12 px-2 md:px-0">
@@ -234,7 +232,8 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
         <div className="space-y-4">
           {results.questionsWithAnswers.map((q, idx) => {
             const qId = q.id || q.question_id || `q-${idx}`;
-            const theory = isTheory(q);
+            // @ts-ignore - The helper is compatible with QuestionResult structure
+            const theory = isTheoryQuestion(q as any);
 
             return (
             <motion.div 

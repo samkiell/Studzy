@@ -246,6 +246,8 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
       question_id: ans.question_id,
       selected_option: ans.selected_option,
       is_correct: isCorrect,
+      theory_answer: isTheory ? (ans.theory_answer || Object.values(ans.theory_sub_answers || {}).filter(Boolean).join('\n\n') || null) : null,
+      ai_feedback: aiFeedback,
     });
   }
 
@@ -296,7 +298,7 @@ export async function scoreQuiz({ attemptId, answers, durationSeconds }: ScoreQu
 async function getExistingResults(supabase: any, attempt: any): Promise<QuizResult> {
   const { data: existingAnswers } = await supabase
     .from("attempt_answers")
-    .select("question_id, selected_option, is_correct")
+    .select("question_id, selected_option, is_correct, theory_answer, ai_feedback")
     .eq("attempt_id", attempt.id);
 
   const { data: questions } = await supabase
@@ -322,7 +324,8 @@ async function getExistingResults(supabase: any, attempt: any): Promise<QuizResu
       is_correct: ans.is_correct,
       duration_seconds: 0,
       explanation: q?.explanation || null,
-      ai_feedback: null,
+      ai_feedback: ans.ai_feedback,
+      theory_answer: ans.theory_answer,
     };
   });
 
