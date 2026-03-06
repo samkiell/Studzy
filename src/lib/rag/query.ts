@@ -45,10 +45,6 @@ async function searchEmbeddings(
   topK: number = TOP_K,
   threshold: number = 0 // Temporarily relaxed threshold for ML Infrastructure debug
 ): Promise<RetrievedChunk[]> {
-  // 🔴 TEMPORARILY DISABLED BY USER REQUEST (TOKENS SAVING)
-  console.log(`[RAG Search] 🚫 Search is temporarily disabled.`);
-  return [];
-
   const supabase = createAdminClient();
 
   // ML Infrastructure Debug Logging

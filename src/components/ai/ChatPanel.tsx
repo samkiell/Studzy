@@ -66,6 +66,12 @@ export function ChatPanel({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  // Set mounted flag
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Close options menu when clicking outside
   useEffect(() => {
@@ -78,10 +84,12 @@ export function ChatPanel({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Update messages when session changes
+  // Update messages when session changes (after mount)
   useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages]);
+    if (hasMounted) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, hasMounted]);
 
   // Handle scroll events to detect if user is at bottom
   const handleScroll = () => {
@@ -258,14 +266,20 @@ export function ChatPanel({
   }, [sessionId, mode, enableSearch]); // removed isLoading to avoid loops if state updates fast, but actually safe.
 
   useEffect(() => {
+    if (!hasMounted) return;
+
     if (initialMessages.length > 0) {
       const lastMsg = initialMessages[initialMessages.length - 1];
       if (lastMsg.role === 'user') {
-        triggerAIResponse();
+        // Wrap in a tiny delay to ensure React has fully finished the mount commit
+        const timer = setTimeout(() => {
+          triggerAIResponse();
+        }, 100);
+        return () => clearTimeout(timer);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasMounted, sessionId]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

@@ -90,6 +90,11 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const handleScroll = () => {
     if (!scrollAreaRef.current) return;
@@ -355,7 +360,7 @@ export const StudzyAIModal: React.FC<StudzyAIModalProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !hasMounted) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4">
