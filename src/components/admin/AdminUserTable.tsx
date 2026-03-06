@@ -53,7 +53,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
   };
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 30;
 
   const filteredUsers = useMemo(() => {
     const filtered = users.filter((u) => {
