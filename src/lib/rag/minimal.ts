@@ -2,7 +2,7 @@
 // Clean, Minimal RAG Implementation [DEBUG-READY]
 // ============================================
 
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText } from "./embeddings";
 import {
@@ -11,7 +11,7 @@ import {
   SIMILARITY_THRESHOLD,
 } from "./config";
 
-const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 /**
  * Execute the clean, minimal RAG flow with explicit logging.
@@ -64,32 +64,24 @@ If the answer is not in the materials, say you don't know.
 STUDY MATERIALS:
 ${context}`;
 
-    // 4. Call Mistral
-    console.log(`[RAG] CALLING Mistral (${CHAT_MODEL})...`);
-    const agentId = process.env.MISTRAL_AI_AGENT_ID;
+    // 4. Call Gemini
+    console.log(`[RAG] CALLING Gemini (${CHAT_MODEL})...`);
+    const model = genAI.getGenerativeModel({ 
+      model: CHAT_MODEL,
+      generationConfig: {
+        // @ts-ignore
+        thinking_level: "minimal"
+      }
+    });
     
-    let response;
-    if (agentId) {
-      response = await client.agents.complete({
-        agentId: agentId,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: query }
-        ],
-      });
-    } else {
-      response = await client.chat.complete({
-        model: CHAT_MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: query }
-        ],
-        temperature: 0.1,
-      });
-    }
+    const response = await model.generateContent({
+      contents: [
+        { role: "user", parts: [{ text: systemPrompt + "\n\nQuery: " + query }] }
+      ],
+    });
 
-    const answer = response.choices?.[0]?.message?.content || "No response generated.";
-    console.log(`[RAG] ✅ RESPONSE GENERATED (${response.usage?.totalTokens || 0} tokens used)`);
+    const answer = response.response.text();
+    console.log(`[RAG] ✅ RESPONSE GENERATED`);
 
     return {
       answer,

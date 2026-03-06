@@ -59,7 +59,6 @@ async function searchEmbeddings(
   console.log(`[RAG Search] --- Search Diagnostics ---`);
   console.log(`[RAG Search] Total vectors in collection: ${totalVectors || 0}`);
   console.log(`[RAG Search] Namespace: study_material_embeddings`);
-  console.log(`[RAG Search] Query Embedding Model: ${EMBEDDING_MODEL}`);
   console.log(`[RAG Search] Parameters: topK=${topK}, threshold=${threshold}`);
 
   const { data, error } = await supabase.rpc("match_embeddings", {

@@ -32,13 +32,6 @@ export async function embedText(text: string): Promise<number[]> {
   }
 }
 
-/**
- * Estimate tokens for a string safely.
- */
-function estimateTokens(text: string): number {
-  const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
-  return Math.ceil(wordCount * TOKENS_PER_WORD);
-}
 
 /**
  * Generate embeddings for multiple texts in efficient batches.
