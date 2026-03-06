@@ -227,6 +227,12 @@ export async function gradeTheoryExam({
       continue;
     }
 
+    // 🕒 Rate Limit Protection: Wait 1.2s between calls to stay under RPM limits
+    if (questionFeedbacks.length > 0) {
+      console.log(`[TheoryGrading] 🕒 Waiting 1.2s to respect rate limits...`);
+      await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+
     const grading = await gradeTheoryQuestion(question, studentAnswerText);
 
     totalScore += grading.score;

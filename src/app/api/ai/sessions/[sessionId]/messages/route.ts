@@ -288,6 +288,13 @@ export async function POST(
   } catch (error: any) {
     console.error("Messages POST error:", error);
     
+    // Log full diagnostic info for Mistral SDK Errors
+    console.error("[API Session] ❌ Diagnostic failure details:", {
+      status: error.status || error.statusCode,
+      message: error.message,
+      body: error.body
+    });
+
     // Handle Mistral SDK Errors (Rate limits, Invalid keys, etc.)
     if (error.statusCode === 429) {
       return NextResponse.json(
@@ -432,25 +439,6 @@ CRITICAL:
   }
 
   const finalMessages = validateMessages(mistralMessages);
-
-  // System prompt to replicate the agent's behavior
-  const studzySystemPrompt = {
-    role: "system",
-    content: `You are Studzy AI, a helpful and knowledgeable study assistant for Nigerian university students.
-You help with exam preparation, coursework, lecture notes, and general academic questions.
-Guidelines:
-1. Explain concepts clearly and concisely, using examples when helpful.
-2. If it's an exam question, provide a well-structured answer.
-3. Format your response with markdown for readability (headers, lists, bold, code blocks).
-4. Be encouraging and supportive in your tone.
-5. When you don't know something, say so honestly.
-6. Keep responses focused and relevant to the student's question.`
-  };
-
-  // Prepend system prompt if not already present
-  if (finalMessages.length === 0 || finalMessages[0].role !== "system") {
-    finalMessages.unshift(studzySystemPrompt);
-  }
 
   // 🖼️ Vision requests: Use pixtral model for image understanding
   if (hasImageRequest) {

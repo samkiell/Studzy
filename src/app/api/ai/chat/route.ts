@@ -191,10 +191,9 @@ export async function POST(request: NextRequest) {
             content: ragContext,
           });
         } else {
-          // 💡 FALLBACK: Inform the AI that no local context was found so it answers normally
           mistralMessages.unshift({
             role: "system",
-            content: "Note: No specific study materials were found in the database for this query. Please answer based on your general knowledge or available web search tools.",
+            content: "Answer based on general knowledge.",
           });
         }
       }
@@ -262,7 +261,12 @@ CRITICAL:
         return NextResponse.json({ content });
       }
     } catch (apiError: any) {
-      console.error("[API] ❌ Mistral failure:", apiError);
+      console.error("[API] ❌ Mistral failure details:", {
+        status: apiError.status || apiError.statusCode,
+        message: apiError.message,
+        body: apiError.body,
+        stack: apiError.stack
+      });
       return NextResponse.json(
         { error: `Mistral API Error: ${apiError.message}` },
         { status: 500 }
