@@ -2,11 +2,11 @@
 // RAG Configuration Constants
 // ============================================
 
-/** Mistral embedding model — outputs 1024-dim vectors */
-export const EMBEDDING_MODEL = "mistral-embed";
+/** Gemini embedding model — outputs 768-dim vectors */
+export const EMBEDDING_MODEL = "text-embedding-004";
 
-/** Mistral chat model for RAG responses */
-export const CHAT_MODEL = "mistral-large-latest";
+/** Gemini chat model for RAG responses */
+export const CHAT_MODEL = "gemini-3-flash-preview";
 
 /** Target chunk size in tokens (approx) */
 export const CHUNK_SIZE_TOKENS = 650;
