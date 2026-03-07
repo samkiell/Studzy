@@ -199,7 +199,7 @@ CRITICAL:
     }
 
     const model = genAI.getGenerativeModel({ 
-      model: hasImages ? "gemini-2.5-flash" : "gemini-2.5-flash", 
+      model: hasImages ? "gemini-2.5-pro" : "gemini-2.5-pro", 
       systemInstruction: systemPrompt.trim() || undefined,
       generationConfig: {
       }

@@ -5,8 +5,8 @@
 /** Gemini embedding model — outputs 768-dim vectors */
 export const EMBEDDING_MODEL = "text-embedding-004";
 
-/** Gemini chat model for RAG responses — upgraded to 2.5 Flash for state-of-the-art intelligence */
-export const CHAT_MODEL = "gemini-2.5-flash";
+/** Gemini chat model for RAG responses — upgraded to 2.5 Pro for higher quota + intelligence */
+export const CHAT_MODEL = "gemini-2.5-pro";
 
 /** Target chunk size in tokens (approx) */
 export const CHUNK_SIZE_TOKENS = 650;
