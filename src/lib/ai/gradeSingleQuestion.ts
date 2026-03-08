@@ -1,8 +1,8 @@
 import { GradingQuestion, AIGradingResponse } from "@/types/grading";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash-latest"; // highly compatible alias
-const API_VERSION = "v1beta"; 
+const GEMINI_MODEL = "gemini-2.0-flash";
 
 export async function gradeSingleQuestion(
   question: GradingQuestion,
@@ -11,6 +11,8 @@ export async function gradeSingleQuestion(
   if (!GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not configured");
   }
+
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
   const prompt = `
 You are an academic examiner. Grade the student answer strictly based on the question and max score provided.
@@ -36,41 +38,20 @@ Response Structure:
 IMPORTANT: The score must be between 0 and ${question.maxScore}.
 `;
 
-  const url = `https://generativelanguage.googleapis.com/${API_VERSION}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
   const executeRequest = async (): Promise<AIGradingResponse> => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
-          },
-        }),
-        signal: controller.signal,
+      const model = genAI.getGenerativeModel({ 
+        model: GEMINI_MODEL,
+        generationConfig: { 
+          responseMimeType: "application/json"
+        }
       });
 
-      clearTimeout(timeoutId);
+      const response = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gemini API error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
+      const content = response.response.text();
       if (!content) {
         throw new Error("Empty response from Gemini API");
       }
@@ -83,23 +64,24 @@ IMPORTANT: The score must be between 0 and ${question.maxScore}.
       
       return parsed;
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        throw new Error("Gemini API request timed out after 30 seconds");
-      }
       throw error;
-    } finally {
-      clearTimeout(timeoutId);
     }
   };
 
   try {
     return await executeRequest();
-  } catch (error) {
+  } catch (error: any) {
+    // Check for rate limiters or transient errors
+    const isRateLimit = error.message?.includes("429") || error.message?.includes("Quota exceeded");
+    
     if (retryCount > 0) {
-      console.warn(`Grading failed for question ${question.id}, retrying...`, error);
+      const delay = isRateLimit ? 2000 : 500; // Wait longer if rate limited
+      console.warn(`Grading failed for question ${question.id}, retrying in ${delay}ms...`, error.message);
+      await new Promise(resolve => setTimeout(resolve, delay));
       return gradeSingleQuestion(question, retryCount - 1);
     }
-    console.error(`Grading failed for question ${question.id} after retries.`, error);
+    
+    console.error(`Grading failed for question ${question.id} after retries.`, error.message);
     return {
       score: 0,
       feedback: "Failed to grade this question due to an AI service error.",

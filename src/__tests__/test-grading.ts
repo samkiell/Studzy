@@ -1,8 +1,26 @@
-import { gradeExam } from "../src/lib/ai/gradeExam";
-import { GradingQuestion } from "../src/types/grading";
+import { gradeExam } from "../lib/ai/gradeExam";
+import { GradingQuestion } from "../types/grading";
 
-// Mock environment variables would be needed if running outside Next.js
-// This script is for reference and manual execution verification ideas.
+// Load environment variables for local testing
+import * as fs from 'fs';
+import * as path from 'path';
+
+function loadEnv() {
+  const envPath = path.resolve(process.cwd(), '.env.local');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim().replace(/^['"](.*)['"]$/, '$1');
+        process.env[key] = value;
+      }
+    });
+  }
+}
+
+loadEnv();
 
 async function testGrading() {
   console.log("🚀 Starting AI Grading Pipeline Test...");
@@ -50,6 +68,4 @@ async function testGrading() {
   }
 }
 
-// Note: To run this, you'd need a local execution environment with GEMINI_API_KEY
-// For now, I'll provide the logic and verify the code structure.
-// testGrading();
+testGrading();
