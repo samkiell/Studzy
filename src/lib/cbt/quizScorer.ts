@@ -1,7 +1,65 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
+import { isTheoryQuestion } from "@/types/cbt";
+import type { Question, SubmitAnswer } from "@/types/cbt";
 import { gradeExam } from "@/lib/ai/gradeExam";
 import type { GradingQuestion } from "@/types/grading";
+
+// ─── TYPES ──────────────────────────────────────────────────
+
+/** A single submitted answer (MCQ or Theory) */
+export interface QuizSubmittedAnswer {
+  question_id: string;
+  /** MCQ: selected option key (e.g. "A"). Theory: null */
+  selected_option: string | null;
+  /** Theory: main answer text. MCQ: null */
+  theory_answer?: string | null;
+  /** Theory: sub-question answers { label: value }. MCQ: null */
+  theory_sub_answers?: Record<string, string> | null;
+  /** Time spent on this question */
+  duration_seconds: number;
+}
+
+/** Result for a single question after scoring */
+export interface QuestionResult {
+  question_id: string;
+  question_text: string;
+  topic: string | null;
+  difficulty?: string | null;
+  options: Record<string, string>;
+  correct_option: string | null;
+  selected_option: string | null;
+  is_correct: boolean;
+  duration_seconds: number;
+  explanation: string | null;
+  /** Theory-only: AI feedback */
+  ai_feedback?: {
+    score: number;
+    max_marks: number;
+    strengths: string[];
+    weaknesses: string[];
+    improvement: string;
+  } | null;
+  /** Theory-only: student's written answer text */
+  theory_answer?: string | null;
+}
+
+/** Full quiz submission result */
+export interface QuizResult {
+  score: number;
+  totalQuestions: number;
+  completedAt: string;
+  topicStats: Record<string, { correct: number; total: number; avgTime: number }>;
+  questionsWithAnswers: QuestionResult[];
+}
+
+/** Input for the modular scorer */
+export interface ScoreQuizInput {
+  attemptId: string;
+  answers: QuizSubmittedAnswer[];
+  durationSeconds: number;
+}
 
 // ─── MAIN SCORER ────────────────────────────────────────────
 

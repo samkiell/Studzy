@@ -1,7 +1,7 @@
 import { GradingQuestion, AIGradingResponse } from "@/types/grading";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.5-flash"; // Or standard gemini-1.5-flash if 2.5 isn't available
+const GEMINI_MODEL = "gemini-1.5-flash"; // More generous quotas than 2.5-flash-exp
 
 export async function gradeSingleQuestion(
   question: GradingQuestion,
