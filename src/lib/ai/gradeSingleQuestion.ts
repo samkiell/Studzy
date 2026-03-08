@@ -1,7 +1,8 @@
 import { GradingQuestion, AIGradingResponse } from "@/types/grading";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash"; // More generous quotas than 2.5-flash-exp
+const GEMINI_MODEL = "gemini-1.5-flash-latest"; // highly compatible alias
+const API_VERSION = "v1beta"; 
 
 export async function gradeSingleQuestion(
   question: GradingQuestion,
@@ -35,7 +36,7 @@ Response Structure:
 IMPORTANT: The score must be between 0 and ${question.maxScore}.
 `;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/${API_VERSION}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const executeRequest = async (): Promise<AIGradingResponse> => {
     const controller = new AbortController();
