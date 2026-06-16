@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
 
 export async function POST(request: NextRequest) {
@@ -92,6 +93,19 @@ export async function POST(request: NextRequest) {
         success: false,
         message: `Failed to save: ${insertError.message}`,
       }, { status: 500 });
+    }
+
+    // 📧 Notify students of the new resource (after the response is sent).
+    if (resource.status === "published") {
+      after(() =>
+        notifyStudentsOfNewContent({
+          kind: "resource",
+          courseId,
+          resourceTitle: title.trim(),
+          resourceType: type,
+          slug: resource.slug ?? finalSlug,
+        }),
+      );
     }
 
     return NextResponse.json({

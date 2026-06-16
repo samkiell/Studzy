@@ -70,3 +70,81 @@ export const getEmailTemplate = (type: 'confirm' | 'reset' | 'change' | 'magic',
 
   return templates[type];
 };
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const RESOURCE_TYPE_LABEL: Record<string, string> = {
+  audio: 'audio lecture',
+  video: 'video',
+  pdf: 'PDF',
+  image: 'image',
+  document: 'document',
+  question_bank: 'question bank',
+};
+
+/**
+ * Email sent to students when an admin uploads a new resource or CBT questions.
+ */
+export const getNewContentEmail = (data: {
+  kind: 'resource' | 'questions';
+  courseCode: string;
+  courseTitle: string;
+  url: string;
+  itemTitle?: string; // resource title
+  resourceType?: string; // audio | video | pdf | image | document
+  count?: number; // number of new questions
+}) => {
+  const baseStyles = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .badge { display: inline-block; padding: 4px 10px; background-color: #ede9fe; color: #6d28d9; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .button { display: inline-block; padding: 12px 24px; background-color: #7c3aed; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .footer { font-size: 12px; color: #6b7280; margin-top: 40px; }
+  `;
+
+  const course = `${escapeHtml(data.courseCode)} – ${escapeHtml(data.courseTitle)}`;
+
+  let subject: string;
+  let heading: string;
+  let body: string;
+  let cta: string;
+
+  if (data.kind === 'resource') {
+    const typeLabel = RESOURCE_TYPE_LABEL[data.resourceType ?? ''] ?? 'resource';
+    subject = `New ${typeLabel} in ${data.courseCode}`;
+    heading = `New ${typeLabel} added`;
+    body = `<p><strong>${escapeHtml(data.itemTitle ?? 'A new resource')}</strong> is now available in <strong>${course}</strong>.</p>`;
+    cta = 'View Resource';
+  } else {
+    const n = data.count ?? 0;
+    subject = `${n} new practice question${n === 1 ? '' : 's'} in ${data.courseCode}`;
+    heading = `${n} new practice question${n === 1 ? '' : 's'} added`;
+    body = `<p>${n} new question${n === 1 ? '' : 's'} ${n === 1 ? 'is' : 'are'} ready for you to practice in <strong>${course}</strong>.</p>`;
+    cta = 'Start Practicing';
+  }
+
+  return {
+    subject,
+    html: `
+      <div class="container">
+        <span class="badge">Studzy</span>
+        <h2 style="margin-top: 16px;">${heading}</h2>
+        ${body}
+        <a href="${data.url}" class="button">${cta}</a>
+        <p style="font-size: 13px; color: #6b7280;">Keep up the momentum — your next study session is one click away.</p>
+        <div class="footer">
+          You're receiving this because you have a Studzy account.<br/>
+          &copy; ${new Date().getFullYear()} Studzy.
+        </div>
+      </div>
+      <style>${baseStyles}</style>
+    `,
+  };
+};

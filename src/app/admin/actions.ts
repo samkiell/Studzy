@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
 import { STORAGE_BUCKET, MATERIALS_BUCKET } from "@/lib/rag/config";
 
@@ -481,6 +483,18 @@ export async function uploadCBTQuestions(formData: FormData) {
     revalidatePath("/admin/upload");
     revalidatePath("/admin/questions"); // Revalidate this too
     revalidatePath("/cbt");
+
+    // 📧 Notify students that new practice questions are available (post-response).
+    if (totalUploaded > 0) {
+      after(() =>
+        notifyStudentsOfNewContent({
+          kind: "questions",
+          courseId: courseData.id,
+          courseCode,
+          count: totalUploaded,
+        }),
+      );
+    }
 
     return {
       success: true,

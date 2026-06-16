@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -188,6 +189,20 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error(`[API Upload] Failed to trigger ingestion:`, err);
       }
+    }
+
+    // 📧 Notify students of the new resource (after the response is sent so it
+    // doesn't slow the upload). Only published resources are visible to students.
+    if (resource.status === "published") {
+      after(() =>
+        notifyStudentsOfNewContent({
+          kind: "resource",
+          courseId,
+          resourceTitle: title.trim(),
+          resourceType: type,
+          slug: resource.slug,
+        }),
+      );
     }
 
     return NextResponse.json({
