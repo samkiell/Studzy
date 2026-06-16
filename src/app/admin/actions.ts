@@ -480,6 +480,17 @@ export async function uploadCBTQuestions(formData: FormData) {
     const totalUploaded = validatedQuestions.length;
     const inserted = upsertedData?.length || 0;
 
+    // Ensure the course is flagged as a CBT course so it appears on /cbt.
+    // Uses the admin client (bypasses RLS) and only writes when it actually changes.
+    const { error: cbtFlagError } = await supabaseAdmin
+      .from("courses")
+      .update({ is_cbt: true })
+      .eq("id", courseData.id)
+      .eq("is_cbt", false);
+    if (cbtFlagError) {
+      console.error("[CBT Upload] Failed to enable is_cbt:", cbtFlagError.message);
+    }
+
     revalidatePath("/admin/upload");
     revalidatePath("/admin/questions"); // Revalidate this too
     revalidatePath("/cbt");

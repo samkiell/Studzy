@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   // Fetch all courses
