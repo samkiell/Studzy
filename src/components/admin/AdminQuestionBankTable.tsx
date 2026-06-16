@@ -4,14 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, Filter, Trash2, Download, FileJson, Calendar, BookOpen } from "lucide-react";
 import { Modal, useModal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { deleteResource } from "@/app/admin/actions"; // We reuse deleteResource since it's just a resource provided we update it to handle safely? 
-// actually deleteResource handles file deletion and DB deletion.
-// However, checking deleteResource implementation: it deletes from RAG bucket. 
-// Our new upload logic puts it in "question-banks/" in RAG bucket.
-// deleteResource logic: 
-// const pathParts = url.pathname.split("/storage/v1/object/public/RAG/");
-// const filePath = pathParts[1];
-// This SHOULD work if the URL structure matches.
+import { deleteQuestionBank } from "@/app/admin/actions";
 
 interface QuestionBank {
   id: string;
@@ -19,7 +12,7 @@ interface QuestionBank {
   course_code: string;
   file_url: string;
   created_at: string;
-  size?: number; // Optional if we have it
+  questionCount?: number;
 }
 
 interface AdminQuestionBankTableProps {
@@ -56,7 +49,7 @@ export function AdminQuestionBankTable({
     deleteModal.close();
 
     try {
-      const result = await deleteResource(fileToDelete.id);
+      const result = await deleteQuestionBank(fileToDelete.id);
 
       if (result.success) {
         setFiles(prev => prev.filter(f => f.id !== fileToDelete.id));
@@ -137,14 +130,21 @@ export function AdminQuestionBankTable({
                           </div>
                           <div>
                             <p className="font-medium text-neutral-900 dark:text-white">{file.title}</p>
-                            <a 
-                              href={file.file_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-xs text-primary-600 hover:underline"
-                            >
-                              Download JSON
-                            </a>
+                            <div className="flex items-center gap-2">
+                              {typeof file.questionCount === "number" && (
+                                <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                                  {file.questionCount} question{file.questionCount === 1 ? "" : "s"}
+                                </span>
+                              )}
+                              <a
+                                href={file.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary-600 hover:underline"
+                              >
+                                Download JSON
+                              </a>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -206,7 +206,11 @@ export function AdminQuestionBankTable({
         onClose={deleteModal.close}
         type="error"
         title="Delete Question Bank"
-        description="Are you sure you want to delete this file? Note: This currently only removes the file record. Questions imported from it remain in the database."
+        description={`This permanently deletes "${fileToDelete?.title ?? "this file"}"${
+          typeof fileToDelete?.questionCount === "number"
+            ? ` and all ${fileToDelete.questionCount} question${fileToDelete.questionCount === 1 ? "" : "s"} from it`
+            : " and all questions imported from it"
+        }. This cannot be undone.`}
         footer={
           <div className="flex w-full gap-3">
             <Button

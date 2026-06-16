@@ -77,26 +77,16 @@ export async function notifyStudentsOfNewContent(content: NewContent): Promise<v
       return;
     }
 
-    // Fail-safe recipient selection:
-    //   1. NOTIFY_TEST_EMAIL set        -> send ONLY to that address (preview/test)
-    //   2. NOTIFY_BROADCAST_ALL=true    -> send to ALL active students
-    //   3. neither set                  -> send NOTHING (so a fresh deploy can never
-    //                                      accidentally email everyone)
+    // Recipient selection:
+    //   - NOTIFY_TEST_EMAIL set -> send ONLY to that address (for previewing/staging)
+    //   - otherwise             -> send to ALL active students (production default)
     const testEmail = process.env.NOTIFY_TEST_EMAIL?.trim();
-    const broadcastAll = process.env.NOTIFY_BROADCAST_ALL === "true";
+    const recipients: StudentRecipient[] = testEmail
+      ? [{ email: testEmail, name: null }]
+      : await getStudentRecipients(admin);
 
-    let recipients: StudentRecipient[];
     if (testEmail) {
-      recipients = [{ email: testEmail, name: null }];
       console.log(`[notifications] TEST MODE — sending only to ${testEmail} (not students).`);
-    } else if (broadcastAll) {
-      recipients = await getStudentRecipients(admin);
-    } else {
-      console.log(
-        "[notifications] Not configured to send. Set NOTIFY_TEST_EMAIL to preview, " +
-          "or NOTIFY_BROADCAST_ALL=true to email all students.",
-      );
-      return;
     }
 
     if (recipients.length === 0) {

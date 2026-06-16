@@ -398,6 +398,30 @@ export async function uploadCBTQuestions(formData: FormData) {
        return { success: false, message: `Course not found for code: ${courseCode}` };
     }
 
+    // 2b. Record the uploaded JSON as a question_bank resource (the "file"), so the
+    // admin can later delete the whole batch in one click. Questions get stamped with
+    // this resource's id (bank_id); deleting the file cascades to all its questions.
+    const { data: bankUrlData } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(uploadData.path);
+
+    const { data: bankResource, error: bankError } = await supabase
+      .from("resources")
+      .insert({
+        course_id: courseData.id,
+        title: file.name,
+        type: "question_bank",
+        file_url: bankUrlData.publicUrl,
+        status: "published",
+      })
+      .select("id")
+      .single();
+
+    if (bankError) {
+      console.error("[CBT Upload] Failed to create question-bank record:", bankError.message);
+    }
+    const bankId = bankResource?.id ?? null;
+
     // 3. Process the Questions (Existing Logic)
     const content = await file.text();
     let data: unknown;
@@ -452,9 +476,10 @@ export async function uploadCBTQuestions(formData: FormData) {
       .from("questions")
       .upsert(
         validatedQuestions.map((q, idx) => ({
-          course_id: courseData.id, 
+          course_id: courseData.id,
+          bank_id: bankId,
           course_code: courseCode,
-          question_id: currentMaxId + (idx + 1), 
+          question_id: currentMaxId + (idx + 1),
           difficulty: q.difficulty,
           topic: q.topic,
           question_text: q.question_text,
@@ -541,6 +566,48 @@ export async function deleteQuestion(questionId: string | number): Promise<Uploa
     revalidatePath("/cbt");
 
     return { success: true, message: "Question deleted successfully" };
+  } catch (error: any) {
+    return { success: false, message: error.message || "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Delete an entire uploaded question bank: every question that came from that
+ * JSON file, plus the file record and the stored JSON itself.
+ */
+export async function deleteQuestionBank(resourceId: string): Promise<UploadResult> {
+  try {
+    await requireAdmin();
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+
+    // 1. Delete all questions belonging to this bank (admin client bypasses RLS).
+    const { error: qError, count } = await admin
+      .from("questions")
+      .delete({ count: "exact" })
+      .eq("bank_id", resourceId);
+
+    if (qError) {
+      return { success: false, message: `Failed to delete questions: ${qError.message}` };
+    }
+
+    // 2. Delete the file record + the stored JSON (also disables the course's CBT
+    //    if no questions remain is left to the admin; we just remove this batch).
+    const fileResult = await deleteResource(resourceId);
+    if (!fileResult.success) {
+      return {
+        success: false,
+        message: `Deleted ${count ?? 0} questions, but removing the file failed: ${fileResult.message}`,
+      };
+    }
+
+    revalidatePath("/admin/questions");
+    revalidatePath("/cbt");
+
+    return {
+      success: true,
+      message: `Deleted ${count ?? 0} question${count === 1 ? "" : "s"} and the file.`,
+    };
   } catch (error: any) {
     return { success: false, message: error.message || "An unexpected error occurred" };
   }

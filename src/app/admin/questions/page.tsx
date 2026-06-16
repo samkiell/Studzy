@@ -37,18 +37,10 @@ export default async function AdminQuestionsPage() {
     console.error("Error fetching question banks:", resourcesError);
   }
 
-  const files = (resources || []).map((r: any) => ({
-    id: r.id,
-    title: r.title,
-    course_code: r.courses?.code || "Unknown",
-    file_url: r.file_url,
-    created_at: r.created_at,
-  }));
-
   // 2. Fetch ALL individual questions from the questions table
   const { data: questionsData, error: questionsError } = await supabase
     .from("questions")
-    .select("id, course_code, question_id, question_text, options, correct_option, explanation, topic, difficulty, question_type, created_at")
+    .select("id, course_code, question_id, question_text, options, correct_option, explanation, topic, difficulty, question_type, created_at, bank_id")
     .order("created_at", { ascending: false });
 
   if (questionsError) {
@@ -67,6 +59,22 @@ export default async function AdminQuestionsPage() {
     difficulty: q.difficulty,
     question_type: q.question_type,
     created_at: q.created_at,
+  }));
+
+  // Count questions per uploaded bank so each file row shows its size.
+  const countByBank = new Map<string, number>();
+  for (const q of questionsData || []) {
+    const bankId = (q as any).bank_id as string | null;
+    if (bankId) countByBank.set(bankId, (countByBank.get(bankId) || 0) + 1);
+  }
+
+  const files = (resources || []).map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    course_code: r.courses?.code || "Unknown",
+    file_url: r.file_url,
+    created_at: r.created_at,
+    questionCount: countByBank.get(r.id) || 0,
   }));
 
   return (
