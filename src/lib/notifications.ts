@@ -39,10 +39,12 @@ function siteUrl(): string {
 async function getStudentRecipients(
   admin: ReturnType<typeof createAdminClient>,
 ): Promise<StudentRecipient[]> {
+  // Students are stored with role "user" (only admins have role "admin"), so target
+  // every active non-admin profile that has an email.
   const { data, error } = await admin
     .from("profiles")
     .select("email, full_name, username")
-    .eq("role", "student")
+    .neq("role", "admin")
     .eq("status", "active")
     .not("email", "is", null);
 
