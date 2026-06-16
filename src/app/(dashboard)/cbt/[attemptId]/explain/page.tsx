@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ChevronLeft, BrainCircuit, Sparkles, AlertCircle, CheckCircle2, Loader2, RefreshCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { generateExplanationPrompt } from "@/lib/cbt/ai-utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,93 +17,83 @@ export default function ExplainPage() {
   const [aiExplanation, setAiExplanation] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchAiExplanation = useCallback(async () => {
-    if (!session || !orderedQuestions.length) return;
-    
-    const currentQuestion = orderedQuestions[session.currentIndex];
-    const selectedOption = session.answers[currentQuestion.id];
-    
-    if (!currentQuestion || !selectedOption) return;
-
-    // Abort previous request if any
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    setIsLoading(true);
-    setError(null);
-    setAiExplanation("");
-
-    try {
-      const prompt = generateExplanationPrompt(currentQuestion, selectedOption);
-      
-      // Set a client-side timeout
-      const timeoutId = setTimeout(() => {
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
-          setError("The request timed out. Please try again.");
-          setIsLoading(false);
-        }
-      }, 60000); // 60s timeout for complex explanations
-
-      console.log("[AI] 📡 Fetching explanation (non-streaming)...");
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: abortControllerRef.current.signal,
-        body: JSON.stringify({
-          messages: [{ role: "user", content: prompt }],
-          mode: "chat",
-          enable_search: false,
-          enable_code: false,
-          stream: false,
-        }),
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        console.error("[AI] ❌ API response not OK:", response.status, response.statusText);
-        throw new Error(`Failed to reach Studzy AI (${response.status})`);
-      }
-
-      const data = await response.json();
-      console.log("[AI] ✅ Received response. Content length:", data.content?.length || 0);
-      
-      if (data.content) {
-        setAiExplanation(data.content);
-      } else {
-        throw new Error("No explanation received");
-      }
-      
-      // Final scroll on completion
-      if (scrollRef.current) {
-        scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      console.error("AI Explanation Error:", err);
-      setError(err.message || "Failed to generate explanation. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session, orderedQuestions]);
+  // Derive the current question + the picked option as stable primitives so the
+  // fetch effect only re-runs when they actually change (not on every render).
+  const currentQuestion =
+    isHydrated && session && orderedQuestions.length
+      ? orderedQuestions[session.currentIndex]
+      : undefined;
+  const selectedOption =
+    currentQuestion && session ? session.answers[currentQuestion.id] : undefined;
 
   useEffect(() => {
-    if (isHydrated && session && orderedQuestions.length && !aiExplanation && !isLoading && !error) {
-      fetchAiExplanation();
-    }
-    
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+    if (!currentQuestion || !selectedOption) return;
+
+    // `cancelled` distinguishes an unmount/question-change abort (silent) from
+    // our own timeout abort (which should surface a timeout error).
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+    const run = async () => {
+      setIsLoading(true);
+      setError(null);
+      setAiExplanation("");
+
+      try {
+        const prompt = generateExplanationPrompt(currentQuestion, selectedOption);
+        const response = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            messages: [{ role: "user", content: prompt }],
+            mode: "chat",
+            enable_search: false,
+            enable_code: false,
+            stream: false,
+          }),
+        });
+
+        if (!response.ok) {
+          const detail = await response.json().catch(() => null);
+          throw new Error(detail?.error || `Failed to reach Studzy AI (${response.status})`);
+        }
+
+        const data = await response.json();
+        if (cancelled) return;
+
+        if (data.content) {
+          setAiExplanation(data.content);
+        } else {
+          throw new Error(data.error || "No explanation received");
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        if (err?.name === "AbortError") {
+          setError("The request timed out. Please try again.");
+        } else {
+          console.error("AI Explanation Error:", err);
+          setError(err?.message || "Failed to generate explanation. Please try again.");
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        if (!cancelled) setIsLoading(false);
       }
     };
-  }, [isHydrated, session, orderedQuestions, aiExplanation, isLoading, error, fetchAiExplanation]);
+
+    run();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestion?.id, selectedOption, retryNonce]);
 
   // Auto-scroll while streaming
   useEffect(() => {
@@ -120,8 +110,6 @@ export default function ExplainPage() {
     );
   }
 
-  const currentQuestion = orderedQuestions[session.currentIndex];
-  
   if (!currentQuestion) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0B] gap-4">
@@ -132,7 +120,6 @@ export default function ExplainPage() {
     );
   }
 
-  const selectedOption = session.answers[currentQuestion.id];
   const isCorrect = selectedOption === currentQuestion.correct_option;
 
   return (
@@ -246,7 +233,7 @@ export default function ExplainPage() {
                 {error && !isLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 py-4">
                     <p className="text-sm text-red-400">{error}</p>
-                    <Button size="sm" onClick={fetchAiExplanation} className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20">Try Again</Button>
+                    <Button size="sm" onClick={() => setRetryNonce((n) => n + 1)} className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20">Try Again</Button>
                   </div>
                 )}
 
