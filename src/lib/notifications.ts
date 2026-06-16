@@ -1,6 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendBulkEmail } from "@/lib/email";
+import { sendIndividualEmails } from "@/lib/email";
 import { getNewContentEmail } from "@/lib/email-templates";
+
+type StudentRecipient = {
+  email: string;
+  name: string | null;
+};
 
 type NewResource = {
   kind: "resource";
@@ -28,26 +33,29 @@ function siteUrl(): string {
 }
 
 /**
- * Fetch the email addresses of every active student.
+ * Fetch the email + name of every active student.
  * Uses the service-role client so RLS doesn't hide other users' rows.
  */
-async function getStudentEmails(
+async function getStudentRecipients(
   admin: ReturnType<typeof createAdminClient>,
-): Promise<string[]> {
+): Promise<StudentRecipient[]> {
   const { data, error } = await admin
     .from("profiles")
-    .select("email")
+    .select("email, full_name, username")
     .eq("role", "student")
     .eq("status", "active")
     .not("email", "is", null);
 
   if (error) {
-    console.error("[notifications] Failed to load student emails:", error.message);
+    console.error("[notifications] Failed to load student recipients:", error.message);
     return [];
   }
   return (data ?? [])
-    .map((row) => (row as { email: string | null }).email)
-    .filter((e): e is string => !!e);
+    .map((row) => {
+      const r = row as { email: string | null; full_name: string | null; username: string | null };
+      return { email: r.email, name: r.full_name || r.username || null };
+    })
+    .filter((r): r is StudentRecipient => !!r.email);
 }
 
 /**
@@ -77,12 +85,12 @@ export async function notifyStudentsOfNewContent(content: NewContent): Promise<v
     const testEmail = process.env.NOTIFY_TEST_EMAIL?.trim();
     const broadcastAll = process.env.NOTIFY_BROADCAST_ALL === "true";
 
-    let recipients: string[];
+    let recipients: StudentRecipient[];
     if (testEmail) {
-      recipients = [testEmail];
+      recipients = [{ email: testEmail, name: null }];
       console.log(`[notifications] TEST MODE — sending only to ${testEmail} (not students).`);
     } else if (broadcastAll) {
-      recipients = await getStudentEmails(admin);
+      recipients = await getStudentRecipients(admin);
     } else {
       console.log(
         "[notifications] Not configured to send. Set NOTIFY_TEST_EMAIL to preview, " +
@@ -99,25 +107,31 @@ export async function notifyStudentsOfNewContent(content: NewContent): Promise<v
     const base = siteUrl();
     const courseUrl = `${base}/course/${course.code}`;
 
-    const email =
-      content.kind === "resource"
-        ? getNewContentEmail({
-            kind: "resource",
-            courseCode: course.code,
-            courseTitle: course.title,
-            itemTitle: content.resourceTitle,
-            resourceType: content.resourceType,
-            url: content.slug ? `${courseUrl}/resource/${content.slug}` : courseUrl,
-          })
-        : getNewContentEmail({
-            kind: "questions",
-            courseCode: course.code,
-            courseTitle: course.title,
-            count: content.count,
-            url: `${base}/cbt`,
-          });
+    // Build a personalized message per student (their own "To:" + their name).
+    const messages = recipients.map((recipient) => {
+      const email =
+        content.kind === "resource"
+          ? getNewContentEmail({
+              kind: "resource",
+              courseCode: course.code,
+              courseTitle: course.title,
+              recipientName: recipient.name,
+              itemTitle: content.resourceTitle,
+              resourceType: content.resourceType,
+              url: content.slug ? `${courseUrl}/resource/${content.slug}` : courseUrl,
+            })
+          : getNewContentEmail({
+              kind: "questions",
+              courseCode: course.code,
+              courseTitle: course.title,
+              recipientName: recipient.name,
+              count: content.count,
+              url: `${base}/cbt`,
+            });
+      return { to: recipient.email, subject: email.subject, html: email.html };
+    });
 
-    const result = await sendBulkEmail(recipients, email.subject, email.html);
+    const result = await sendIndividualEmails(messages);
     console.log(
       `[notifications] ${content.kind} email for ${course.code}: sent ${result.sent}/${result.total}, failed ${result.failed}.`,
     );

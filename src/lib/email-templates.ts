@@ -97,6 +97,7 @@ export const getNewContentEmail = (data: {
   courseCode: string;
   courseTitle: string;
   url: string;
+  recipientName?: string | null; // student's first name, for a personal greeting
   itemTitle?: string; // resource title
   resourceType?: string; // audio | video | pdf | image | document
   count?: number; // number of new questions
@@ -110,6 +111,10 @@ export const getNewContentEmail = (data: {
   `;
 
   const course = `${escapeHtml(data.courseCode)} – ${escapeHtml(data.courseTitle)}`;
+
+  // Use only the first word of the name so we greet "Samuel", not "Samuel Ezekiel".
+  const firstName = data.recipientName?.trim().split(/\s+/)[0];
+  const greeting = `<p>Hi ${firstName ? escapeHtml(firstName) : 'there'},</p>`;
 
   let subject: string;
   let heading: string;
@@ -136,6 +141,7 @@ export const getNewContentEmail = (data: {
       <div class="container">
         <span class="badge">Studzy</span>
         <h2 style="margin-top: 16px;">${heading}</h2>
+        ${greeting}
         ${body}
         <a href="${data.url}" class="button">${cta}</a>
         <p style="font-size: 13px; color: #6b7280;">Keep up the momentum — your next study session is one click away.</p>
