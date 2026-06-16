@@ -12,71 +12,10 @@ export interface Exam {
   endTime: string; // ISO string to know when it's over
 }
 
-export const EXAM_DATA: Exam[] = [
-  {
-    code: "CSC 201",
-    title: "Introduction to Python Programming",
-    location: "ICT Hall",
-    date: "Friday, 20th Feb, 2026",
-    time: "5:00pm – 6:00pm",
-    startTime: "2026-02-20T17:00:00",
-    endTime: "2026-02-20T18:00:00",
-  },
-  {
-    code: "MTH 201",
-    title: "Mathematical Foundations",
-    location: "ICT Hall",
-    date: "Saturday, 21st Feb, 2026",
-    time: "8:00am – 9:00am",
-    startTime: "2026-02-21T08:00:00",
-    endTime: "2026-02-21T09:00:00",
-  },
-  {
-    code: "STT 201",
-    title: "Statistics & Probability",
-    location: "ICT Hall",
-    date: "Wednesday, 4th March, 2026",
-    time: "1:00pm – 2:00pm",
-    startTime: "2026-03-04T13:00:00",
-    endTime: "2026-03-04T14:00:00",
-  },
-  {
-    code: "CPE 203",
-    title: "Digital Systems I",
-    location: "ICT Hall",
-    date: "Wednesday, 25th Feb, 2026",
-    time: "8:00am – 6:00pm",
-    startTime: "2026-02-25T08:00:00",
-    endTime: "2026-02-25T18:00:00",
-  },
-  {
-    code: "SEN 205",
-    title: "Software Requirement and Design",
-    location: "BOO B",
-    date: "Saturday, 7th March, 2026",
-    time: "12:00pm – 3:00pm",
-    startTime: "2026-03-07T12:00:00",
-    endTime: "2026-03-07T15:00:00",
-  },
-  {
-    code: "SEN 203",
-    title: "Discrete Structures",
-    location: "Seminar Room (A, B, C, D)",
-    date: "Saturday, 14th March, 2026",
-    time: "12:00pm – 3:00pm",
-    startTime: "2026-03-14T12:00:00",
-    endTime: "2026-03-14T15:00:00",
-  },
-  {
-    code: "SEN 201",
-    title: "Software Construction",
-    location: "Seminar Room (A, B, C, D)",
-    date: "Friday, 13th March, 2026",
-    time: "4:00pm – 7:00pm",
-    startTime: "2026-03-13T16:00:00",
-    endTime: "2026-03-13T19:00:00",
-  },
-];
+// Cleared for the new (Rain) semester — previous Harmattan-session exam dates
+// referenced courses that have been removed. Add the new exam timetable here
+// when it is published. Empty array → exam badges/countdown stay hidden.
+export const EXAM_DATA: Exam[] = [];
 
 /**
  * Get the exam schedule entry for a course by its code.
