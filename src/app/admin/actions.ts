@@ -405,11 +405,18 @@ export async function uploadCBTQuestions(formData: FormData) {
       .from(STORAGE_BUCKET)
       .getPublicUrl(uploadData.path);
 
+    // resources.slug is NOT NULL; build a unique slug (timestamp keeps it unique).
+    const bankSlug = `qb-${timestamp}-${file.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")}`.slice(0, 90);
+
     const { data: bankResource, error: bankError } = await supabase
       .from("resources")
       .insert({
         course_id: courseData.id,
         title: file.name,
+        slug: bankSlug,
         type: "question_bank",
         file_url: bankUrlData.publicUrl,
         status: "published",
