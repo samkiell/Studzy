@@ -68,7 +68,7 @@ export default async function AdminAnalyticsPage() {
           Resource Analytics
         </h1>
         <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-          Track resource views and completions
+          Track resource views and completions in real time
         </p>
       </div>
 
