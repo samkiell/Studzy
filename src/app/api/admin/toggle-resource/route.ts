@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyStudentsOfNewContent } from "@/lib/notifications";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -63,9 +64,27 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    let updatePayload: any = { [field]: value };
+    let shouldNotify = false;
+    let resourceDetails: any = null;
+
+    if (field === "status" && value === "published") {
+      const { data: existingResource } = await supabase
+        .from("resources")
+        .select("email_sent, course_id, title, type, slug")
+        .eq("id", resourceId)
+        .single();
+
+      if (existingResource && !existingResource.email_sent) {
+        updatePayload.email_sent = true;
+        shouldNotify = true;
+        resourceDetails = existingResource;
+      }
+    }
+
     const { error: updateError } = await supabase
       .from("resources")
-      .update({ [field]: value })
+      .update(updatePayload)
       .eq("id", resourceId);
 
     if (updateError) {
@@ -73,6 +92,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: `Failed to update: ${updateError.message}` },
         { status: 500 }
+      );
+    }
+
+    if (shouldNotify && resourceDetails) {
+      after(() =>
+        notifyStudentsOfNewContent({
+          kind: "resource",
+          courseId: resourceDetails.course_id,
+          resourceTitle: resourceDetails.title,
+          resourceType: resourceDetails.type,
+          slug: resourceDetails.slug,
+        })
       );
     }
 

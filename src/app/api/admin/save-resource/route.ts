@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
         description: description?.trim() || null,
         status: status || "published",
         uploader_id: user.id,
+        email_sent: (status || "published") === "published",
       })
       .select()
       .single();
@@ -145,6 +146,29 @@ export async function PATCH(request: NextRequest) {
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (status !== undefined) updateData.status = status;
     if (featured !== undefined) updateData.featured = featured;
+
+    // Check if status is transitioning to published, and if email was already sent
+    if (status === "published") {
+      const { data: existingResource } = await supabase
+        .from("resources")
+        .select("email_sent, course_id, title, type, slug")
+        .eq("id", id)
+        .single();
+
+      if (existingResource && !existingResource.email_sent) {
+        updateData.email_sent = true;
+        // Trigger notification email
+        after(() =>
+          notifyStudentsOfNewContent({
+            kind: "resource",
+            courseId: existingResource.course_id,
+            resourceTitle: (title !== undefined ? title.trim() : existingResource.title) || "",
+            resourceType: (type !== undefined ? type : existingResource.type) || "pdf",
+            slug: (slug !== undefined ? slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : existingResource.slug) || "",
+          })
+        );
+      }
+    }
 
     const { error: updateError } = await supabase
       .from("resources")

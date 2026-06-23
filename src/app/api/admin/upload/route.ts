@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
         type,
         file_url: fileUrl,
         description: description?.trim() || null,
+        email_sent: true,
       })
       .select()
       .single();

@@ -56,6 +56,7 @@ export interface Resource {
   featured: boolean;
   view_count: number;
   status: ResourceStatus;
+  email_sent: boolean;
   created_at: string;
 }
 
@@ -106,10 +107,11 @@ export interface Database {
       };
       resources: {
         Row: Resource;
-        Insert: Omit<Resource, "id" | "created_at"> & {
+        Insert: Omit<Resource, "id" | "created_at" | "email_sent"> & {
           id?: string;
           slug?: string;
           created_at?: string;
+          email_sent?: boolean;
         };
         Update: Partial<Omit<Resource, "id">>;
       };

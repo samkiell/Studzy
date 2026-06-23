@@ -76,6 +76,7 @@ CREATE TABLE resources (
     featured BOOLEAN NOT NULL DEFAULT false,
     view_count INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
+    email_sent BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

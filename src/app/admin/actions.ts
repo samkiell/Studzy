@@ -128,6 +128,7 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
         type,
         file_url: fileUrl,
         description: description?.trim() || null,
+        email_sent: true,
       })
       .select()
       .single();
