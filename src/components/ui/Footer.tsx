@@ -52,6 +52,11 @@ export function Footer() {
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               &copy; {new Date().getFullYear()} Studzy. Built for <strong>DevCore&apos;23</strong> Pioneers.
             </p>
+            <div className="mt-2 flex justify-center gap-4 text-xs text-neutral-400 dark:text-neutral-500 md:justify-start">
+              <a href="/privacy" className="hover:text-neutral-600 dark:hover:text-neutral-300">Privacy Policy</a>
+              <span>•</span>
+              <a href="/terms" className="hover:text-neutral-600 dark:hover:text-neutral-300">Terms of Service</a>
+            </div>
             <p className="mt-1 text-[10px] text-neutral-400 dark:text-neutral-500">
               Created with ⚡beans
             </p>
