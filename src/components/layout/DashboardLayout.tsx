@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { Footer } from "@/components/ui/Footer";
@@ -18,6 +19,10 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, user, role }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  // Hide footer + remove padding on CBT attempt pages (fullscreen quiz UI)
+  const isCbtAttempt = /^\/cbt\/[^/]+$/.test(pathname);
 
   return (
     <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950">
@@ -37,11 +42,11 @@ export function DashboardLayout({ children, user, role }: DashboardLayoutProps) 
         {/* Mobile Header */}
         <DashboardHeader user={user} role={role} />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10">
-          <div className="mx-auto max-w-7xl min-h-[calc(100vh-8rem)]">
+        <main className={`flex-1 ${isCbtAttempt ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10'}`}>
+          <div className={isCbtAttempt ? 'h-full' : 'mx-auto max-w-7xl min-h-[calc(100vh-8rem)]'}>
             {children}
           </div>
-          <Footer />
+          {!isCbtAttempt && <Footer />}
         </main>
       </div>
     </div>

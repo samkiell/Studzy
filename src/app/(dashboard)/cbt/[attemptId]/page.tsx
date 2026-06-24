@@ -89,13 +89,9 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <CbtInterface 
-          initialAttempt={attempt} 
-          questions={questions as Question[]} 
-        />
-      </div>
-    </div>
+    <CbtInterface 
+      initialAttempt={attempt} 
+      questions={questions as Question[]} 
+    />
   );
 }

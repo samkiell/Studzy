@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
+  ChevronUp,
   Clock, 
   Send, 
-  SkipForward,
   BrainCircuit,
   AlertCircle,
-  XCircle,
-  ShieldCheck,
   CheckCircle2,
   Trophy,
   Target
@@ -61,6 +60,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     questionsWithAnswers: any[];
   } | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [showJumpBar, setShowJumpBar] = useState(false);
   const [isCreatingAiSession, setIsCreatingAiSession] = useState(false);
   const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
   // Theory answer state: { questionId: { main: string, sub: { label: value } } }
@@ -309,161 +309,181 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0A0A0B] relative">
+    <div className="flex flex-col h-full bg-[#0A0A0B] overflow-hidden w-full max-w-full">
       <ContinueQuizModal 
         isOpen={hasExistingSession}
         onContinue={resumeExisting}
         onStartNew={startFresh}
         lastStartedAt={quizSessionStorage.getSession(initialAttempt.course_id)?.startedAt}
       />
-      {/* Top Header - Truly fixed below global navbar on mobile, top of content on desktop */}
-      <div className="fixed top-16 left-0 right-0 md:absolute md:top-0 z-40 border-b border-white/5 bg-[#0A0A0B]/95 backdrop-blur-md">
-        <div className="w-full px-4 py-2.5 md:py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-              <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
+
+      {/* ─── FIXED HEADER ─────────────────────────────────── */}
+      <div className="shrink-0 z-40 border-b border-white/[0.06] bg-[#0A0A0B] w-full">
+        {/* Course info row */}
+        <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded-md bg-indigo-500/10 shrink-0">
+              <BrainCircuit className="w-4 h-4 text-indigo-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] text-white font-mono uppercase tracking-wider leading-none mb-1">{initialAttempt.course_code}</p>
-              <h2 className="text-xs font-bold text-gray-500 truncate max-w-[140px] sm:max-w-none leading-none">
+              <p className="text-xs text-white/80 font-mono uppercase tracking-wider leading-none">{initialAttempt.course_code}</p>
+              <p className="text-xs text-gray-500 truncate max-w-[140px] sm:max-w-none leading-tight mt-0.5">
                 {initialAttempt.course_title || "CBT Session"}
-              </h2>
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-2 shrink-0">
             {initialAttempt.mode !== 'exam' && (
-              <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                <Target className="w-3 h-3 text-green-400" />
-                <span className="text-[11px] md:text-sm font-bold font-mono text-green-400">{currentAccuracy}%</span>
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/5 text-green-400">
+                <Target className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold font-mono">{currentAccuracy}%</span>
               </div>
             )}
 
             {initialAttempt.mode === 'exam' && (
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${
+              <div className={`flex items-center gap-1 px-2.5 py-1 rounded-md ${
                 timeLeft < 300 
-                  ? 'bg-red-500/10 border-red-500/20 text-red-400 animate-pulse' 
-                  : 'bg-white/5 border-white/5 text-gray-300'
+                  ? 'bg-red-500/10 text-red-400 animate-pulse' 
+                  : 'bg-white/5 text-gray-300'
               }`}>
-                <Clock className="w-3 h-3" />
-                <span className="text-[11px] md:text-sm font-bold font-mono">
-                  {formatTime(timeLeft)}
-                </span>
+                <Clock className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold font-mono">{formatTime(timeLeft)}</span>
               </div>
+            )}
+
+            {initialAttempt.mode === 'exam' && (
+              <button 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="text-xs font-bold uppercase tracking-wide text-red-500/70 hover:text-red-400 transition-colors ml-1"
+              >
+                {isSubmitting ? "..." : "End"}
+              </button>
             )}
           </div>
         </div>
         
-        {/* Progress Bar - Attached to header */}
-        <div className="w-full h-0.5 bg-white/5">
+        {/* Progress bar */}
+        <div className="w-full h-[2px] bg-white/[0.04]">
           <motion.div 
-            className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"
+            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
             initial={{ width: 0 }}
             animate={{ width: `${((currentIndex + 1) / orderedQuestions.length) * 100}%` }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         </div>
 
-        {/* Quick Jump Bar */}
-        <div 
-          className="w-full bg-[#0A0A0B]/90 border-t border-white/5 px-4 py-2.5 flex items-center gap-2 overflow-x-auto"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest shrink-0 mr-1 select-none">
-            Jump to:
-          </span>
-          <div className="flex items-center gap-1.5">
-            {orderedQuestions.map((q, idx) => {
-              const isCurrent = idx === currentIndex;
-              const hasAnswer = isTheoryQuestion(q) 
-                ? (theoryAnswers[q.id]?.main?.trim() || Object.values(theoryAnswers[q.id]?.sub || {}).some(v => v?.trim()))
-                : !!answers[q.id];
-              
-              let numBg = "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5";
-              if (isCurrent) {
-                numBg = "bg-indigo-600 text-white border border-indigo-500 shadow-md shadow-indigo-600/20 font-bold";
-              } else if (hasAnswer) {
-                numBg = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium";
-              }
+        {/* Jump bar toggle + collapsible grid */}
+        <div className="px-3 sm:px-4">
+          <button
+            type="button"
+            onClick={() => setShowJumpBar(!showJumpBar)}
+            className="w-full flex items-center justify-between py-2 text-xs text-gray-400 hover:text-gray-300 transition-colors"
+          >
+            <span className="font-medium">Jump to question</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-500 font-mono text-[11px]">{currentIndex + 1}/{orderedQuestions.length}</span>
+              {showJumpBar ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </div>
+          </button>
+          
+          <AnimatePresence>
+            {showJumpBar && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap items-center gap-1.5 pb-2.5">
+                  {orderedQuestions.map((q, idx) => {
+                    const isCurrent = idx === currentIndex;
+                    const hasAnswer = isTheoryQuestion(q) 
+                      ? (theoryAnswers[q.id]?.main?.trim() || Object.values(theoryAnswers[q.id]?.sub || {}).some(v => v?.trim()))
+                      : !!answers[q.id];
+                    
+                    let numBg = "bg-white/[0.04] text-gray-500 hover:bg-white/[0.08] hover:text-gray-300";
+                    if (isCurrent) {
+                      numBg = "bg-indigo-600 text-white font-bold";
+                    } else if (hasAnswer) {
+                      numBg = "bg-emerald-500/10 text-emerald-400";
+                    }
 
-              return (
-                <button
-                  key={q.id}
-                  type="button"
-                  onClick={() => {
-                    setSessionCurrentIndex(idx);
-                    setShowExplanation(false);
-                  }}
-                  className={`w-7 h-7 rounded-lg text-xs flex items-center justify-center transition-all shrink-0 active:scale-95 ${numBg}`}
-                  title={`Question ${idx + 1}`}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
-          </div>
+                    return (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => {
+                          setSessionCurrentIndex(idx);
+                          setShowExplanation(false);
+                        }}
+                        className={`w-7 h-7 rounded-md text-xs flex items-center justify-center transition-all active:scale-95 ${numBg}`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Main Question Area - Balanced Padding to account for fixed header with jump bar */}
-      <div className="flex-1 pt-36 md:pt-32 pb-32">
-        <div className="max-w-3xl mx-auto px-4">
+      {/* ─── FIXED QUESTION TEXT ─────────────────────────── */}
+      <div className="shrink-0 bg-[#0A0A0B] px-3 sm:px-4 pt-4 pb-3 border-b border-white/[0.04]">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+              Q{currentIndex + 1}
+            </span>
+            <span className="w-px h-3 bg-white/10" />
+            <span className="text-xs font-medium text-indigo-400/80 uppercase tracking-wide truncate">
+              {currentQuestion.topic || "General"}
+            </span>
+            {currentQuestion.difficulty && (
+              <>
+                <span className="w-px h-3 bg-white/10" />
+                <span className={`text-xs font-bold uppercase tracking-wide shrink-0 ${
+                  currentQuestion.difficulty === 'easy'
+                    ? 'text-emerald-400/70'
+                    : currentQuestion.difficulty === 'hard'
+                    ? 'text-red-400/70'
+                    : 'text-amber-400/70'
+                }`}>
+                  {currentQuestion.difficulty}
+                </span>
+              </>
+            )}
+          </div>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-medium leading-snug text-white/90">
+            {currentQuestion.question_text}
+          </h2>
+        </div>
+      </div>
+
+      {/* ─── SCROLLABLE OPTIONS AREA ──────────────────────── */}
+      <div className="flex-1 overflow-y-auto min-h-0 overflow-x-hidden">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, scale: 0.98, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 1.02, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-8"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.12 }}
+              className="space-y-3"
             >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Question {currentIndex + 1} of {orderedQuestions.length}
-                    </span>
-                    <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest leading-none">
-                      {currentQuestion.topic || "General"}
-                    </span>
-                    {currentQuestion.difficulty && (
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
-                        currentQuestion.difficulty === 'easy'
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : currentQuestion.difficulty === 'hard'
-                          ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                          : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                      }`}>
-                        {currentQuestion.difficulty}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {initialAttempt.mode === 'exam' && (
-                    <button 
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      className="text-[10px] font-bold uppercase tracking-widest text-red-500/80 hover:text-red-400 transition-colors"
-                    >
-                      {isSubmitting ? "..." : "Submit Exam"}
-                    </button>
-                  )}
-                </div>
-                <h2 className="text-xl md:text-3xl font-medium leading-tight text-white/90">
-                  {currentQuestion.question_text}
-                </h2>
-              </div>
-
-              {/* Dynamic renderer: MCQ options OR Theory textareas */}
+              {/* Options / Theory */}
               {isTheoryQuestion(currentQuestion) ? (
-                /* ── THEORY QUESTION RENDERER ─────────────────────── */
-                <div className="space-y-5">
-                  {/* Sub-questions */}
+                <div className="space-y-3">
                   {currentQuestion.sub_questions && currentQuestion.sub_questions.length > 0 ? (
                     currentQuestion.sub_questions.map((sq) => (
-                      <div key={sq.label} className="bg-[#0E0E10] border border-white/5 rounded-xl p-4">
-                        <label className="block text-sm font-medium text-gray-200 mb-2">
-                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-bold mr-2">
+                      <div key={sq.label} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                        <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold mr-1.5">
                             {sq.label}
                           </span>
                           {sq.content}
@@ -472,45 +492,43 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                           value={theoryAnswers[currentQuestion.id]?.sub[sq.label] || ""}
                           onChange={(e) => updateTheoryAnswer(currentQuestion.id, sq.label, e.target.value, true)}
                           placeholder={`Answer for part ${sq.label}...`}
-                          rows={4}
+                          rows={3}
                           disabled={isSubmitted}
-                          className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all text-white placeholder-gray-600 resize-y min-h-[80px] text-sm"
+                          className="w-full bg-[#111113] border border-white/[0.08] rounded-lg px-3 py-2 outline-none focus:border-emerald-500/40 transition-colors text-white text-sm placeholder-gray-600 resize-y min-h-[60px]"
                         />
                       </div>
                     ))
                   ) : (
-                    /* Single main answer textarea */
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Your Answer</label>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5">Your Answer</label>
                       <textarea
                         value={theoryAnswers[currentQuestion.id]?.main || ""}
                         onChange={(e) => updateTheoryAnswer(currentQuestion.id, "main", e.target.value)}
                         placeholder="Write your answer here..."
-                        rows={8}
+                        rows={6}
                         disabled={isSubmitted}
-                        className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all text-white placeholder-gray-600 resize-y min-h-[120px]"
+                        className="w-full bg-[#111113] border border-white/[0.08] rounded-lg px-3 py-2 outline-none focus:border-emerald-500/40 transition-colors text-white placeholder-gray-600 resize-y min-h-[100px]"
                       />
                     </div>
                   )}
                 </div>
               ) : (
-                /* ── MCQ RENDERER (existing) ──────────────────────── */
-                <div className="grid grid-cols-1 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 gap-2.5">
                   {Object.entries(currentQuestion.options).map(([key, value]) => {
                     const isSelected = answers[currentQuestion.id] === key;
                     const isCorrect = key === currentQuestion.correct_option;
                     const hasAnswered = !!answers[currentQuestion.id];
                     
-                    let buttonStyles = "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.07]";
+                    let buttonStyles = "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]";
                     if (isSelected) {
-                      buttonStyles = "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/50";
+                      buttonStyles = "bg-indigo-500/10 border-indigo-500/40";
                     }
                     
                     if (initialAttempt.mode === 'study' && hasAnswered) {
                       if (isCorrect) {
-                        buttonStyles = "bg-green-500/10 border-green-500/30 ring-1 ring-green-500/20";
+                        buttonStyles = "bg-green-500/8 border-green-500/25";
                       } else if (isSelected) {
-                        buttonStyles = "bg-red-500/10 border-red-500/30 ring-1 ring-red-500/20";
+                        buttonStyles = "bg-red-500/8 border-red-500/25";
                       }
                     }
 
@@ -519,22 +537,17 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                         key={key}
                         onClick={() => handleSelectOption(key)}
                         disabled={(initialAttempt.mode === 'study' && hasAnswered) || isSubmitted}
-                        className={`group p-4 md:p-5 rounded-2xl border transition-all text-left flex items-start gap-4 ${buttonStyles}`}
+                        className={`group p-3.5 sm:p-4 rounded-xl border transition-all text-left flex items-center gap-3 ${buttonStyles}`}
                       >
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform group-active:scale-95 ${
-                          isSelected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-gray-500 border border-white/5'
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
+                          isSelected ? 'bg-indigo-500 text-white' : 'bg-white/[0.05] text-gray-500'
                         }`}>
                           {key.toUpperCase()}
                         </div>
-                        <div className="flex-1 py-1">
-                          <span className="text-gray-200 text-sm md:text-base leading-relaxed">{value}</span>
-                          {initialAttempt.mode === 'study' && hasAnswered && isCorrect && (
-                            <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-green-400 uppercase tracking-wider">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Correct Answer
-                            </div>
-                          )}
-                        </div>
+                        <span className="text-gray-200 text-sm sm:text-base leading-snug flex-1">{value}</span>
+                        {initialAttempt.mode === 'study' && hasAnswered && isCorrect && (
+                          <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+                        )}
                       </button>
                     );
                   })}
@@ -544,75 +557,50 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
               {/* Study Mode Feedback */}
               {initialAttempt.mode === 'study' && answers[currentQuestion.id] && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-6 md:p-8 rounded-3xl border overflow-hidden relative ${
+                  className={`p-4 sm:p-5 rounded-xl border ${
                     answers[currentQuestion.id] === currentQuestion.correct_option 
-                      ? "bg-green-500/5 border-green-500/10"
-                      : "bg-red-500/5 border-red-500/10"
+                      ? "bg-green-500/[0.04] border-green-500/10"
+                      : "bg-red-500/[0.04] border-red-500/10"
                   }`}
                 >
-                  {/* Decorative background blur */}
-                  <div className={`absolute -right-10 -top-10 w-40 h-40 blur-3xl rounded-full opacity-10 ${
-                    answers[currentQuestion.id] === currentQuestion.correct_option ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
                         {answers[currentQuestion.id] === currentQuestion.correct_option ? (
-                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-                            <Trophy className="w-5 h-5 text-green-500" />
-                          </div>
+                          <Trophy className="w-4 h-4 text-green-500 shrink-0" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-                            <AlertCircle className="w-5 h-5 text-red-500" />
-                          </div>
+                          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                         )}
-                        <div>
-                          <h4 className="font-bold text-lg text-white">
-                            {answers[currentQuestion.id] === currentQuestion.correct_option ? "Correct!" : "U dey wrong"}
-                          </h4>
-                          <p className="text-xs text-gray-400">
-                            {answers[currentQuestion.id] === currentQuestion.correct_option 
-                              ? "Excellent understanding. Keep the momentum going!"
-                              : `The correct answer is ${currentQuestion.correct_option?.toUpperCase() || 'N/A'}. Review the explanation below.`}
-                          </p>
-                        </div>
+                        <span className="font-semibold text-sm sm:text-base text-white">
+                          {answers[currentQuestion.id] === currentQuestion.correct_option ? "Correct!" : "Wrong"}
+                        </span>
+                        {answers[currentQuestion.id] !== currentQuestion.correct_option && (
+                          <span className="text-xs sm:text-sm text-gray-400">
+                            — Answer: {currentQuestion.correct_option?.toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       
-                      <Button 
-                        variant="outline"
+                      <button
                         onClick={handleExplainWithAi}
                         disabled={isCreatingAiSession}
-                        size="sm"
-                        className="hidden sm:flex gap-2 border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10"
+                        className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors shrink-0"
                       >
                         {isCreatingAiSession ? (
-                          <div className="w-4 h-4 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
-                        ) : <BrainCircuit className="w-4 h-4" />}
-                        Explain with AI
-                      </Button>
+                          <div className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                        ) : <BrainCircuit className="w-3.5 h-3.5" />}
+                        <span className="hidden sm:inline">Explain with AI</span>
+                        <span className="sm:hidden">AI</span>
+                      </button>
                     </div>
 
-                    <div className="bg-white/5 border border-white/5 p-4 rounded-2xl">
-                      <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">
-                      <span className="font-bold text-white mr-1">Explanation:</span>
-                        {currentQuestion.explanation || "No explanation provided for this question."}
+                    {currentQuestion.explanation && (
+                      <p className="text-xs sm:text-sm text-gray-400 leading-relaxed pl-6">
+                        {currentQuestion.explanation}
                       </p>
-                    </div>
-
-                    <Button 
-                      variant="outline"
-                      onClick={handleExplainWithAi}
-                      disabled={isCreatingAiSession}
-                      className="w-full sm:hidden gap-2 border-indigo-500/20 bg-indigo-500/5 text-indigo-400"
-                    >
-                      {isCreatingAiSession ? (
-                         <div className="w-4 h-4 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
-                      ) : <BrainCircuit className="w-4 h-4" />}
-                      Explain with AI
-                    </Button>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -621,38 +609,40 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         </div>
       </div>
 
-      {/* Bottom Navigation - Sticky */}
-      <div className="sticky bottom-0 border-t border-white/5 bg-black/40 backdrop-blur-2xl px-4 py-4 md:py-6 z-30 -mb-4 -mx-4 md:-mb-8 md:-mx-8 lg:-mb-10 lg:-mx-10">
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+      {/* ─── FIXED BOTTOM NAV ─────────────────────────────── */}
+      <div className="shrink-0 z-40 border-t border-white/[0.06] bg-[#0A0A0B]/95 backdrop-blur-sm px-3 sm:px-4 py-3">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Button 
             onClick={prevQuestion} 
             disabled={currentIndex === 0}
-            className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all gap-2"
+            className="h-10 px-4 sm:px-5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-gray-300 hover:bg-white/[0.08] hover:text-white transition-all gap-1.5 text-sm"
           >
-            <ChevronLeft className="w-5 h-5" />
-            <span>Previous</span>
+            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Prev</span>
           </Button>
 
-          <div className="flex items-center gap-2">
-            {!isLastQuestion ? (
-              <Button 
-                onClick={nextQuestion} 
-                className="h-12 px-8 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all gap-2"
-              >
-                Next
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting}
-                className="h-12 px-8 rounded-2xl bg-green-600 hover:bg-green-700 text-white shadow-xl shadow-green-500/20 gap-2"
-              >
-                {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
-                Final Submit
-              </Button>
-            )}
-          </div>
+          <span className="text-xs text-gray-500 font-mono">
+            {answeredCount}/{orderedQuestions.length}
+          </span>
+
+          {!isLastQuestion ? (
+            <Button 
+              onClick={nextQuestion} 
+              className="h-10 px-4 sm:px-5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-gray-300 hover:bg-white/[0.08] hover:text-white transition-all gap-1.5 text-sm"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              className="h-10 px-5 sm:px-6 rounded-xl bg-green-600 hover:bg-green-700 text-white gap-1.5 text-sm"
+            >
+              {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+              Submit
+            </Button>
+          )}
         </div>
       </div>
     </div>

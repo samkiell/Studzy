@@ -68,56 +68,56 @@ export function InstallPWA() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[99999] w-max max-w-[95vw]"
+        className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[99999] sm:w-max sm:max-w-[90vw]"
       >
-        <div className="flex items-center gap-6 rounded-[28px] border border-neutral-200/50 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] p-4 pl-6 pr-4 dark:border-white/10 dark:bg-neutral-900">
-          <div className="flex items-center gap-5">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 shrink-0">
-              <Download className="h-7 w-7" />
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 rounded-2xl border border-neutral-200/50 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] p-4 dark:border-white/10 dark:bg-neutral-900">
+          {/* Dismiss X */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDismiss();
+            }}
+            className="absolute top-2 right-2 sm:static flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full sm:rounded-xl transition-colors hover:bg-neutral-100 dark:hover:bg-white/10 shrink-0 sm:order-last"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4 sm:h-5 sm:w-5 text-neutral-400" />
+          </button>
+
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 shrink-0">
+              <Download className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[17px] font-extrabold text-neutral-900 dark:text-white leading-tight">
+              <span className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white leading-tight">
                 Install Studzy
               </span>
-              <span className="text-[12px] font-semibold text-neutral-500 dark:text-neutral-400 leading-tight mt-1">
+              <span className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 leading-tight mt-0.5">
                 Have it as an App on your phone
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {!isIOS ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleInstall();
-                }}
-                className="rounded-2xl bg-indigo-600 px-8 py-3.5 text-[15px] font-bold text-white transition-all hover:bg-indigo-700 active:scale-95 shadow-xl shadow-indigo-600/30"
-              >
-                Install Now
-              </button>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDismiss();
-                }}
-                className="rounded-2xl bg-neutral-100 px-8 py-3.5 text-[15px] font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
-              >
-                Got it
-              </button>
-            )}
+          {!isIOS ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleInstall();
+              }}
+              className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-600/20 shrink-0"
+            >
+              Install
+            </button>
+          ) : (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleDismiss();
               }}
-              className="group flex h-12 w-12 items-center justify-center rounded-2xl transition-colors hover:bg-neutral-100 dark:hover:bg-white/10"
-              aria-label="Close"
+              className="w-full sm:w-auto rounded-xl bg-neutral-100 px-5 py-2.5 text-sm font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 shrink-0"
             >
-              <X className="h-6 w-6 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-white" />
+              Got it
             </button>
-          </div>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>
