@@ -14,8 +14,10 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/profile#reset-pwd`);
       }
       
-      // If it's a signup confirmation, show the success page
-      if (searchParams.get('type') === 'signup' || !searchParams.has('next')) {
+      const isEmailUser = data.user?.app_metadata?.provider === "email";
+
+      // If it's an email signup confirmation, show the success page
+      if (isEmailUser && (searchParams.get('type') === 'signup' || !searchParams.has('next'))) {
         const username =
           data.user?.user_metadata?.username ||
           "Scholar";
