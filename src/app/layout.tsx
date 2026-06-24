@@ -138,7 +138,17 @@ export default function RootLayout({
         <InstallPWA />
         <Analytics />
         <SpeedInsights />
-        <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
+        <Toaster 
+          position="bottom-right" 
+          toastOptions={{ 
+            duration: 3000,
+            style: {
+              background: "#171717",
+              color: "#fff",
+              border: "1px solid #262626",
+            }
+          }} 
+        />
       </body>
     </html>
   );
