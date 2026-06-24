@@ -12,15 +12,15 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  allowedDevOrigins: [
+    "localhost:3000",
+    "192.168.137.1:3000",
+    "192.168.137.1"
+  ],
   experimental: {
     serverActions: {
       bodySizeLimit: "100mb",
     },
-    allowedDevOrigins: [
-      "localhost:3000",
-      "192.168.137.1:3000",
-      "192.168.137.1"
-    ]
   },
   images: {
     remotePatterns: [

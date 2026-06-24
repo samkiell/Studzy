@@ -133,7 +133,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Courses" 
           value={String(courses?.length || 0)} 
@@ -232,15 +232,13 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-          {icon}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-neutral-600 dark:text-neutral-400">{title}</p>
-          <p className="truncate text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
-        </div>
+    <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-900 flex flex-col justify-between gap-3 min-h-[110px]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 w-fit shrink-0">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 truncate">{title}</p>
+        <p className="text-lg sm:text-2xl font-bold text-neutral-900 dark:text-white mt-1 truncate">{value}</p>
       </div>
     </div>
   );
