@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { Question, Attempt, SubmitAnswer, isTheoryQuestion } from "@/types/cbt";
 import { submitCbtAttempt } from "@/app/(dashboard)/cbt/actions";
 import { useRouter, useParams } from "next/navigation";
+import { saveOfflineAttempt, getOfflineAttempt } from "@/lib/offline/offlineDb";
 
 import { ResultSummary } from "./ResultSummary";
 import { useQuizSession } from "@/hooks/useQuizSession";
@@ -92,6 +93,33 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       const fetchExistingResults = async () => {
         setIsSubmitting(true);
         try {
+          if (initialAttempt.id.startsWith("offline_")) {
+            const stored = await getOfflineAttempt(initialAttempt.id);
+            if (stored) {
+              const score = (stored as any).score || 0;
+              const mockResults = {
+                score,
+                totalQuestions: questions.length,
+                topicStats: {},
+                questionsWithAnswers: questions.map((q) => ({
+                  id: q.id,
+                  question_text: q.question_text,
+                  options: q.options || {},
+                  correct_option: q.correct_option || null,
+                  selected_option: stored.answers[q.id] || null,
+                  is_correct: q.correct_option ? stored.answers[q.id] === q.correct_option : false,
+                  duration_seconds: stored.questionDurations[q.id] || 0,
+                  explanation: q.explanation || null,
+                  topic: q.topic || null,
+                  difficulty: q.difficulty || null,
+                })),
+              };
+              setResults(mockResults);
+              setIsSubmitted(true);
+            }
+            return;
+          }
+
           const res = await submitCbtAttempt({
             attemptId: initialAttempt.id,
             answers: [],
@@ -107,7 +135,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       };
       fetchExistingResults();
     }
-  }, [initialAttempt.completed_at, initialAttempt.id, results, isSubmitting]);
+  }, [initialAttempt.completed_at, initialAttempt.id, results, isSubmitting, questions]);
 
   // Timer logic for exam mode
   useEffect(() => {
@@ -232,6 +260,56 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     if (isSubmitting || isSubmitted) return;
     setIsSubmitting(true);
     
+    if (initialAttempt.id.startsWith("offline_")) {
+      try {
+        const score = orderedQuestions.reduce((acc, q) => {
+          const isMcq = q.options && Object.keys(q.options).length > 0;
+          if (isMcq) {
+            return acc + (answers[q.id] === q.correct_option ? 1 : 0);
+          }
+          return acc;
+        }, 0);
+
+        const mockResults = {
+          score,
+          totalQuestions: orderedQuestions.length,
+          topicStats: {},
+          questionsWithAnswers: orderedQuestions.map((q) => ({
+            id: q.id,
+            question_text: q.question_text,
+            options: q.options || {},
+            correct_option: q.correct_option || null,
+            selected_option: answers[q.id] || null,
+            is_correct: q.correct_option ? answers[q.id] === q.correct_option : false,
+            duration_seconds: questionDurations[q.id] || 0,
+            explanation: q.explanation || null,
+            topic: q.topic || null,
+            difficulty: q.difficulty || null,
+          })),
+        };
+
+        await saveOfflineAttempt({
+          ...initialAttempt,
+          answers,
+          theoryAnswers,
+          questionDurations,
+          completed_at: new Date().toISOString(),
+          pending_sync: true,
+          score,
+          duration_seconds: initialAttempt.mode === 'exam' ? ((initialAttempt.time_limit_seconds || 1800) - timeLeft) : 0,
+        } as any);
+
+        setResults(mockResults);
+        setIsSubmitted(true);
+        clearSession();
+      } catch (error) {
+        console.error("Offline submission failed:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     const formattedAnswers: SubmitAnswer[] = Object.entries(answers).map(([id, option]) => ({
       question_id: id,
       selected_option: option,
