@@ -622,7 +622,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
           </Button>
 
           <span className="text-xs text-gray-500 font-mono">
-            {answeredCount}/{orderedQuestions.length}
+            {answeredCount}/{orderedQuestions.length} answered
           </span>
 
           {!isLastQuestion ? (
