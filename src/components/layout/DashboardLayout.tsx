@@ -42,8 +42,8 @@ export function DashboardLayout({ children, user, role }: DashboardLayoutProps) 
         {/* Mobile Header */}
         <DashboardHeader user={user} role={role} />
 
-        <main className={`flex-1 ${isCbtAttempt ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10'}`}>
-          <div className={isCbtAttempt ? 'h-full' : 'mx-auto max-w-7xl min-h-[calc(100vh-8rem)]'}>
+        <main className={`flex-1 ${isCbtAttempt ? 'overflow-hidden h-full flex flex-col' : 'overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10'}`}>
+          <div className={isCbtAttempt ? 'h-full flex flex-col' : 'mx-auto max-w-7xl min-h-[calc(100vh-8rem)]'}>
             {children}
           </div>
           {!isCbtAttempt && <Footer />}

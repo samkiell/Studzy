@@ -320,7 +320,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
       {/* ─── FIXED HEADER ─────────────────────────────────── */}
       <div className="shrink-0 z-40 border-b border-white/[0.06] bg-[#0A0A0B] w-full">
         {/* Course info row */}
-        <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="p-1.5 rounded-md bg-indigo-500/10 shrink-0">
               <BrainCircuit className="w-4 h-4 text-indigo-400" />
@@ -375,7 +375,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
         </div>
 
         {/* Jump bar toggle + collapsible grid */}
-        <div className="px-3 sm:px-4">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4">
           <button
             type="button"
             onClick={() => setShowJumpBar(!showJumpBar)}
@@ -397,7 +397,7 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="flex flex-wrap items-center gap-1.5 pb-2.5">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pb-2.5">
                   {orderedQuestions.map((q, idx) => {
                     const isCurrent = idx === currentIndex;
                     const hasAnswer = isTheoryQuestion(q) 
