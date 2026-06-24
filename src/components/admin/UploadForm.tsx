@@ -21,6 +21,7 @@ import { CBTUploadToggle } from "./cbt/CBTUploadToggle";
 import { CourseSelector } from "./cbt/CourseSelector";
 import { JSONFileInput } from "./cbt/JSONFileInput";
 import { UploadSummary } from "./cbt/UploadSummary";
+import { CBTPreview } from "./cbt/CBTPreview";
 import { STORAGE_BUCKET, MATERIALS_BUCKET } from "@/lib/rag/config";
 
 interface UploadFormProps {
@@ -78,6 +79,14 @@ export function UploadForm({ courses }: UploadFormProps) {
   const [isCbtMode, setIsCbtMode] = useState(false);
   const [cbtFile, setCbtFile] = useState<File | null>(null);
   const [cbtSummary, setCbtSummary] = useState<any>(null);
+  const [cbtPreview, setCbtPreview] = useState<{
+    totalQuestions: number;
+    topics: { name: string; count: number }[];
+    difficultyCounts: Record<string, number>;
+    questionTypes: Record<string, number>;
+    isValid: boolean;
+    errors: string[];
+  } | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -92,6 +101,90 @@ export function UploadForm({ courses }: UploadFormProps) {
       messageRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [globalMessage]);
+
+  // Parse CBT JSON file to show preview
+  useEffect(() => {
+    if (!cbtFile) {
+      setCbtPreview(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const parsed = JSON.parse(text);
+
+        if (!Array.isArray(parsed)) {
+          setCbtPreview({
+            totalQuestions: 0,
+            topics: [],
+            difficultyCounts: {},
+            questionTypes: {},
+            isValid: false,
+            errors: ["CBT data must be a JSON array of questions."],
+          });
+          return;
+        }
+
+        const topicsMap: Record<string, number> = {};
+        const difficulties: Record<string, number> = {};
+        const types: Record<string, number> = {};
+        const errors: string[] = [];
+
+        parsed.forEach((q: any, index: number) => {
+          const qNum = index + 1;
+          if (!q.question_text) {
+            errors.push(`Question #${qNum} is missing "question_text".`);
+          }
+
+          const type = q.question_type || "mcq";
+          types[type] = (types[type] || 0) + 1;
+
+          if (type === "mcq") {
+            if (!q.options || typeof q.options !== "object") {
+              errors.push(`Question #${qNum} (MCQ) is missing "options" object.`);
+            } else if (!q.correct_option) {
+              errors.push(`Question #${qNum} (MCQ) is missing "correct_option".`);
+            }
+          } else {
+            if (!q.model_answer) {
+              errors.push(`Question #${qNum} (Theory) is missing "model_answer".`);
+            }
+          }
+
+          const topic = q.topic || "Uncategorized";
+          topicsMap[topic] = (topicsMap[topic] || 0) + 1;
+
+          const difficulty = q.difficulty || "medium";
+          difficulties[difficulty] = (difficulties[difficulty] || 0) + 1;
+        });
+
+        const topics = Object.entries(topicsMap)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count);
+
+        setCbtPreview({
+          totalQuestions: parsed.length,
+          topics,
+          difficultyCounts: difficulties,
+          questionTypes: types,
+          isValid: errors.length === 0,
+          errors: errors.slice(0, 5),
+        });
+      } catch (err: any) {
+        setCbtPreview({
+          totalQuestions: 0,
+          topics: [],
+          difficultyCounts: {},
+          questionTypes: {},
+          isValid: false,
+          errors: [`Failed to parse JSON: ${err.message}`],
+        });
+      }
+    };
+    reader.readAsText(cbtFile);
+  }, [cbtFile]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -495,6 +588,14 @@ export function UploadForm({ courses }: UploadFormProps) {
             onFileSelect={setCbtFile} 
             disabled={isSaving}
           />
+
+          {cbtFile && cbtPreview && (
+            <CBTPreview 
+              preview={cbtPreview} 
+              fileName={cbtFile.name} 
+              fileSize={cbtFile.size} 
+            />
+          )}
           
           {cbtSummary && (
             <UploadSummary 

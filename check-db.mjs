@@ -8,8 +8,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 async function check() {
   const { data, error } = await supabase
     .from("resources")
-    .select("type, file_url")
-    .limit(20);
+    .select("id, title, status, email_sent, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
 
   if (error) {
     console.error(error);
