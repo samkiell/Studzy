@@ -83,7 +83,6 @@ export const metadata: Metadata = {
 };
 
 import { Footer } from "@/components/ui/Footer";
-import { SyncProvider } from "@/components/providers/SyncProvider";
 
 export default function RootLayout({
   children,
@@ -98,6 +97,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Studzy" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -126,7 +138,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased flex flex-col min-h-screen`} suppressHydrationWarning>
         <UserPresence />
-        <SyncProvider>
           <LoadingProvider>
             <AIProvider>
               <div className="flex-1 flex flex-col">
@@ -134,7 +145,6 @@ export default function RootLayout({
               </div>
             </AIProvider>
           </LoadingProvider>
-        </SyncProvider>
         <InstallPWA />
         <Analytics />
         <SpeedInsights />

@@ -4,7 +4,8 @@ import {
   Brain, 
   User, 
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  Settings
 } from "lucide-react";
 
 export interface NavItemConfig {
@@ -39,6 +40,11 @@ export const NAVIGATION_ITEMS: NavItemConfig[] = [
     label: "Profile",
     href: "/profile",
     icon: User,
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings,
   },
   {
     label: "Admin",

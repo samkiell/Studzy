@@ -35,7 +35,7 @@ export function DashboardLayout({ children, user, role }: DashboardLayoutProps) 
 
       {/* Main Content Area */}
       <div 
-        className={`flex flex-1 flex-col transition-all duration-300 ${
+        className={`flex flex-1 flex-col h-screen overflow-hidden transition-all duration-300 ${
           isCollapsed ? "md:pl-20" : "md:pl-64"
         }`}
       >

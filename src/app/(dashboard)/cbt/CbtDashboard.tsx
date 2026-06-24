@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   BookOpen, 
@@ -11,26 +11,13 @@ import {
   ChevronRight,
   Info,
   BrainCircuit,
-  Gauge,
-  Download,
-  Trash2,
-  Wifi,
-  WifiOff
+  Gauge
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { startCbtAttempt, getCbtMetadata } from "./actions";
-import { CbtMode, Question } from "@/types/cbt";
+import { CbtMode } from "@/types/cbt";
 import { Course } from "@/types/database";
-import { 
-  getDownloadedCourseIds, 
-  saveCoursesOffline, 
-  saveQuestionsOffline, 
-  deleteOfflineCourse, 
-  saveOfflineAttempt, 
-  getOfflineQuestions 
-} from "@/lib/offline/offlineDb";
-import { toast } from "react-hot-toast";
 
 interface CbtDashboardProps {
   courses: Course[];
@@ -50,80 +37,9 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const [difficulty, setDifficulty] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
 
-  const [isOnline, setIsOnline] = useState(true);
-  const [downloadedCourseIds, setDownloadedCourseIds] = useState<string[]>([]);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  // Sync online status and downloaded courses list
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    setIsOnline(navigator.onLine);
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    // Initial load of offline courses
-    getDownloadedCourseIds()
-      .then((ids) => {
-        setDownloadedCourseIds(ids);
-      })
-      .catch((err) => console.error("Error loading offline courses:", err));
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
   const selectedCourse = courses.find(c => c.id === courseId);
   const courseTitle = selectedCourse ? selectedCourse.title : "Select a Course";
   const courseCode = selectedCourse ? selectedCourse.code : "";
-
-  // Helper to load metadata from offline IndexedDB database
-  const loadOfflineMetadata = async (id: string) => {
-    if (!id) return;
-    setMetadataLoading(true);
-    try {
-      const qList = await getOfflineQuestions(id);
-      if (!qList || qList.length === 0) {
-        setMetadata(null);
-        return;
-      }
-      
-      const uniqueTopics = Array.from(new Set(qList.map((q) => q.topic).filter(Boolean))) as string[];
-      const topics = uniqueTopics.map((topicName) => ({
-        name: topicName,
-        count: qList.filter((q) => q.topic === topicName).length,
-      }));
-      
-      const uniqueDifficulties = Array.from(new Set(qList.map((q) => q.difficulty).filter(Boolean))) as string[];
-      const difficulties = uniqueDifficulties.map((diffName) => ({
-        name: diffName,
-        count: qList.filter((q) => q.difficulty === diffName).length,
-      }));
-
-      const hasTheory = qList.some(q => !q.options || Object.keys(q.options).length === 0);
-
-      setMetadata({
-        topics,
-        totalQuestions: qList.length,
-        hasTheoryQuestions: hasTheory,
-        difficulties,
-      });
-
-      if (hasTheory) {
-        setMode("exam");
-      }
-    } catch (err) {
-      console.error("Failed to load offline metadata:", err);
-    } finally {
-      setMetadataLoading(false);
-    }
-  };
 
   // Fetch metadata when course changes
   const handleCourseChange = async (id: string) => {
@@ -132,11 +48,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
     setTopic("all");
     setError(null);
     if (!id) return;
-
-    if (!navigator.onLine) {
-      await loadOfflineMetadata(id);
-      return;
-    }
 
     setMetadataLoading(true);
     try {
@@ -148,49 +59,9 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
       }
     } catch (err) {
       console.error("Failed to fetch metadata:", err);
-      // Fallback offline metadata if server call fails
-      await loadOfflineMetadata(id);
+      setError("Failed to fetch course details from server. Make sure you are connected to the internet.");
     } finally {
       setMetadataLoading(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!courseId || !selectedCourse) return;
-    setIsDownloading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/cbt/download?courseId=${courseId}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to download course questions");
-      }
-      const data = await response.json();
-      
-      // Save course metadata and downloaded questions offline
-      await saveCoursesOffline([selectedCourse]);
-      await saveQuestionsOffline(courseId, data.questions as Question[]);
-      
-      // Update downloaded list
-      setDownloadedCourseIds(prev => [...new Set([...prev, courseId])]);
-      toast.success(`${courseCode} downloaded for offline use!`);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to download course questions.");
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleDeleteDownload = async () => {
-    if (!courseId) return;
-    try {
-      await deleteOfflineCourse(courseId);
-      setDownloadedCourseIds(prev => prev.filter(id => id !== courseId));
-      toast.success(`${courseCode} offline copy removed.`);
-    } catch (err: any) {
-      console.error(err);
-      setError("Failed to delete offline copy.");
     }
   };
 
@@ -201,58 +72,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
     }
     setIsLoading(true);
     setError(null);
-
-    if (!isOnline) {
-      try {
-        const offlineQuestions = await getOfflineQuestions(courseId);
-        if (!offlineQuestions || offlineQuestions.length === 0) {
-          throw new Error("No offline questions found for this course.");
-        }
-
-        const mockAttemptId = `offline_${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)}`;
-        
-        // Filter questions by selected difficulty/topic if chosen
-        let filteredQuestions = [...offlineQuestions];
-        if (topic !== "all") {
-          filteredQuestions = filteredQuestions.filter(q => q.topic === topic);
-        }
-        if (difficulty !== "all") {
-          filteredQuestions = filteredQuestions.filter(q => q.difficulty === difficulty);
-        }
-
-        if (filteredQuestions.length === 0) {
-          throw new Error("No offline questions found matching your filter criteria.");
-        }
-
-        const initialAttempt = {
-          id: mockAttemptId,
-          course_id: courseId,
-          course_code: courseCode,
-          course_title: courseTitle,
-          mode: mode,
-          total_questions: Math.min(numQuestions, filteredQuestions.length),
-          answers: {},
-          questionDurations: {},
-          pending_sync: true,
-          question_ids: filteredQuestions.slice(0, numQuestions).map(q => q.id),
-          completed_at: null,
-          time_limit_seconds: mode === 'exam' ? timeLimit * 60 : 0,
-          score: 0,
-          user_id: "offline_user",
-          duration_seconds: 0,
-          started_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-        };
-
-        await saveOfflineAttempt(initialAttempt);
-        router.push(`/cbt/offline?attemptId=${mockAttemptId}`);
-      } catch (err: any) {
-        setError(err.message || "Failed to start offline CBT session");
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
 
     try {
       const { attempt } = await startCbtAttempt({
@@ -271,10 +90,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
       setIsLoading(false);
     }
   };
-
-  const visibleCourses = isOnline
-    ? courses
-    : courses.filter((c) => downloadedCourseIds.includes(c.id));
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white p-4 md:p-12 lg:p-24 flex flex-col items-center">
@@ -300,17 +115,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
 
         <section className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-8 backdrop-blur-xl shadow-2xl">
           <div className="space-y-8">
-            {/* Offline Mode Banner */}
-            {!isOnline && (
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs md:text-sm flex items-center gap-2.5">
-                <WifiOff className="w-4 h-4 shrink-0 text-amber-400" />
-                <div>
-                  <span className="font-semibold block">Offline Mode Active</span>
-                  <span className="text-[11px] md:text-xs text-amber-400/80">Only courses downloaded while online are available.</span>
-                </div>
-              </div>
-            )}
-
             {/* Course Selector */}
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">
@@ -318,41 +122,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                   <BookOpen className="w-4 h-4 text-indigo-400" />
                   Select Course
                 </label>
-                
-                {/* Download Button */}
-                {courseId && isOnline && (
-                  <div className="flex items-center gap-2 w-fit sm:w-auto">
-                    {downloadedCourseIds.includes(courseId) ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          Downloaded ✓
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleDeleteDownload}
-                          className="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-gray-400 transition-all"
-                          title="Remove offline copy"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleDownload}
-                        disabled={isDownloading}
-                        className="flex items-center gap-1 text-[10px] font-extrabold bg-indigo-500/15 border border-indigo-500/35 hover:bg-indigo-500/25 px-2.5 py-1 rounded-full text-indigo-400 transition-all disabled:opacity-50 uppercase tracking-wider"
-                      >
-                        {isDownloading ? (
-                          <div className="w-3 h-3 border border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
-                        ) : (
-                          <Download className="w-3 h-3" />
-                        )}
-                        <span>Download offline</span>
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
               
               <select 
@@ -361,16 +130,14 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                 className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all appearance-none text-white cursor-pointer"
               >
                 <option value="" disabled>Select a course...</option>
-                {visibleCourses.length > 0 ? (
-                  visibleCourses.map((course) => (
+                {courses.length > 0 ? (
+                  courses.map((course) => (
                     <option key={course.id} value={course.id}>
                       {course.code} - {course.title}
                     </option>
                   ))
                 ) : (
-                  <option value="" disabled>
-                    {isOnline ? "No CBT courses available" : "No downloaded courses available offline"}
-                  </option>
+                  <option value="" disabled>No CBT courses available</option>
                 )}
               </select>
             </div>
