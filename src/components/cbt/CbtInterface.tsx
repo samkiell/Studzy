@@ -134,6 +134,67 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isSubmitted, isSubmitting, initialAttempt.mode]);
 
+  // Keyboard Shortcuts listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSubmitted) return;
+
+      // Ignore shortcuts if user is typing in an input, textarea or contenteditable element
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+
+      // Navigation: Left / Right arrows
+      if (e.key === "ArrowLeft") {
+        if (currentIndex > 0) {
+          setSessionCurrentIndex(currentIndex - 1);
+          setShowExplanation(false);
+        }
+      } else if (e.key === "ArrowRight") {
+        if (currentIndex < orderedQuestions.length - 1) {
+          setSessionCurrentIndex(currentIndex + 1);
+          setShowExplanation(false);
+        }
+      }
+
+      // Option Selection: A, B, C, D
+      if (currentQuestion && !isTheoryQuestion(currentQuestion)) {
+        if (key === "a") {
+          handleSelectOption("A");
+        } else if (key === "b") {
+          handleSelectOption("B");
+        } else if (key === "c") {
+          handleSelectOption("C");
+        } else if (key === "d") {
+          handleSelectOption("D");
+        }
+      }
+
+      // Hotkey 'j' to skip/jump to a specific question number
+      if (key === "j") {
+        e.preventDefault();
+        const numStr = prompt(`Enter question number to skip to (1-${orderedQuestions.length}):`);
+        if (numStr) {
+          const num = parseInt(numStr, 10);
+          if (!isNaN(num) && num >= 1 && num <= orderedQuestions.length) {
+            setSessionCurrentIndex(num - 1);
+            setShowExplanation(false);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentIndex, orderedQuestions, isSubmitted, currentQuestion]);
+
   const handleSelectOption = (option: string) => {
     if (isSubmitted || !currentQuestion) return;
     setAnswer(currentQuestion.id, option);
@@ -302,10 +363,50 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         </div>
+
+        {/* Quick Jump Bar */}
+        <div 
+          className="w-full bg-[#0A0A0B]/90 border-t border-white/5 px-4 py-2.5 flex items-center gap-2 overflow-x-auto"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest shrink-0 mr-1 select-none">
+            Jump to:
+          </span>
+          <div className="flex items-center gap-1.5">
+            {orderedQuestions.map((q, idx) => {
+              const isCurrent = idx === currentIndex;
+              const hasAnswer = isTheoryQuestion(q) 
+                ? (theoryAnswers[q.id]?.main?.trim() || Object.values(theoryAnswers[q.id]?.sub || {}).some(v => v?.trim()))
+                : !!answers[q.id];
+              
+              let numBg = "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5";
+              if (isCurrent) {
+                numBg = "bg-indigo-600 text-white border border-indigo-500 shadow-md shadow-indigo-600/20 font-bold";
+              } else if (hasAnswer) {
+                numBg = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium";
+              }
+
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => {
+                    setSessionCurrentIndex(idx);
+                    setShowExplanation(false);
+                  }}
+                  className={`w-7 h-7 rounded-lg text-xs flex items-center justify-center transition-all shrink-0 active:scale-95 ${numBg}`}
+                  title={`Question ${idx + 1}`}
+                >
+                  {idx + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Main Question Area - Balanced Padding to account for fixed header */}
-      <div className="flex-1 pt-24 md:pt-20 pb-32">
+      {/* Main Question Area - Balanced Padding to account for fixed header with jump bar */}
+      <div className="flex-1 pt-36 md:pt-32 pb-32">
         <div className="max-w-3xl mx-auto px-4">
           <AnimatePresence mode="wait">
             <motion.div
