@@ -27,7 +27,7 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
 
   if (attemptError || !attemptData) {
     console.error("Attempt fetch error:", attemptError);
-    notFound();
+    throw new Error(`CBT Attempt fetch error: ${attemptError?.message || "No data found"}`);
   }
 
   // 2. Fetch the course title
