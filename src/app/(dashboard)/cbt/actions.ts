@@ -251,3 +251,114 @@ export async function submitCbtAttempt({
   return result;
 }
 
+export async function syncOfflineAttempt(offlineAttempt: {
+  course_id: string;
+  mode: CbtMode;
+  total_questions: number;
+  score: number;
+  duration_seconds: number;
+  time_limit_seconds: number | null;
+  question_ids: string[];
+  answers: Record<string, string>;
+  theoryAnswers?: Record<string, { main?: string; sub: Record<string, string> }>;
+  questionDurations: Record<string, number>;
+  started_at: string;
+  completed_at: string;
+}) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  // 1. Create a server-side attempt record matching the offline one
+  const { data: attempt, error: attemptError } = await supabase
+    .from("attempts")
+    .insert({
+      user_id: user.id,
+      course_id: offlineAttempt.course_id,
+      mode: offlineAttempt.mode,
+      total_questions: offlineAttempt.total_questions,
+      score: offlineAttempt.score,
+      duration_seconds: offlineAttempt.duration_seconds,
+      time_limit_seconds: offlineAttempt.time_limit_seconds,
+      question_ids: offlineAttempt.question_ids,
+      started_at: offlineAttempt.started_at,
+      completed_at: offlineAttempt.completed_at,
+    })
+    .select()
+    .single();
+
+  if (attemptError || !attempt) {
+    console.error("Failed to create sync attempt record:", attemptError);
+    throw new Error(`Failed to sync: ${attemptError?.message || "DB error"}`);
+  }
+
+  // 2. Insert all the student's answers (MCQ + Theory) into 'student_answers' table
+  const submittedAnswers: any[] = [];
+
+  // MCQs
+  for (const [qId, option] of Object.entries(offlineAttempt.answers)) {
+    const duration = offlineAttempt.questionDurations[qId] || 0;
+    
+    // Check if correct
+    const { data: qData } = await supabase
+      .from("questions")
+      .select("correct_option")
+      .eq("id", qId)
+      .single();
+
+    const isCorrect = qData?.correct_option === option;
+
+    submittedAnswers.push({
+      attempt_id: attempt.id,
+      question_id: qId,
+      selected_option: option,
+      theory_answer: null,
+      theory_sub_answers: null,
+      is_correct: isCorrect,
+      duration_seconds: duration,
+    });
+  }
+
+  // Theory
+  if (offlineAttempt.theoryAnswers) {
+    for (const [qId, answer] of Object.entries(offlineAttempt.theoryAnswers)) {
+      if (submittedAnswers.find(a => a.question_id === qId)) continue;
+      
+      const duration = offlineAttempt.questionDurations[qId] || 0;
+
+      submittedAnswers.push({
+        attempt_id: attempt.id,
+        question_id: qId,
+        selected_option: null,
+        theory_answer: answer.main || null,
+        theory_sub_answers: Object.keys(answer.sub).length > 0 ? answer.sub : null,
+        is_correct: false, // will require grading / not auto-scored offline
+        duration_seconds: duration,
+      });
+    }
+  }
+
+  if (submittedAnswers.length > 0) {
+    const { error: answersError } = await supabase
+      .from("student_answers")
+      .insert(submittedAnswers);
+
+    if (answersError) {
+      console.error("Failed to insert synced student answers:", answersError);
+      // Clean up the attempt record to prevent duplicates
+      await supabase.from("attempts").delete().eq("id", attempt.id);
+      throw new Error(`Failed to sync answers: ${answersError.message}`);
+    }
+  }
+
+  revalidatePath("/dashboard/cbt");
+  return { success: true, serverAttemptId: attempt.id };
+}
+

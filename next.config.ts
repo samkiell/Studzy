@@ -5,6 +5,9 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: false, // Temporarily enabled for PWA verification
   register: true,
+  fallbacks: {
+    document: "/offline",
+  },
 });
 
 const nextConfig: NextConfig = {
@@ -13,6 +16,11 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "100mb",
     },
+    allowedDevOrigins: [
+      "localhost:3000",
+      "192.168.137.1:3000",
+      "192.168.137.1"
+    ]
   },
   images: {
     remotePatterns: [

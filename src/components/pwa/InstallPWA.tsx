@@ -15,16 +15,31 @@ export function InstallPWA() {
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(ios);
 
-    // Check if already in standalone mode
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
-    if (isStandalone) return;
+    const checkAndShowPrompt = async (showFn: () => void) => {
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+      if (isStandalone) return;
 
-    if (ios) {
-      // iOS doesn't support 'beforeinstallprompt', so we show manual instructions
+      if ("getInstalledRelatedApps" in navigator) {
+        try {
+          const relatedApps = await (navigator as any).getInstalledRelatedApps();
+          if (relatedApps && relatedApps.length > 0) {
+            return; // Already installed, skip prompt
+          }
+        } catch (e) {
+          console.error("Failed to check installed apps:", e);
+        }
+      }
+
       const isDismissed = sessionStorage.getItem("pwa-prompt-dismissed");
       if (!isDismissed) {
-        setTimeout(() => setIsVisible(true), 3000);
+        showFn();
       }
+    };
+
+    if (ios) {
+      setTimeout(() => {
+        checkAndShowPrompt(() => setIsVisible(true));
+      }, 3000);
       return;
     }
 
@@ -32,10 +47,9 @@ export function InstallPWA() {
       e.preventDefault();
       setDeferredPrompt(e);
       
-      const isDismissed = sessionStorage.getItem("pwa-prompt-dismissed");
-      if (!isDismissed) {
-        setTimeout(() => setIsVisible(true), 3000);
-      }
+      setTimeout(() => {
+        checkAndShowPrompt(() => setIsVisible(true));
+      }, 3000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);

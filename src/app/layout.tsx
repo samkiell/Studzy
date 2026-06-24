@@ -83,6 +83,7 @@ export const metadata: Metadata = {
 };
 
 import { Footer } from "@/components/ui/Footer";
+import { SyncProvider } from "@/components/providers/SyncProvider";
 
 export default function RootLayout({
   children,
@@ -125,13 +126,15 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased flex flex-col min-h-screen`} suppressHydrationWarning>
         <UserPresence />
-        <LoadingProvider>
-          <AIProvider>
-            <div className="flex-1 flex flex-col">
-              {children}
-            </div>
-          </AIProvider>
-        </LoadingProvider>
+        <SyncProvider>
+          <LoadingProvider>
+            <AIProvider>
+              <div className="flex-1 flex flex-col">
+                {children}
+              </div>
+            </AIProvider>
+          </LoadingProvider>
+        </SyncProvider>
         <InstallPWA />
         <Analytics />
         <SpeedInsights />
