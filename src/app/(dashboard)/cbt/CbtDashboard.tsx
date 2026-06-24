@@ -313,7 +313,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
 
             {/* Course Selector */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
                   <BookOpen className="w-4 h-4 text-indigo-400" />
                   Select Course
@@ -321,7 +321,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                 
                 {/* Download Button */}
                 {courseId && isOnline && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-fit sm:w-auto">
                     {downloadedCourseIds.includes(courseId) ? (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">

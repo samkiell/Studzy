@@ -8,32 +8,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (searchParams.get('type') === 'recovery') {
-        return NextResponse.redirect(`${origin}/profile#reset-pwd`);
-      }
-      
-      const isEmailUser = data.user?.app_metadata?.provider === "email";
-
-      // If it's an email signup confirmation, show the success page
-      if (isEmailUser && (searchParams.get('type') === 'signup' || !searchParams.has('next'))) {
-        const username =
-          data.user?.user_metadata?.username ||
-          "Scholar";
-
-        // Sign out after verification so user can login fresh
-        await supabase.auth.signOut();
-
-        return NextResponse.redirect(
-          `${origin}/auth/confirmed?username=${encodeURIComponent(username)}`
-        );
-      }
-
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // If verification failed, redirect to the confirmed page gracefully
-  return NextResponse.redirect(`${origin}/auth/confirmed?username=Scholar`);
+  return NextResponse.redirect(`${origin}${next}`);
 }
