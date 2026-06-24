@@ -188,13 +188,13 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
   };
 
   return (
-    <div className="flex flex-col gap-8 md:flex-row md:items-start">
+    <div className="flex flex-col gap-8 md:flex-row md:items-start w-full">
       {/* Tab Navigation Menu */}
-      <div className="flex w-full shrink-0 flex-row gap-1 border-b border-neutral-200 pb-2 dark:border-neutral-800 md:w-64 md:flex-col md:border-b-0 md:border-r md:pb-0 md:pr-4">
+      <div className="flex w-full shrink-0 flex-row gap-1 border-b border-neutral-200 pb-2 dark:border-neutral-850 overflow-x-auto flex-nowrap md:w-64 md:flex-col md:border-b-0 md:border-r md:pb-0 md:pr-4 md:overflow-x-visible">
         <button
           type="button"
           onClick={() => setActiveTab("profile")}
-          className={`flex flex-1 items-center justify-center gap-3.5 rounded-xl px-4 py-3 text-sm font-bold tracking-wide transition-all md:flex-none md:justify-start ${
+          className={`flex flex-1 shrink-0 items-center justify-center gap-2 sm:gap-3.5 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold tracking-wide transition-all md:flex-none md:justify-start ${
             activeTab === "profile"
               ? "bg-primary-500/10 text-primary-600 dark:bg-primary-950/20 dark:text-primary-400"
               : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900/50 dark:hover:text-white"
@@ -207,7 +207,7 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
         <button
           type="button"
           onClick={() => setActiveTab("theme")}
-          className={`flex flex-1 items-center justify-center gap-3.5 rounded-xl px-4 py-3 text-sm font-bold tracking-wide transition-all md:flex-none md:justify-start ${
+          className={`flex flex-1 shrink-0 items-center justify-center gap-2 sm:gap-3.5 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold tracking-wide transition-all md:flex-none md:justify-start ${
             activeTab === "theme"
               ? "bg-primary-500/10 text-primary-600 dark:bg-primary-950/20 dark:text-primary-400"
               : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900/50 dark:hover:text-white"
@@ -220,7 +220,7 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
         <button
           type="button"
           onClick={() => setActiveTab("security")}
-          className={`flex flex-1 items-center justify-center gap-3.5 rounded-xl px-4 py-3 text-sm font-bold tracking-wide transition-all md:flex-none md:justify-start ${
+          className={`flex flex-1 shrink-0 items-center justify-center gap-2 sm:gap-3.5 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold tracking-wide transition-all md:flex-none md:justify-start ${
             activeTab === "security"
               ? "bg-primary-500/10 text-primary-600 dark:bg-primary-950/20 dark:text-primary-400"
               : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900/50 dark:hover:text-white"
@@ -232,7 +232,7 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
       </div>
 
       {/* Tab Panels */}
-      <div className="flex-1 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900/50 backdrop-blur-md">
+      <div className="flex-1 w-full rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900/50 backdrop-blur-md overflow-hidden">
         {/* Profile Settings Tab */}
         {activeTab === "profile" && (
           <form onSubmit={handleSaveProfile} className="space-y-6">
@@ -245,7 +245,7 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
 
             <div className="flex flex-col gap-6 md:flex-row md:items-center">
               {/* Avatar Selector */}
-              <div className="relative h-24 w-24 shrink-0 cursor-pointer self-center animate-pulse-subtle" onClick={handleAvatarClick}>
+              <div className="relative h-24 w-24 shrink-0 cursor-pointer self-center" onClick={handleAvatarClick}>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -254,17 +254,19 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
                   onChange={handleFileChange}
                 />
                 <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary-500/30 animate-[spin_30s_linear_infinite]" />
-                <div className="absolute inset-1 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+                <div className="absolute inset-1 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-850">
                   {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt="Avatar"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={avatarUrl}
+                        alt="Avatar"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-neutral-400">
+                    <div className="flex h-full w-full items-center justify-center text-neutral-400 bg-neutral-100 dark:bg-neutral-800">
                       <User className="h-8 w-8" />
                     </div>
                   )}
