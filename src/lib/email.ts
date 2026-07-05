@@ -80,10 +80,15 @@ export async function sendBulkEmail(
     const chunk = unique.slice(i, i + chunkSize);
     try {
       if (RESEND_API_KEY) {
-        const batchTo = RESEND_FROM_EMAIL.includes('<') && RESEND_FROM_EMAIL.includes('>')
-          ? RESEND_FROM_EMAIL
-          : `Studzy <${RESEND_FROM_EMAIL}>`;
-        await sendWithResend(batchTo, subject, html);
+        try {
+          const batchTo = RESEND_FROM_EMAIL.includes('<') && RESEND_FROM_EMAIL.includes('>')
+            ? RESEND_FROM_EMAIL
+            : `Studzy <${RESEND_FROM_EMAIL}>`;
+          await sendWithResend(batchTo, subject, html);
+        } catch (error) {
+          console.error('Resend bulk email failed, falling back to SMTP:', error);
+          await sendWithSmtp(SMTP_SENDER_EMAIL, subject, html);
+        }
       } else {
         await sendWithSmtp(SMTP_SENDER_EMAIL, subject, html);
       }
@@ -122,7 +127,12 @@ export async function sendIndividualEmails(messages: IndividualEmail[], delayMs 
     const msg = queue[i];
     try {
       if (RESEND_API_KEY) {
-        await sendWithResend(msg.to, msg.subject, msg.html);
+        try {
+          await sendWithResend(msg.to, msg.subject, msg.html);
+        } catch (error) {
+          console.error(`Resend individual email to ${msg.to} failed, falling back to SMTP:`, error);
+          await sendWithSmtp(msg.to, msg.subject, msg.html);
+        }
       } else {
         await sendWithSmtp(msg.to, msg.subject, msg.html);
       }
