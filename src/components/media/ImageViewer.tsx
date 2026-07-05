@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Maximize2, Download, ExternalLink } from "lucide-react";
+import { Maximize2, Download, ExternalLink, Loader2 } from "lucide-react";
 
 interface ImageViewerProps {
   src: string;
@@ -12,6 +12,98 @@ interface ImageViewerProps {
 export function ImageViewer({ src, title }: ImageViewerProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [error, setError] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (error || isDownloading) return;
+    setIsDownloading(true);
+
+    try {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        
+        if (!ctx) {
+          fallbackDownload();
+          return;
+        }
+
+        // Draw original image
+        ctx.drawImage(img, 0, 0);
+
+        // Add Watermark
+        ctx.save();
+        
+        // Large diagonal watermark
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(-Math.PI / 4);
+        
+        // Calculate font size based on image width
+        const fontSize = Math.max(40, canvas.width / 10);
+        ctx.font = `900 ${fontSize}px sans-serif`;
+        ctx.fillStyle = "rgba(115, 115, 115, 0.15)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.letterSpacing = `${fontSize / 4}px`;
+        ctx.fillText("STUDZY", 0, 0);
+        
+        ctx.restore();
+
+        // Small bottom-left watermark
+        ctx.font = `bold ${Math.max(20, canvas.width / 40)}px sans-serif`;
+        ctx.fillStyle = "rgba(96, 165, 250, 0.5)"; // blue-400
+        ctx.textAlign = "left";
+        ctx.fillText("Studzy", Math.max(20, canvas.width * 0.02), canvas.height - Math.max(20, canvas.width * 0.02));
+
+        // Trigger download
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            fallbackDownload();
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          // Ensure it downloads as a file by appending extension if missing
+          let filename = title || "studzy-image";
+          if (!/\.(jpg|jpeg|png|webp|gif)$/i.test(filename)) {
+            filename += ".png";
+          }
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setIsDownloading(false);
+        }, "image/png");
+      };
+      
+      img.onerror = () => {
+        fallbackDownload();
+      };
+      
+      img.src = src;
+    } catch (err) {
+      console.error("Download failed", err);
+      fallbackDownload();
+    }
+  };
+
+  const fallbackDownload = () => {
+    // fallback if CORS fails or canvas fails
+    const a = document.createElement("a");
+    a.href = src;
+    a.download = title || "download";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setIsDownloading(false);
+  };
 
   return (
     <div className="space-y-4">
@@ -55,19 +147,23 @@ export function ImageViewer({ src, title }: ImageViewerProps) {
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-4 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-        {/* Studzy Watermark */}
-        <div className="pointer-events-none absolute bottom-4 left-4 select-none">
-          <span className="text-lg font-bold text-blue-400/50 drop-shadow-md">Studzy</span>
-        </div>
+            {/* Studzy Watermark */}
+            <div className="pointer-events-none absolute bottom-4 left-4 select-none">
+              <span className="text-lg font-bold text-blue-400/50 drop-shadow-md">Studzy</span>
+            </div>
           </div>
-          <a
-            href={src}
-            download={title}
-            className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95"
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading || error}
+            className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="h-4 w-4" />
-            Download
-          </a>
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isDownloading ? "Processing..." : "Download"}
+          </button>
         </div>
       </div>
     </div>
