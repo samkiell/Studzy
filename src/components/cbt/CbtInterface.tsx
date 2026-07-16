@@ -285,10 +285,14 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
 
   if (isSubmitted && results) {
     return (
-      <ResultSummary 
-        results={results} 
-        courseCode={initialAttempt.course_code} 
-      />
+      <div className="flex-1 overflow-y-auto min-h-0 w-full bg-[#0A0A0B]">
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <ResultSummary 
+            results={results} 
+            courseCode={initialAttempt.course_code} 
+          />
+        </div>
+      </div>
     );
   }
 
