@@ -13,7 +13,6 @@ import {
   BrainCircuit,
   Gauge,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { startPublicCbtAttempt } from "./actions";
 import { CbtMode } from "@/types/cbt";
@@ -84,11 +83,7 @@ export default function PublicCbtLanding() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white p-4 md:p-12 lg:p-24 flex flex-col items-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-2xl relative z-10"
-      >
+      <div className="w-full max-w-2xl relative z-10">
         <header className="text-center mb-8 md:mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs md:text-sm font-medium mb-4">
             <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -256,11 +251,7 @@ export default function PublicCbtLanding() {
               </div>
 
               {mode === "exam" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
                       <Clock className="w-4 h-4 text-indigo-400" />
@@ -292,7 +283,7 @@ export default function PublicCbtLanding() {
                       ))}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
             </div>
           </div>
@@ -325,7 +316,7 @@ export default function PublicCbtLanding() {
             <span>Your progress is saved locally in your browser</span>
           </div>
         </footer>
-      </motion.div>
+      </div>
     </div>
   );
 }
