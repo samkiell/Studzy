@@ -29,9 +29,24 @@ import { ContinueQuizModal } from "./ContinueQuizModal";
 interface CbtInterfaceProps {
   initialAttempt: Attempt;
   questions: Question[];
+  onSubmit?: (data: {
+    attemptId: string;
+    answers: SubmitAnswer[];
+    durationSeconds: number;
+    theoryAnswers?: Record<string, { main?: string; sub: Record<string, string> }>;
+    questionDurations: Record<string, number>;
+    questions: Question[];
+  }) => Promise<{
+    score: number;
+    totalQuestions: number;
+    completedAt: string;
+    topicStats: Record<string, { correct: number; total: number; avgTime: number }>;
+    questionsWithAnswers: any[];
+  }>;
+  hideAiExplain?: boolean;
 }
 
-export default function CbtInterface({ initialAttempt, questions }: CbtInterfaceProps) {
+export default function CbtInterface({ initialAttempt, questions, onSubmit, hideAiExplain }: CbtInterfaceProps) {
   const router = useRouter();
   
   const {
@@ -246,13 +261,25 @@ export default function CbtInterface({ initialAttempt, questions }: CbtInterface
     }));
 
     try {
-      const res = await submitCbtAttempt({
+      const submitPayload = {
         attemptId: initialAttempt.id,
         answers: formattedAnswers,
         durationSeconds: initialAttempt.mode === 'exam' ? ((initialAttempt.time_limit_seconds || 1800) - timeLeft) : 0,
         theoryAnswers: Object.keys(theoryAnswers).length > 0 ? theoryAnswers : undefined,
         questionDurations,
-      });
+        questions,
+      };
+
+      const res = onSubmit
+        ? await onSubmit(submitPayload)
+        : await submitCbtAttempt({
+            attemptId: submitPayload.attemptId,
+            answers: submitPayload.answers,
+            durationSeconds: submitPayload.durationSeconds,
+            theoryAnswers: submitPayload.theoryAnswers,
+            questionDurations: submitPayload.questionDurations,
+          });
+
       // @ts-ignore - The response object structure is correct now
       setResults(res);
       setIsSubmitted(true);

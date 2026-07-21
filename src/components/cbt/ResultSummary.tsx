@@ -51,6 +51,7 @@ interface ResultSummaryProps {
     questionsWithAnswers: QuestionResult[];
   };
   courseCode?: string;
+  hideAiExplain?: boolean;
 }
 
 export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
