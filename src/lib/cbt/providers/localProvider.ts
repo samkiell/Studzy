@@ -1,5 +1,5 @@
 import { Question } from "@/types/cbt";
-import cis214Raw from "./data/cis214.json";
+import cis214Raw from "@/app/cbtx/data/cis214.json";
 
 type RawQuestion = {
   id: string;
