@@ -108,12 +108,26 @@ export default function CbtInterface({ initialAttempt, questions, onSubmit, hide
       const fetchExistingResults = async () => {
         setIsSubmitting(true);
         try {
-          const res = await submitCbtAttempt({
+          const submitPayload = {
             attemptId: initialAttempt.id,
             answers: [],
-            durationSeconds: initialAttempt.duration_seconds || 0
-          });
-          // @ts-ignore
+            durationSeconds: initialAttempt.duration_seconds || 0,
+            theoryAnswers: {},
+            questionDurations: {},
+            questions,
+          };
+
+          const res = onSubmit
+            ? await onSubmit(submitPayload)
+            : await submitCbtAttempt({
+                attemptId: submitPayload.attemptId,
+                answers: submitPayload.answers,
+                durationSeconds: submitPayload.durationSeconds,
+                theoryAnswers: submitPayload.theoryAnswers,
+                questionDurations: submitPayload.questionDurations,
+              });
+
+          // @ts-ignore - The response object structure is correct now
           setResults(res);
         } catch (error) {
           console.error("Failed to fetch existing results:", error);
@@ -123,7 +137,7 @@ export default function CbtInterface({ initialAttempt, questions, onSubmit, hide
       };
       fetchExistingResults();
     }
-  }, [initialAttempt.completed_at, initialAttempt.id, results, isSubmitting, questions]);
+  }, [initialAttempt.completed_at, initialAttempt.id, results, isSubmitting, questions, onSubmit]);
 
   // Timer logic for exam mode
   useEffect(() => {

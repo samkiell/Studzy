@@ -1,7 +1,6 @@
 "use server";
 
 import { localProvider } from "@/lib/cbt/providers/localProvider";
-import { createQuizSession } from "@/lib/quiz/createQuizSession";
 import { scoreLocalQuiz } from "@/lib/cbt/localScorer";
 import { isTheoryQuestion, Question, SubmitAnswer } from "@/types/cbt";
 import { QuizResult, QuizSubmittedAnswer } from "@/lib/cbt/quizScorer";
@@ -59,27 +58,6 @@ export async function startPublicCbtAttempt(params: {
     completed_at: null,
   };
 
-  const session = createQuizSession({
-    sessionId: attemptId,
-    courseId,
-    questionIds,
-  });
-
-  if (typeof window !== "undefined") {
-    const storageKey = `studzy_quiz_session_${courseId}`;
-    localStorage.setItem(storageKey, JSON.stringify(session));
-    const attemptsKey = `studzy_public_attempts_${courseId}`;
-    let attempts: PublicAttempt[] = [];
-    try {
-      const existing = localStorage.getItem(attemptsKey);
-      if (existing) attempts = JSON.parse(existing);
-    } catch {
-      // ignore
-    }
-    attempts.push(attempt);
-    localStorage.setItem(attemptsKey, JSON.stringify(attempts));
-  }
-
   return { attempt, questions };
 }
 
@@ -124,29 +102,6 @@ export async function submitPublicCbtAttempt(params: {
     durationSeconds,
     questionDurations,
   });
-
-  if (typeof window !== "undefined") {
-    const courseId = questions[0]?.course_id || "CIS214";
-    const attemptsKey = `studzy_public_attempts_${courseId}`;
-    try {
-      const existing = localStorage.getItem(attemptsKey);
-      if (existing) {
-        const attempts: PublicAttempt[] = JSON.parse(existing);
-        const idx = attempts.findIndex((a) => a.id === attemptId);
-        if (idx >= 0) {
-          attempts[idx] = {
-            ...attempts[idx],
-            completed_at: result.completedAt,
-            score: result.score,
-            duration_seconds: durationSeconds,
-          };
-          localStorage.setItem(attemptsKey, JSON.stringify(attempts));
-        }
-      }
-    } catch {
-      // ignore storage errors
-    }
-  }
 
   return result;
 }

@@ -7,6 +7,9 @@ import { Footer } from "@/components/ui/Footer";
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
+      <div className="bg-yellow-500 text-black text-center py-3 px-4 text-sm font-semibold">
+        We are currently on maintenance. We will be back when Elon Musk pays.
+      </div>
       <main className="flex flex-1 items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
