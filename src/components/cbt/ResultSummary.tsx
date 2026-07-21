@@ -54,7 +54,7 @@ interface ResultSummaryProps {
   hideAiExplain?: boolean;
 }
 
-export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
+export function ResultSummary({ results, courseCode, hideAiExplain }: ResultSummaryProps) {
   const router = useRouter();
   const reviewsRef = useRef<HTMLDivElement>(null);
   const percentage = Math.round((results.score / results.totalQuestions) * 100);
@@ -283,7 +283,7 @@ export function ResultSummary({ results, courseCode }: ResultSummaryProps) {
                   ) : (
                     <XCircle className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
                   )}
-                  {!theory && (
+                  {!theory && !hideAiExplain && (
                     <Button
                       variant="ghost"
                       size="sm"
