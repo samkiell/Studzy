@@ -52,6 +52,29 @@ export default function PublicCbtLanding() {
         difficulty: difficulty === "all" ? undefined : difficulty,
       });
 
+      if (typeof window !== "undefined") {
+        const storageKey = `studzy_quiz_session_${attempt.course_id}`;
+        localStorage.setItem(storageKey, JSON.stringify({
+          sessionId: attempt.id,
+          courseId: attempt.course_id,
+          orderedQuestionIds: attempt.question_ids,
+          currentIndex: 0,
+          answers: {},
+          startedAt: attempt.started_at,
+          completed: false,
+        }));
+        const attemptsKey = `studzy_public_attempts_${attempt.course_id}`;
+        let attempts: any[] = [];
+        try {
+          const existing = localStorage.getItem(attemptsKey);
+          if (existing) attempts = JSON.parse(existing);
+        } catch {
+          // ignore
+        }
+        attempts.push(attempt);
+        localStorage.setItem(attemptsKey, JSON.stringify(attempts));
+      }
+
       router.push(`/cbtx/${attempt.id}`);
     } catch (err: any) {
       setError(err.message || "Failed to start CBT session");
