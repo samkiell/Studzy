@@ -1,0 +1,1702 @@
+[
+  {
+    "id": "1",
+    "topic": "Problem Fundamentals",
+    "question_text": "What is the most formal definition of a problem in computer science?",
+    "difficulty": "easy",
+    "options": {
+      "A": "A programming error",
+      "B": "A gap between the current state and the desired state",
+      "C": "A difficult mathematical equation",
+      "D": "A task that requires a computer"
+    },
+    "correct_option": "B",
+    "explanation": "A problem is defined as a gap between what is happening now (current state) and what we want (desired state).",
+    "course_id": "CIS214",
+    "question_id": 1,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is NOT a step in problem definition and analysis?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Understand the current state",
+      "B": "Define the goal",
+      "C": "Ignore edge cases",
+      "D": "List constraints"
+    },
+    "correct_option": "C",
+    "explanation": "Ignoring edge cases is not a step; in fact, considering edge cases is explicitly required for thorough analysis.",
+    "course_id": "CIS214",
+    "question_id": 2,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is an example of a well-defined problem?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Improve traffic in Lagos",
+      "B": "Sort a list of 100 student names alphabetically",
+      "C": "Make the world a better place",
+      "D": "Design a beautiful website"
+    },
+    "correct_option": "B",
+    "explanation": "Sorting a list has clear inputs (the list), clear outputs (sorted list), and a known procedure.",
+    "course_id": "CIS214",
+    "question_id": 3,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "topic": "Problem Fundamentals",
+    "question_text": "What is the difference between a well-defined and an ill-defined problem?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Well-defined problems are always harder",
+      "B": "Well-defined problems have clear starting conditions and goals; ill-defined problems are vague",
+      "C": "Ill-defined problems require algorithms; well-defined problems do not",
+      "D": "Well-defined problems cannot be solved by computers"
+    },
+    "correct_option": "B",
+    "explanation": "A well-defined problem has clear starting conditions, a clear goal, and known rules; an ill-defined problem is vague and lacks clear boundaries.",
+    "course_id": "CIS214",
+    "question_id": 4,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "topic": "Problem Fundamentals",
+    "question_text": "The statement 'Given any program and any input, will the program halt or run forever?' describes which famous problem?",
+    "difficulty": "medium",
+    "options": {
+      "A": "The Sorting Problem",
+      "B": "The Halting Problem",
+      "C": "The P vs NP Problem",
+      "D": "The Traveling Salesman Problem"
+    },
+    "correct_option": "B",
+    "explanation": "The Halting Problem, proven by Alan Turing in 1936, asks whether a program will halt or run forever for any given input.",
+    "course_id": "CIS214",
+    "question_id": 5,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "topic": "Problem Fundamentals",
+    "question_text": "Who proved that the Halting Problem is unsolvable?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Alan Turing",
+      "B": "Albert Einstein",
+      "C": "Grace Hopper",
+      "D": "John von Neumann"
+    },
+    "correct_option": "A",
+    "explanation": "Alan Turing proved the Halting Problem is unsolvable in 1936.",
+    "course_id": "CIS214",
+    "question_id": 6,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "7",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is an unsolvable problem?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Sorting a list of numbers",
+      "B": "Calculating factorial",
+      "C": "The Halting Problem",
+      "D": "Finding the sum of numbers from 1 to n"
+    },
+    "correct_option": "C",
+    "explanation": "The Halting Problem is unsolvable (undecidable) because no algorithm can determine for all programs and inputs whether they halt.",
+    "course_id": "CIS214",
+    "question_id": 7,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "8",
+    "topic": "Problem Fundamentals",
+    "question_text": "What does 'P' stand for in computational complexity theory?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Polynomial time",
+      "B": "Problematic",
+      "C": "Parallel",
+      "D": "Prime"
+    },
+    "correct_option": "A",
+    "explanation": "P stands for Polynomial time, meaning problems that can be solved quickly (time grows like n, n², n³, etc.).",
+    "course_id": "CIS214",
+    "question_id": 8,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "9",
+    "topic": "Problem Fundamentals",
+    "question_text": "What does 'NP' stand for in computational complexity theory?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Not Polynomial",
+      "B": "Non-Programmable",
+      "C": "Nondeterministic Polynomial",
+      "D": "Negative Performance"
+    },
+    "correct_option": "C",
+    "explanation": "NP stands for Nondeterministic Polynomial, meaning a proposed solution can be verified quickly, but finding the solution may be very hard.",
+    "course_id": "CIS214",
+    "question_id": 9,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "10",
+    "topic": "Problem Fundamentals",
+    "question_text": "If P = NP, what would happen to modern cryptography?",
+    "difficulty": "hard",
+    "options": {
+      "A": "It would become stronger",
+      "B": "It would remain unchanged",
+      "C": "Most current encryption would break",
+      "D": "It would only affect sorting algorithms"
+    },
+    "correct_option": "C",
+    "explanation": "If P = NP, many hard problems would become easy, breaking most current encryption systems that rely on the hardness of certain problems.",
+    "course_id": "CIS214",
+    "question_id": 10,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "11",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is an NP problem?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Checking if a Sudoku grid is correctly filled",
+      "B": "Multiplying two numbers",
+      "C": "Sorting a list of integers",
+      "D": "Finding the shortest path in a map with fixed roads"
+    },
+    "correct_option": "A",
+    "explanation": "Checking a filled Sudoku grid is fast (polynomial time), but solving a hard Sudoku puzzle can take enormous time — this is characteristic of NP.",
+    "course_id": "CIS214",
+    "question_id": 11,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "12",
+    "topic": "Problem Fundamentals",
+    "question_text": "What is the key difference between P and NP problems?",
+    "difficulty": "hard",
+    "options": {
+      "A": "P problems are harder than NP problems",
+      "B": "P problems can be solved quickly; NP problems can be verified quickly but not necessarily solved quickly",
+      "C": "P problems are unsolvable; NP problems are solvable",
+      "D": "P problems are always recursive; NP problems are iterative"
+    },
+    "correct_option": "B",
+    "explanation": "P problems are solvable in polynomial time; NP problems have solutions that can be verified in polynomial time, but finding them may be slow.",
+    "course_id": "CIS214",
+    "question_id": 12,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "13",
+    "topic": "Problem Fundamentals",
+    "question_text": "Why is 'Improve traffic in Lagos' considered an ill-defined problem?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Because Lagos has too many cars",
+      "B": "Because it is too broad and lacks clear boundaries and measurable goals",
+      "C": "Because traffic cannot be improved",
+      "D": "Because it requires a supercomputer"
+    },
+    "correct_option": "B",
+    "explanation": "It is ill-defined because it lacks clear starting conditions, specific goals, and measurable success criteria.",
+    "course_id": "CIS214",
+    "question_id": 13,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "14",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is NOT a characteristic of a well-defined problem?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Clear initial state",
+      "B": "Clear goal",
+      "C": "Subjective interpretation",
+      "D": "Known rules or operations"
+    },
+    "correct_option": "C",
+    "explanation": "A well-defined problem has clear, objective characteristics; subjective interpretation makes a problem ill-defined.",
+    "course_id": "CIS214",
+    "question_id": 14,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "15",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which step in problem analysis involves dividing a large problem into smaller sub-problems?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Decomposition",
+      "B": "Abstraction",
+      "C": "Optimization",
+      "D": "Iteration"
+    },
+    "correct_option": "A",
+    "explanation": "Decomposition is the process of breaking a problem down into smaller, more manageable sub-problems.",
+    "course_id": "CIS214",
+    "question_id": 15,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "16",
+    "topic": "Problem Fundamentals",
+    "question_text": "What is the significance of edge cases in problem analysis?",
+    "difficulty": "medium",
+    "options": {
+      "A": "They are irrelevant to most problems",
+      "B": "They help ensure the solution handles unusual or extreme inputs correctly",
+      "C": "They make the problem harder to define",
+      "D": "They are only needed for sorting algorithms"
+    },
+    "correct_option": "B",
+    "explanation": "Considering edge cases (e.g., empty lists, very large numbers) ensures the algorithm is robust and handles all valid inputs.",
+    "course_id": "CIS214",
+    "question_id": 16,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "17",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is a solvable problem?",
+    "difficulty": "easy",
+    "options": {
+      "A": "The Halting Problem",
+      "B": "Determining if a number is even",
+      "C": "Solving all mathematical equations",
+      "D": "Predicting the future"
+    },
+    "correct_option": "B",
+    "explanation": "Determining if a number is even has a simple, clear algorithm (n % 2 == 0) and is solvable.",
+    "course_id": "CIS214",
+    "question_id": 17,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "18",
+    "topic": "Problem Fundamentals",
+    "question_text": "In the context of P vs NP, which statement is most widely believed by experts?",
+    "difficulty": "hard",
+    "options": {
+      "A": "P = NP is proven true",
+      "B": "P ≠ NP is likely true",
+      "C": "P and NP are unrelated",
+      "D": "NP problems are always solvable in O(1)"
+    },
+    "correct_option": "B",
+    "explanation": "Most experts believe P ≠ NP — meaning some problems are inherently hard to solve, even if solutions are easy to verify.",
+    "course_id": "CIS214",
+    "question_id": 18,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "19",
+    "topic": "Problem Fundamentals",
+    "question_text": "What is the first step in problem analysis according to the lecture notes?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Define the goal",
+      "B": "List constraints",
+      "C": "Understand the current state",
+      "D": "Identify inputs and outputs"
+    },
+    "correct_option": "C",
+    "explanation": "The first step is to understand the current state — what is happening now.",
+    "course_id": "CIS214",
+    "question_id": 19,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "20",
+    "topic": "Problem Fundamentals",
+    "question_text": "Which of the following is NOT an example of a real-world domain for problem solving mentioned in the lectures?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Healthcare",
+      "B": "Environment",
+      "C": "Astrology",
+      "D": "Traffic management"
+    },
+    "correct_option": "C",
+    "explanation": "Healthcare, environment, and traffic management are all mentioned; astrology is not.",
+    "course_id": "CIS214",
+    "question_id": 20,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "21",
+    "topic": "Algorithms",
+    "question_text": "What is an algorithm?",
+    "difficulty": "easy",
+    "options": {
+      "A": "A random set of instructions",
+      "B": "A finite, well-defined sequence of instructions that transforms inputs into outputs",
+      "C": "A computer program",
+      "D": "A flowchart"
+    },
+    "correct_option": "B",
+    "explanation": "An algorithm is a finite, well-defined sequence of instructions that transforms a set of inputs into a desired output.",
+    "course_id": "CIS214",
+    "question_id": 21,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "22",
+    "topic": "Algorithms",
+    "question_text": "Which of the following is NOT a property of a good algorithm?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Determinism",
+      "B": "Finiteness",
+      "C": "Ambiguity",
+      "D": "Correctness"
+    },
+    "correct_option": "C",
+    "explanation": "Algorithms must be unambiguous; ambiguity is not a property of a good algorithm.",
+    "course_id": "CIS214",
+    "question_id": 22,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "23",
+    "topic": "Algorithms",
+    "question_text": "What does 'finiteness' mean in the context of algorithms?",
+    "difficulty": "medium",
+    "options": {
+      "A": "The algorithm uses finite memory",
+      "B": "The algorithm terminates after a bounded number of steps",
+      "C": "The algorithm has finite inputs",
+      "D": "The algorithm is written in a finite programming language"
+    },
+    "correct_option": "B",
+    "explanation": "Finiteness means the algorithm terminates after a bounded number of steps; an infinite loop is not an algorithm.",
+    "course_id": "CIS214",
+    "question_id": 23,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "24",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm category splits a problem into smaller sub-problems, solves each recursively, and then merges the results?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Greedy Algorithms",
+      "B": "Divide and Conquer",
+      "C": "Dynamic Programming",
+      "D": "Backtracking"
+    },
+    "correct_option": "B",
+    "explanation": "Divide and Conquer splits problems into smaller sub-problems, solves them recursively, and merges results (e.g., MergeSort, QuickSort).",
+    "course_id": "CIS214",
+    "question_id": 24,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "25",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm category stores results of overlapping sub-problems to avoid recomputation?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Divide and Conquer",
+      "B": "Greedy Algorithms",
+      "C": "Dynamic Programming",
+      "D": "Brute Force"
+    },
+    "correct_option": "C",
+    "explanation": "Dynamic Programming solves overlapping sub-problems once and stores results for reuse (e.g., Fibonacci, Knapsack).",
+    "course_id": "CIS214",
+    "question_id": 25,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "26",
+    "topic": "Algorithms",
+    "question_text": "What is the key characteristic of a greedy algorithm?",
+    "difficulty": "medium",
+    "options": {
+      "A": "It tries all possible solutions",
+      "B": "It makes the locally optimal choice at each step",
+      "C": "It uses recursion exclusively",
+      "D": "It never uses backtracking"
+    },
+    "correct_option": "B",
+    "explanation": "A greedy algorithm makes the locally optimal choice at each step, hoping to reach a global optimum.",
+    "course_id": "CIS214",
+    "question_id": 26,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "27",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm category incrementally builds a solution and abandons partial solutions that fail constraints?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Divide and Conquer",
+      "B": "Dynamic Programming",
+      "C": "Backtracking",
+      "D": "Greedy Algorithms"
+    },
+    "correct_option": "C",
+    "explanation": "Backtracking incrementally builds a solution and abandons ('backtracks') partial solutions that fail constraints (e.g., N-Queens, Sudoku).",
+    "course_id": "CIS214",
+    "question_id": 27,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "28",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm category is guaranteed to find the optimal solution but is prohibitively slow for large inputs?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Greedy Algorithms",
+      "B": "Divide and Conquer",
+      "C": "Brute Force / Exhaustive Search",
+      "D": "Dynamic Programming"
+    },
+    "correct_option": "C",
+    "explanation": "Brute Force tries all possible solutions — it is guaranteed optimal but very slow for large inputs.",
+    "course_id": "CIS214",
+    "question_id": 28,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "29",
+    "topic": "Algorithms",
+    "question_text": "Which of the following is an example of a Divide and Conquer algorithm?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Linear Search",
+      "B": "Bubble Sort",
+      "C": "MergeSort",
+      "D": "Greedy Knapsack"
+    },
+    "correct_option": "C",
+    "explanation": "MergeSort is a classic Divide and Conquer algorithm — it splits the array, sorts halves, and merges the results.",
+    "course_id": "CIS214",
+    "question_id": 29,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "30",
+    "topic": "Algorithms",
+    "question_text": "What is the importance of the algorithm's recipient?",
+    "difficulty": "hard",
+    "options": {
+      "A": "It determines the programming language used",
+      "B": "The recipient must be able to perform the actions (feasibility and self-explanatory)",
+      "C": "The recipient must be a computer",
+      "D": "The recipient must be an expert programmer"
+    },
+    "correct_option": "B",
+    "explanation": "The algorithm's recipient must be able to perform the actions (feasible) and understand them without further elaboration (self-explanatory).",
+    "course_id": "CIS214",
+    "question_id": 30,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "31",
+    "topic": "Algorithms",
+    "question_text": "What is the 'control flow' of an algorithm?",
+    "difficulty": "easy",
+    "options": {
+      "A": "The speed at which the algorithm executes",
+      "B": "The order and conditions under which actions are performed",
+      "C": "The number of variables used",
+      "D": "The programming language used"
+    },
+    "correct_option": "B",
+    "explanation": "Control flow determines when and how many times to perform actions (e.g., loops, conditionals).",
+    "course_id": "CIS214",
+    "question_id": 31,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "32",
+    "topic": "Algorithms",
+    "question_text": "Which property of an algorithm ensures it produces the same output for the same input every time?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Finiteness",
+      "B": "Correctness",
+      "C": "Determinism",
+      "D": "Optimality"
+    },
+    "correct_option": "C",
+    "explanation": "Determinism ensures that given identical inputs, the algorithm always produces identical outputs with no ambiguity.",
+    "course_id": "CIS214",
+    "question_id": 32,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "33",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm is an example of a Greedy Algorithm?",
+    "difficulty": "easy",
+    "options": {
+      "A": "MergeSort",
+      "B": "Dijkstra's shortest path algorithm",
+      "C": "Binary Search",
+      "D": "Bubble Sort"
+    },
+    "correct_option": "B",
+    "explanation": "Dijkstra's shortest path algorithm is a classic Greedy Algorithm that makes locally optimal choices.",
+    "course_id": "CIS214",
+    "question_id": 33,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "34",
+    "topic": "Algorithms",
+    "question_text": "What does 'correctness' mean in the context of algorithms?",
+    "difficulty": "medium",
+    "options": {
+      "A": "The algorithm is written in correct syntax",
+      "B": "The algorithm produces the right answer for all valid inputs",
+      "C": "The algorithm is fast",
+      "D": "The algorithm is memory-efficient"
+    },
+    "correct_option": "B",
+    "explanation": "Correctness means the algorithm produces the right answer for all valid inputs — it is both sound and complete.",
+    "course_id": "CIS214",
+    "question_id": 34,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "35",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm is an example of Backtracking?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Fibonacci sequence",
+      "B": "N-Queens problem solver",
+      "C": "Linear Search",
+      "D": "Factorial"
+    },
+    "correct_option": "B",
+    "explanation": "The N-Queens problem solver is a classic Backtracking algorithm that incrementally builds a solution and backtracks when constraints are violated.",
+    "course_id": "CIS214",
+    "question_id": 35,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "36",
+    "topic": "Algorithms",
+    "question_text": "What is the key trade-off of Greedy Algorithms?",
+    "difficulty": "hard",
+    "options": {
+      "A": "They are slow but always optimal",
+      "B": "They are fast but not always optimal",
+      "C": "They require large memory",
+      "D": "They only work on sorted data"
+    },
+    "correct_option": "B",
+    "explanation": "Greedy algorithms are fast but do not guarantee a global optimum — they make locally optimal choices.",
+    "course_id": "CIS214",
+    "question_id": 36,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "37",
+    "topic": "Algorithms",
+    "question_text": "Which of the following is NOT a category of algorithms?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Divide and Conquer",
+      "B": "Dynamic Programming",
+      "C": "Quantum Computing",
+      "D": "Greedy Algorithms"
+    },
+    "correct_option": "C",
+    "explanation": "Quantum Computing is a computing paradigm, not a category of algorithms. The categories listed are Divide and Conquer, DP, Greedy, Backtracking, Brute Force, and Graph Algorithms.",
+    "course_id": "CIS214",
+    "question_id": 37,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "38",
+    "topic": "Algorithms",
+    "question_text": "What is the difference between an algorithm and a heuristic?",
+    "difficulty": "hard",
+    "options": {
+      "A": "Algorithms are always slow; heuristics are always fast",
+      "B": "Algorithms guarantee optimality; heuristics do not",
+      "C": "Algorithms are only for computers; heuristics are for humans",
+      "D": "Algorithms are written in code; heuristics are written in English"
+    },
+    "correct_option": "B",
+    "explanation": "Algorithms guarantee optimality and correctness; heuristics are approximations that trade optimality for speed.",
+    "course_id": "CIS214",
+    "question_id": 38,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "39",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm category is used for solving the Knapsack Problem optimally?",
+    "difficulty": "hard",
+    "options": {
+      "A": "Greedy Algorithms",
+      "B": "Brute Force",
+      "C": "Dynamic Programming",
+      "D": "Divide and Conquer"
+    },
+    "correct_option": "C",
+    "explanation": "Dynamic Programming is used to solve the 0/1 Knapsack Problem optimally by storing results of overlapping sub-problems.",
+    "course_id": "CIS214",
+    "question_id": 39,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "40",
+    "topic": "Algorithms",
+    "question_text": "Which algorithm category is best suited for graph traversal like BFS and DFS?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Graph Algorithms",
+      "B": "Divide and Conquer",
+      "C": "Dynamic Programming",
+      "D": "Backtracking"
+    },
+    "correct_option": "A",
+    "explanation": "Graph Algorithms include BFS, DFS, A*, and Prim's, and are fundamental for navigation, networking, and AI planning.",
+    "course_id": "CIS214",
+    "question_id": 40,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "41",
+    "topic": "Search Algorithms",
+    "question_text": "What is the time complexity of Linear Search?",
+    "difficulty": "easy",
+    "options": {
+      "A": "O(1)",
+      "B": "O(log n)",
+      "C": "O(n)",
+      "D": "O(n²)"
+    },
+    "correct_option": "C",
+    "explanation": "Linear Search checks each element once, so its time complexity is O(n) — linear time.",
+    "course_id": "CIS214",
+    "question_id": 41,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "42",
+    "topic": "Search Algorithms",
+    "question_text": "What is the primary condition required for Binary Search to work correctly?",
+    "difficulty": "easy",
+    "options": {
+      "A": "The array must be unsorted",
+      "B": "The array must be sorted",
+      "C": "The array must contain unique elements",
+      "D": "The array must be of even length"
+    },
+    "correct_option": "B",
+    "explanation": "Binary Search only works on sorted arrays; if the array is unsorted, the algorithm fails.",
+    "course_id": "CIS214",
+    "question_id": 42,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "43",
+    "topic": "Search Algorithms",
+    "question_text": "What is the time complexity of Binary Search?",
+    "difficulty": "easy",
+    "options": {
+      "A": "O(n)",
+      "B": "O(n²)",
+      "C": "O(log n)",
+      "D": "O(1)"
+    },
+    "correct_option": "C",
+    "explanation": "Binary Search repeatedly halves the search space, so its time complexity is O(log n).",
+    "course_id": "CIS214",
+    "question_id": 43,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "44",
+    "topic": "Search Algorithms",
+    "question_text": "In Binary Search, what happens if the middle element is less than the target?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Search the left half",
+      "B": "Search the right half",
+      "C": "Stop the search",
+      "D": "Return -1"
+    },
+    "correct_option": "B",
+    "explanation": "If A[mid] < target, the target must be in the right half, so low = mid + 1.",
+    "course_id": "CIS214",
+    "question_id": 44,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "45",
+    "topic": "Search Algorithms",
+    "question_text": "Which search algorithm is suitable for an unsorted array?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Binary Search",
+      "B": "Linear Search",
+      "C": "Both",
+      "D": "Neither"
+    },
+    "correct_option": "B",
+    "explanation": "Linear Search works on unsorted arrays; Binary Search requires the array to be sorted.",
+    "course_id": "CIS214",
+    "question_id": 45,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "46",
+    "topic": "Search Algorithms",
+    "question_text": "What is the worst-case scenario for Linear Search?",
+    "difficulty": "medium",
+    "options": {
+      "A": "The target is the first element",
+      "B": "The target is not in the array",
+      "C": "The array is empty",
+      "D": "The target is in the middle"
+    },
+    "correct_option": "B",
+    "explanation": "The worst-case for Linear Search is when the target is not present, requiring checks of all n elements.",
+    "course_id": "CIS214",
+    "question_id": 46,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "47",
+    "topic": "Search Algorithms",
+    "question_text": "What is the best-case scenario for Binary Search?",
+    "difficulty": "medium",
+    "options": {
+      "A": "The target is in the middle of the array",
+      "B": "The target is at the first position",
+      "C": "The target is at the last position",
+      "D": "The target is not in the array"
+    },
+    "correct_option": "A",
+    "explanation": "In Binary Search, the best case is when the target is exactly the middle element, requiring only one comparison.",
+    "course_id": "CIS214",
+    "question_id": 47,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "48",
+    "topic": "Search Algorithms",
+    "question_text": "How does Linear Search determine if the target is not found?",
+    "difficulty": "easy",
+    "options": {
+      "A": "It returns 0",
+      "B": "It returns the length of the array",
+      "C": "It returns -1",
+      "D": "It throws an exception"
+    },
+    "correct_option": "C",
+    "explanation": "Linear Search returns -1 if the target is not found in the array.",
+    "course_id": "CIS214",
+    "question_id": 48,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "49",
+    "topic": "Search Algorithms",
+    "question_text": "Which of the following is a disadvantage of Linear Search compared to Binary Search?",
+    "difficulty": "medium",
+    "options": {
+      "A": "It requires sorted data",
+      "B": "It is slower for large datasets (O(n) vs O(log n))",
+      "C": "It uses more memory",
+      "D": "It cannot find the target"
+    },
+    "correct_option": "B",
+    "explanation": "Linear Search is O(n), which is slower than Binary Search's O(log n) for large datasets, though Binary Search requires sorted data.",
+    "course_id": "CIS214",
+    "question_id": 49,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "50",
+    "topic": "Search Algorithms",
+    "question_text": "In Binary Search, what is the initial value of 'low' and 'high'?",
+    "difficulty": "easy",
+    "options": {
+      "A": "low = 0, high = 1",
+      "B": "low = 0, high = n-1",
+      "C": "low = 1, high = n",
+      "D": "low = n-1, high = 0"
+    },
+    "correct_option": "B",
+    "explanation": "Binary Search initializes low to the first index (0) and high to the last index (n-1).",
+    "course_id": "CIS214",
+    "question_id": 50,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "51",
+    "topic": "Search Algorithms",
+    "question_text": "What is the purpose of the 'mid' index in Binary Search?",
+    "difficulty": "medium",
+    "options": {
+      "A": "To find the maximum element",
+      "B": "To divide the search space into two halves",
+      "C": "To count the number of elements",
+      "D": "To swap elements"
+    },
+    "correct_option": "B",
+    "explanation": "The 'mid' index is used to divide the search space into left and right halves, determining which half the target may be in.",
+    "course_id": "CIS214",
+    "question_id": 51,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "52",
+    "topic": "Search Algorithms",
+    "question_text": "When does Binary Search terminate?",
+    "difficulty": "medium",
+    "options": {
+      "A": "When the target is found or when low > high",
+      "B": "When the array is empty",
+      "C": "After exactly n steps",
+      "D": "When high equals low"
+    },
+    "correct_option": "A",
+    "explanation": "Binary Search terminates when the target is found or when low exceeds high, indicating the target is not present.",
+    "course_id": "CIS214",
+    "question_id": 52,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "53",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the time complexity of Bubble Sort in the worst case?",
+    "difficulty": "easy",
+    "options": {
+      "A": "O(n)",
+      "B": "O(n log n)",
+      "C": "O(n²)",
+      "D": "O(1)"
+    },
+    "correct_option": "C",
+    "explanation": "Bubble Sort has a worst-case time complexity of O(n²) due to nested loops.",
+    "course_id": "CIS214",
+    "question_id": 53,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "54",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the key difference between Selection Sort and Bubble Sort?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Selection Sort is faster",
+      "B": "Selection Sort makes fewer swaps than Bubble Sort",
+      "C": "Bubble Sort is always O(n log n)",
+      "D": "Selection Sort requires sorted input"
+    },
+    "correct_option": "B",
+    "explanation": "Selection Sort makes exactly n-1 swaps, whereas Bubble Sort can make many more swaps in the worst case.",
+    "course_id": "CIS214",
+    "question_id": 54,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "55",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the best-case time complexity of Insertion Sort?",
+    "difficulty": "medium",
+    "options": {
+      "A": "O(n²)",
+      "B": "O(n log n)",
+      "C": "O(n)",
+      "D": "O(1)"
+    },
+    "correct_option": "C",
+    "explanation": "Insertion Sort has a best-case time complexity of O(n) when the array is already sorted.",
+    "course_id": "CIS214",
+    "question_id": 55,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "56",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the value of 0! (zero factorial)?",
+    "difficulty": "easy",
+    "options": {
+      "A": "0",
+      "B": "1",
+      "C": "Undefined",
+      "D": "Infinity"
+    },
+    "correct_option": "B",
+    "explanation": "By definition, 0! = 1. This is a standard mathematical convention.",
+    "course_id": "CIS214",
+    "question_id": 56,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "57",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the 4th Fibonacci number (F(4))?",
+    "difficulty": "medium",
+    "options": {
+      "A": "1",
+      "B": "2",
+      "C": "3",
+      "D": "5"
+    },
+    "correct_option": "C",
+    "explanation": "Fibonacci sequence: F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3.",
+    "course_id": "CIS214",
+    "question_id": 57,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "58",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "Which algorithm is used to check if a string reads the same forward and backward?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Fibonacci",
+      "B": "Factorial",
+      "C": "Palindrome check",
+      "D": "Maximum finder"
+    },
+    "correct_option": "C",
+    "explanation": "The Palindrome check algorithm verifies if a string reads the same forward and backward.",
+    "course_id": "CIS214",
+    "question_id": 58,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "59",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "How does the reverse array algorithm work in-place?",
+    "difficulty": "medium",
+    "options": {
+      "A": "It creates a new array and copies elements in reverse",
+      "B": "It swaps elements from the start and end moving inward",
+      "C": "It uses recursion to reverse",
+      "D": "It sorts the array in descending order"
+    },
+    "correct_option": "B",
+    "explanation": "The reverse array algorithm swaps elements at the left and right pointers, moving them toward each other until they meet.",
+    "course_id": "CIS214",
+    "question_id": 59,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "60",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the initial value of 'max' in the Find Maximum algorithm?",
+    "difficulty": "easy",
+    "options": {
+      "A": "0",
+      "B": "The first element of the array (A[0])",
+      "C": "Infinity",
+      "D": "The last element of the array"
+    },
+    "correct_option": "B",
+    "explanation": "The Find Maximum algorithm initializes max to A[0] and then compares it with the remaining elements.",
+    "course_id": "CIS214",
+    "question_id": 60,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "61",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "In Selection Sort, what does the inner loop do?",
+    "difficulty": "medium",
+    "options": {
+      "A": "It swaps adjacent elements",
+      "B": "It finds the smallest element in the unsorted portion",
+      "C": "It shifts elements to the right",
+      "D": "It sorts the array recursively"
+    },
+    "correct_option": "B",
+    "explanation": "The inner loop of Selection Sort finds the index of the smallest element in the unsorted portion.",
+    "course_id": "CIS214",
+    "question_id": 61,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "62",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "In Insertion Sort, what is the 'key' variable used for?",
+    "difficulty": "medium",
+    "options": {
+      "A": "To store the current element being inserted",
+      "B": "To count the number of swaps",
+      "C": "To find the maximum element",
+      "D": "To mark the end of the array"
+    },
+    "correct_option": "A",
+    "explanation": "The 'key' stores the current element (A[i]) that needs to be inserted into its correct position in the sorted portion.",
+    "course_id": "CIS214",
+    "question_id": 62,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "63",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the factorial of 5 (5!)?",
+    "difficulty": "easy",
+    "options": {
+      "A": "20",
+      "B": "60",
+      "C": "120",
+      "D": "24"
+    },
+    "correct_option": "C",
+    "explanation": "5! = 5 × 4 × 3 × 2 × 1 = 120.",
+    "course_id": "CIS214",
+    "question_id": 63,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "64",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "Which of the following is the correct pseudocode for Bubble Sort's outer loop?",
+    "difficulty": "hard",
+    "options": {
+      "A": "for i from 0 to n-1",
+      "B": "for i from 0 to n-2",
+      "C": "for i from 1 to n",
+      "D": "for i from n down to 0"
+    },
+    "correct_option": "B",
+    "explanation": "The outer loop runs from 0 to n-2 (inclusive) because the inner loop uses n-i-2 as its upper bound.",
+    "course_id": "CIS214",
+    "question_id": 64,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "65",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "In the Fibonacci iterative algorithm, what are the initial values of 'a' and 'b'?",
+    "difficulty": "easy",
+    "options": {
+      "A": "a = 1, b = 1",
+      "B": "a = 0, b = 1",
+      "C": "a = 1, b = 2",
+      "D": "a = 0, b = 0"
+    },
+    "correct_option": "B",
+    "explanation": "The Fibonacci iterative algorithm initializes a = 0 (F(0)) and b = 1 (F(1)).",
+    "course_id": "CIS214",
+    "question_id": 65,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "66",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What is the output of the Palindrome check on the string 'racecar'?",
+    "difficulty": "easy",
+    "options": {
+      "A": "False",
+      "B": "True",
+      "C": "Error",
+      "D": "Null"
+    },
+    "correct_option": "B",
+    "explanation": "'racecar' reads the same forward and backward, so the Palindrome check returns true.",
+    "course_id": "CIS214",
+    "question_id": 66,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "67",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "Why is Insertion Sort efficient for nearly sorted arrays?",
+    "difficulty": "hard",
+    "options": {
+      "A": "It uses divide and conquer",
+      "B": "It only makes O(n) comparisons in the best case",
+      "C": "It uses recursion",
+      "D": "It swaps elements in parallel"
+    },
+    "correct_option": "B",
+    "explanation": "Insertion Sort has a best-case time complexity of O(n) when the array is nearly or already sorted, requiring few shifts.",
+    "course_id": "CIS214",
+    "question_id": 67,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "68",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "How many swaps does Selection Sort make for an array of size n?",
+    "difficulty": "medium",
+    "options": {
+      "A": "n",
+      "B": "n-1",
+      "C": "n²",
+      "D": "n log n"
+    },
+    "correct_option": "B",
+    "explanation": "Selection Sort makes exactly n-1 swaps, regardless of the array's initial order.",
+    "course_id": "CIS214",
+    "question_id": 68,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "69",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "What does the Factorial algorithm return when n = 0?",
+    "difficulty": "easy",
+    "options": {
+      "A": "0",
+      "B": "1",
+      "C": "Undefined",
+      "D": "Infinity"
+    },
+    "correct_option": "B",
+    "explanation": "The Factorial algorithm returns 1 when n = 0, because 0! = 1.",
+    "course_id": "CIS214",
+    "question_id": 69,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "70",
+    "topic": "Sorting & Basic Algorithms",
+    "question_text": "Which sorting algorithm shifts elements to the right to make space for the key?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Bubble Sort",
+      "B": "Selection Sort",
+      "C": "Insertion Sort",
+      "D": "QuickSort"
+    },
+    "correct_option": "C",
+    "explanation": "Insertion Sort shifts larger elements to the right to insert the key into its correct position.",
+    "course_id": "CIS214",
+    "question_id": 70,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "71",
+    "topic": "Flowcharts",
+    "question_text": "Which flowchart symbol represents the start or end of a program?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Rectangle",
+      "B": "Diamond",
+      "C": "Oval / Terminator",
+      "D": "Parallelogram"
+    },
+    "correct_option": "C",
+    "explanation": "The Oval (or Terminator) symbol represents the start or end of a program in a flowchart.",
+    "course_id": "CIS214",
+    "question_id": 71,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "72",
+    "topic": "Flowcharts",
+    "question_text": "What does a Diamond shape represent in a flowchart?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Input or Output",
+      "B": "Processing / Calculation",
+      "C": "Decision (Yes/No)",
+      "D": "Start or End"
+    },
+    "correct_option": "C",
+    "explanation": "The Diamond shape represents a decision point (Yes/No question) in a flowchart.",
+    "course_id": "CIS214",
+    "question_id": 72,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "73",
+    "topic": "Flowcharts",
+    "question_text": "What does a Parallelogram shape represent in a flowchart?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Processing",
+      "B": "Decision",
+      "C": "Input or Output",
+      "D": "Start"
+    },
+    "correct_option": "C",
+    "explanation": "The Parallelogram represents input or output operations in a flowchart.",
+    "course_id": "CIS214",
+    "question_id": 73,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "74",
+    "topic": "Flowcharts",
+    "question_text": "What does a Rectangle shape represent in a flowchart?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Input or Output",
+      "B": "Processing / Calculation",
+      "C": "Decision",
+      "D": "Start or End"
+    },
+    "correct_option": "B",
+    "explanation": "The Rectangle represents a processing or calculation step in a flowchart.",
+    "course_id": "CIS214",
+    "question_id": 74,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "75",
+    "topic": "Flowcharts",
+    "question_text": "What do arrows represent in a flowchart?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Input",
+      "B": "Output",
+      "C": "Direction of flow",
+      "D": "Decision"
+    },
+    "correct_option": "C",
+    "explanation": "Arrows indicate the direction of flow in a flowchart.",
+    "course_id": "CIS214",
+    "question_id": 75,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "76",
+    "topic": "Flowcharts",
+    "question_text": "Which of the following is a best practice for flowcharts?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Use crossing arrows to save space",
+      "B": "Keep flow direction mostly top to bottom or left to right",
+      "C": "Use as many symbols as possible",
+      "D": "Avoid labels to keep it clean"
+    },
+    "correct_option": "B",
+    "explanation": "Keeping flow direction mostly top to bottom or left to right is a best practice for readability.",
+    "course_id": "CIS214",
+    "question_id": 76,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "77",
+    "topic": "Flowcharts",
+    "question_text": "Why are flowcharts useful?",
+    "difficulty": "medium",
+    "options": {
+      "A": "They are a programming language",
+      "B": "They help in planning, debugging, and explaining logic",
+      "C": "They are only for non-programmers",
+      "D": "They replace algorithms"
+    },
+    "correct_option": "B",
+    "explanation": "Flowcharts visually represent algorithms, helping in planning, debugging, and communicating logic.",
+    "course_id": "CIS214",
+    "question_id": 77,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "78",
+    "topic": "Flowcharts",
+    "question_text": "In a flowchart for 'Find Maximum of Two Numbers', what is the decision condition?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Is A == B?",
+      "B": "Is A > B?",
+      "C": "Is A < B?",
+      "D": "Is A + B > 0?"
+    },
+    "correct_option": "B",
+    "explanation": "The decision condition is 'Is A > B?' — if yes, output A; otherwise, output B.",
+    "course_id": "CIS214",
+    "question_id": 78,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "79",
+    "topic": "Flowcharts",
+    "question_text": "How many decisions (diamonds) are in the 'Check Even or Odd' flowchart?",
+    "difficulty": "easy",
+    "options": {
+      "A": "0",
+      "B": "1",
+      "C": "2",
+      "D": "3"
+    },
+    "correct_option": "B",
+    "explanation": "The 'Check Even or Odd' flowchart has one decision: 'Is number % 2 == 0?'",
+    "course_id": "CIS214",
+    "question_id": 79,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "80",
+    "topic": "Flowcharts",
+    "question_text": "What should you do before implementing a flowchart in code?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Add more symbols",
+      "B": "Test the logic of the flowchart",
+      "C": "Translate it to another language",
+      "D": "Delete the flowchart"
+    },
+    "correct_option": "B",
+    "explanation": "Testing the logic of the flowchart ensures that the algorithm is correct before implementation.",
+    "course_id": "CIS214",
+    "question_id": 80,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "81",
+    "topic": "Heuristics",
+    "question_text": "What is a heuristic?",
+    "difficulty": "easy",
+    "options": {
+      "A": "An exact algorithm",
+      "B": "A practical, experience-based technique that finds a good-enough solution quickly",
+      "C": "A programming language",
+      "D": "A type of flowchart"
+    },
+    "correct_option": "B",
+    "explanation": "A heuristic is a practical, experience-based technique that finds a good-enough solution quickly, without guarantee of optimality.",
+    "course_id": "CIS214",
+    "question_id": 81,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "82",
+    "topic": "Heuristics",
+    "question_text": "Why are heuristics necessary for NP-hard problems?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Because exact algorithms are too slow for large instances",
+      "B": "Because heuristics always find the optimal solution",
+      "C": "Because NP-hard problems are unsolvable",
+      "D": "Because heuristics require no computation"
+    },
+    "correct_option": "A",
+    "explanation": "Exact algorithms for NP-hard problems are prohibitively slow for large instances; heuristics make them tractable.",
+    "course_id": "CIS214",
+    "question_id": 82,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "83",
+    "topic": "Heuristics",
+    "question_text": "What is the Nearest Neighbor heuristic used for?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Finding the optimal solution to TSP",
+      "B": "Finding a short route for the Traveling Salesman Problem quickly",
+      "C": "Sorting numbers",
+      "D": "Checking palindromes"
+    },
+    "correct_option": "B",
+    "explanation": "Nearest Neighbor is a heuristic for TSP that visits the closest unvisited city next, producing a short route quickly.",
+    "course_id": "CIS214",
+    "question_id": 83,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "84",
+    "topic": "Heuristics",
+    "question_text": "In the Greedy Knapsack heuristic, how are items selected?",
+    "difficulty": "medium",
+    "options": {
+      "A": "By smallest weight first",
+      "B": "By highest value-to-weight ratio first",
+      "C": "By largest weight first",
+      "D": "By random selection"
+    },
+    "correct_option": "B",
+    "explanation": "Greedy Knapsack selects items in descending order of their value-to-weight ratio.",
+    "course_id": "CIS214",
+    "question_id": 84,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "85",
+    "topic": "Heuristics",
+    "question_text": "What is the purpose of the Shortest Processing Time (SPT) heuristic?",
+    "difficulty": "medium",
+    "options": {
+      "A": "To maximize total completion time",
+      "B": "To minimize average waiting time",
+      "C": "To maximize resource usage",
+      "D": "To sort jobs by value"
+    },
+    "correct_option": "B",
+    "explanation": "SPT schedules the shortest job first to minimize average waiting time.",
+    "course_id": "CIS214",
+    "question_id": 85,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "86",
+    "topic": "Heuristics",
+    "question_text": "What does the A* search algorithm use to determine the next node to expand?",
+    "difficulty": "hard",
+    "options": {
+      "A": "Random selection",
+      "B": "The node with the lowest f-cost (g-cost + h-cost)",
+      "C": "The node with the highest heuristic value",
+      "D": "The node with the lowest actual cost only"
+    },
+    "correct_option": "B",
+    "explanation": "A* selects the node with the lowest f-cost, where f(n) = g(n) + h(n) (actual cost + heuristic estimate).",
+    "course_id": "CIS214",
+    "question_id": 86,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "87",
+    "topic": "Heuristics",
+    "question_text": "What is a characteristic of a heuristic?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Always finds the optimal solution",
+      "B": "Provides an approximate solution quickly",
+      "C": "Is always deterministic",
+      "D": "Requires exponential time"
+    },
+    "correct_option": "B",
+    "explanation": "Heuristics provide approximate solutions quickly, trading optimality for speed.",
+    "course_id": "CIS214",
+    "question_id": 87,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "88",
+    "topic": "Heuristics",
+    "question_text": "Why does the Nearest Neighbor heuristic not guarantee the optimal TSP route?",
+    "difficulty": "hard",
+    "options": {
+      "A": "Because it visits cities randomly",
+      "B": "Because it makes locally optimal choices that may not lead to the global optimum",
+      "C": "Because it only works for 5 cities",
+      "D": "Because it uses recursion"
+    },
+    "correct_option": "B",
+    "explanation": "Nearest Neighbor makes locally optimal choices (closest city) that may not lead to the global optimum.",
+    "course_id": "CIS214",
+    "question_id": 88,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "89",
+    "topic": "Heuristics",
+    "question_text": "In the Greedy Knapsack problem, if the capacity is 15 kg and items A(2kg, $40), C(5kg, $100), E(6kg, $120) are selected, what is the total value?",
+    "difficulty": "medium",
+    "options": {
+      "A": "$220",
+      "B": "$260",
+      "C": "$240",
+      "D": "$280"
+    },
+    "correct_option": "B",
+    "explanation": "Total value = $40 + $100 + $120 = $260. Total weight = 2 + 5 + 6 = 13 kg, within capacity.",
+    "course_id": "CIS214",
+    "question_id": 89,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "90",
+    "topic": "Heuristics",
+    "question_text": "What is the 80/20 Rule (Pareto Principle) an example of?",
+    "difficulty": "easy",
+    "options": {
+      "A": "An exact algorithm",
+      "B": "A managerial heuristic",
+      "C": "A sorting algorithm",
+      "D": "A graph algorithm"
+    },
+    "correct_option": "B",
+    "explanation": "The 80/20 Rule is a managerial heuristic that suggests focusing on the 20% of causes producing 80% of effects.",
+    "course_id": "CIS214",
+    "question_id": 90,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "91",
+    "topic": "Heuristics",
+    "question_text": "What is the main trade-off when using heuristics instead of exact algorithms?",
+    "difficulty": "hard",
+    "options": {
+      "A": "Speed for accuracy",
+      "B": "Memory for speed",
+      "C": "Accuracy for speed",
+      "D": "Simplicity for complexity"
+    },
+    "correct_option": "C",
+    "explanation": "Heuristics trade accuracy (optimality) for speed (computational efficiency).",
+    "course_id": "CIS214",
+    "question_id": 91,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "92",
+    "topic": "Heuristics",
+    "question_text": "Which heuristic is used for graph coloring?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Nearest Neighbor",
+      "B": "Largest Degree First",
+      "C": "Shortest Processing Time",
+      "D": "First-Come First-Served"
+    },
+    "correct_option": "B",
+    "explanation": "Largest Degree First is a heuristic for graph coloring that assigns colors to vertices in decreasing order of degree.",
+    "course_id": "CIS214",
+    "question_id": 92,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "93",
+    "topic": "Heuristics",
+    "question_text": "What does the A* algorithm return if the OpenList becomes empty?",
+    "difficulty": "hard",
+    "options": {
+      "A": "The shortest path",
+      "B": "Failure (no path found)",
+      "C": "The start node",
+      "D": "The goal node"
+    },
+    "correct_option": "B",
+    "explanation": "If the OpenList is empty before reaching the goal, A* returns failure — no path exists.",
+    "course_id": "CIS214",
+    "question_id": 93,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "94",
+    "topic": "Heuristics",
+    "question_text": "Which heuristic minimizes average waiting time in job scheduling?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Longest Processing Time",
+      "B": "Shortest Processing Time",
+      "C": "Random Scheduling",
+      "D": "First-Come First-Served"
+    },
+    "correct_option": "B",
+    "explanation": "Shortest Processing Time (SPT) minimizes average waiting time by scheduling the shortest job first.",
+    "course_id": "CIS214",
+    "question_id": 94,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "95",
+    "topic": "Heuristics",
+    "question_text": "What is the key difference between an algorithm and a heuristic?",
+    "difficulty": "hard",
+    "options": {
+      "A": "Algorithms are always faster",
+      "B": "Heuristics always find the optimal solution",
+      "C": "Algorithms guarantee optimality; heuristics do not",
+      "D": "Heuristics are only for NP-hard problems"
+    },
+    "correct_option": "C",
+    "explanation": "Algorithms guarantee optimality and correctness, whereas heuristics provide approximate solutions without guarantees.",
+    "course_id": "CIS214",
+    "question_id": 95,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "96",
+    "topic": "Heuristics",
+    "question_text": "In the Greedy Knapsack example, why is item B not selected?",
+    "difficulty": "medium",
+    "options": {
+      "A": "Because it has a low value",
+      "B": "Because it has a lower value-to-weight ratio than A, C, and E",
+      "C": "Because it is too heavy",
+      "D": "Because it is not available"
+    },
+    "correct_option": "B",
+    "explanation": "Item B has a lower value-to-weight ratio (16.67) compared to A, C, and E (20), so it is not selected first.",
+    "course_id": "CIS214",
+    "question_id": 96,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "97",
+    "topic": "Heuristics",
+    "question_text": "What is the time complexity of the Nearest Neighbor heuristic for TSP?",
+    "difficulty": "hard",
+    "options": {
+      "A": "O(n)",
+      "B": "O(n²)",
+      "C": "O(n log n)",
+      "D": "O(2ⁿ)"
+    },
+    "correct_option": "B",
+    "explanation": "Nearest Neighbor for TSP is O(n²) because for each of n cities, it checks all unvisited cities to find the nearest one.",
+    "course_id": "CIS214",
+    "question_id": 97,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "98",
+    "topic": "Heuristics",
+    "question_text": "Why is the 'avoid tolls' heuristic used in route planning?",
+    "difficulty": "easy",
+    "options": {
+      "A": "Because toll roads are always slower",
+      "B": "Because it's a rule of thumb that may save money, though not always optimal",
+      "C": "Because it guarantees the shortest path",
+      "D": "Because toll roads are closed"
+    },
+    "correct_option": "B",
+    "explanation": "'Avoid tolls' is a heuristic or rule of thumb that may save money but does not guarantee the optimal route.",
+    "course_id": "CIS214",
+    "question_id": 98,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "99",
+    "topic": "Heuristics",
+    "question_text": "What is a key characteristic of a heuristic?",
+    "difficulty": "medium",
+    "options": {
+      "A": "No completeness guarantee — may fail to find a solution",
+      "B": "Always complete",
+      "C": "Always optimal",
+      "D": "Always deterministic"
+    },
+    "correct_option": "A",
+    "explanation": "Heuristics have no completeness guarantee — they may fail to find a feasible solution in some cases.",
+    "course_id": "CIS214",
+    "question_id": 99,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "100",
+    "topic": "Heuristics",
+    "question_text": "What does the Greedy Knapsack algorithm return as its final output?",
+    "difficulty": "easy",
+    "options": {
+      "A": "The optimal set of items",
+      "B": "A set of selected items and total value (approximate)",
+      "C": "The total weight only",
+      "D": "The number of items selected"
+    },
+    "correct_option": "B",
+    "explanation": "Greedy Knapsack returns a set of selected items and the total value, but it is an approximate solution, not guaranteed optimal.",
+    "course_id": "CIS214",
+    "question_id": 100,
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
