@@ -1,5 +1,5 @@
-import { isTheoryQuestion } from "@/types/cbt";
-import type { Question, QuizResult, QuizSubmittedAnswer, QuestionResult } from "@/lib/cbt/quizScorer";
+import { isTheoryQuestion, Question } from "@/types/cbt";
+import type { QuizResult, QuizSubmittedAnswer, QuestionResult } from "@/lib/cbt/quizScorer";
 
 export function scoreLocalQuiz({
   questions,

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { startPublicCbtAttempt } from "../actions";
+import { startPublicCbtAttempt } from "./actions";
 import { CbtMode } from "@/types/cbt";
 
 export default function PublicCbtLanding() {

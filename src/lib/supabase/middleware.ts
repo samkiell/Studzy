@@ -52,6 +52,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/ai-flashcard-generator") &&
     !request.nextUrl.pathname.startsWith("/ai-exam-predictor") &&
     !request.nextUrl.pathname.startsWith("/university-study-tools") &&
+    !request.nextUrl.pathname.startsWith("/cbtx") &&
     request.nextUrl.pathname !== "/"
   ) {
     const url = request.nextUrl.clone();

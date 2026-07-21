@@ -1,7 +1,6 @@
 "use server";
 
 import { localProvider } from "@/lib/cbt/providers/localProvider";
-import { quizSessionService } from "@/lib/quiz/quizSessionService";
 import { createQuizSession } from "@/lib/quiz/createQuizSession";
 import { scoreLocalQuiz } from "@/lib/cbt/localScorer";
 import { isTheoryQuestion, Question, SubmitAnswer } from "@/types/cbt";
@@ -82,19 +81,6 @@ export async function startPublicCbtAttempt(params: {
   }
 
   return { attempt, questions };
-}
-
-export async function getPublicAttempt(attemptId: string, courseId: string): Promise<PublicAttempt | null> {
-  if (typeof window === "undefined") return null;
-  const attemptsKey = `studzy_public_attempts_${courseId}`;
-  try {
-    const existing = localStorage.getItem(attemptsKey);
-    if (!existing) return null;
-    const attempts: PublicAttempt[] = JSON.parse(existing);
-    return attempts.find((a) => a.id === attemptId) || null;
-  } catch {
-    return null;
-  }
 }
 
 export async function submitPublicCbtAttempt(params: {
