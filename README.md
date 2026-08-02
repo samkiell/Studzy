@@ -66,7 +66,7 @@ npx vercel
 
 ## Tech Stack
 
-- [Next.js 15](https://nextjs.org/) - React framework
+- [Next.js 16](https://nextjs.org/) - React framework
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
 - [Supabase](https://supabase.com/) - Backend (Auth, Database, Storage)
