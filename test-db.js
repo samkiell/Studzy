@@ -13,7 +13,7 @@ async function checkBookmarks() {
 
   console.log("Bookmarks:", data);
   console.log("Count:", count);
-  console.log("Error:", error);
+  console.log("Errors gotten:", error);
 }
 
 checkBookmarks();
