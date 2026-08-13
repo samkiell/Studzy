@@ -54,25 +54,25 @@ export function StorageBreakdownCard({ metrics }: StorageBreakdownCardProps) {
           <p className="text-xs font-semibold uppercase text-neutral-500 dark:text-neutral-400">7-Day Growth</p>
           <div className="mt-1 flex items-baseline gap-2">
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              +{formatBytes(metrics.growth7DaysBytes)}
+              +{formatBytes(metrics.forecast?.growth7DaysBytes || 0)}
             </p>
             <TrendingUp className="h-4 w-4 text-emerald-500" />
           </div>
           <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            30-day: +{formatBytes(metrics.growth30DaysBytes)}
+            30-day: +{formatBytes(metrics.forecast?.growth30DaysBytes || 0)}
           </p>
         </div>
 
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <p className="text-xs font-semibold uppercase text-neutral-500 dark:text-neutral-400">Quota Time Estimate</p>
           <p className="mt-1 text-base font-bold text-neutral-900 dark:text-white">
-            {metrics.estimatedDaysToWarning !== null
-              ? `~${metrics.estimatedDaysToWarning} days to warning`
+            {metrics.forecast?.forecast80Percent?.date
+              ? `80% Est: ${metrics.forecast.forecast80Percent.date}`
               : "Stable usage rate"}
           </p>
           <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            {metrics.estimatedDaysToCritical !== null
-              ? `~${metrics.estimatedDaysToCritical} days to critical limit`
+            {metrics.forecast?.forecast100Percent?.date
+              ? `100% Est: ${metrics.forecast.forecast100Percent.date}`
               : "No threshold overflow imminent"}
           </p>
         </div>
@@ -177,7 +177,12 @@ export function StorageBreakdownCard({ metrics }: StorageBreakdownCardProps) {
                 {metrics.largestFiles.map((file, idx) => (
                   <tr key={`${file.bucket}-${file.path}-${idx}`} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                     <td className="py-2.5 px-3 font-medium text-neutral-900 dark:text-white truncate max-w-xs" title={file.path}>
-                      {file.name}
+                      <span className="block truncate">{file.name}</span>
+                      {file.linkedResource && (
+                        <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold block truncate">
+                          Linked: {file.linkedResource.courseCode ? `${file.linkedResource.courseCode} - ` : ""}{file.linkedResource.title}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2.5 px-3 text-xs text-neutral-600 dark:text-neutral-400">
                       <span className="rounded bg-neutral-100 px-2 py-0.5 font-mono dark:bg-neutral-800">{file.bucket}</span>
@@ -187,6 +192,27 @@ export function StorageBreakdownCard({ metrics }: StorageBreakdownCardProps) {
                     </td>
                     <td className="py-2.5 px-3 font-semibold text-neutral-900 dark:text-white whitespace-nowrap">
                       {formatBytes(file.sizeBytes)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap">
+                      {file.resourceAppUrl ? (
+                        <a
+                          href={file.resourceAppUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-bold text-primary-600 hover:underline dark:text-primary-400"
+                        >
+                          <span>App Page</span>
+                        </a>
+                      ) : file.publicUrl ? (
+                        <a
+                          href={file.publicUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-medium text-neutral-500 hover:underline"
+                        >
+                          <span>File URL</span>
+                        </a>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
