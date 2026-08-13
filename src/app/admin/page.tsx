@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSystemHealthSummary, getStorageHealthMetrics } from "@/lib/supabase/health";
+import { SystemHealthSummaryWidget } from "@/components/admin/health/SystemHealthSummaryWidget";
+import { StorageWarningBanner } from "@/components/admin/health/StorageWarningBanner";
 import { 
   ShieldCheck, 
   CloudUpload, 
@@ -13,17 +16,24 @@ import {
   FileText,
   Eye,
   Users,
-  BrainCircuit
+  BrainCircuit,
+  Activity
 } from "lucide-react";
 
 export default async function AdminPage() {
   const supabase = createAdminClient();
+
+  // Fetch Health & Dashboard Stats
+  const systemSummaryPromise = getSystemHealthSummary();
+  const storageMetricsPromise = getStorageHealthMetrics();
 
   // Fetch Stats
   const now = new Date();
   const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
 
   const [
+    systemSummary,
+    storageMetrics,
     { count: coursesCount },
     { count: resourcesCount },
     { count: usersCount },
@@ -31,6 +41,8 @@ export default async function AdminPage() {
     { data: resourceStats },
     { data: onlineUsersList }
   ] = await Promise.all([
+    systemSummaryPromise,
+    storageMetricsPromise,
     supabase.from("courses").select("*", { count: "exact", head: true }),
     supabase.from("resources").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -104,6 +116,9 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-10">
+      {/* Storage Warning Alert if threshold reached */}
+      <StorageWarningBanner status={storageMetrics.status} percentage={storageMetrics.usagePercentage} />
+
       {/* Welcome & Stats */}
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -115,6 +130,9 @@ export default async function AdminPage() {
             <p className="text-neutral-600 dark:text-neutral-400">Manage Studzy content and track performance</p>
           </div>
         </div>
+
+      {/* System Health Summary Widget */}
+      <SystemHealthSummaryWidget summary={systemSummary} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
