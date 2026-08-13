@@ -12,11 +12,13 @@ import {
   LogOut,
   ShieldCheck,
   BrainCircuit,
-  Database
+  Database,
+  Activity
 } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/health", label: "Health", icon: Activity },
   { href: "/admin/upload", label: "Upload", icon: CloudUpload },
   { href: "/admin/questions", label: "Questions", icon: Database },
   { href: "/admin/resources", label: "Resources", icon: FileText },
