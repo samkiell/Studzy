@@ -8,89 +8,20 @@ import {
   StorageFileDetail 
 } from "./types";
 import { calculateQuotaMetric, calculateHealthStatus } from "./guardrail-utility";
+import { calculateGrowthAndForecast } from "./forecasting";
+import { listAllStorageObjectsWithResourceLinks } from "./storage-management";
 import { logGuardrailEvent } from "./logger";
 
 // Server-side in-memory metrics cache
 let cachedStorageMetrics: { data: StorageHealthMetrics; timestamp: number } | null = null;
 let cachedSystemSummary: { data: SystemHealthSummary; timestamp: number } | null = null;
 
-interface RawFileObject {
-  id?: string | null;
-  name: string;
-  bucket: string;
-  path: string;
-  metadata?: {
-    size?: number;
-    mimetype?: string;
-  } | null;
-  created_at?: string;
-}
-
 /**
- * Categorizes a file by MIME type or extension into standard categories:
- * video, audio, pdf, image, document, or other.
+ * Clears in-memory health metrics cache forcing a fresh recalculation on next fetch
  */
-
-function categorizeFileType(name: string, mimeType?: string): FileTypeCategoryUsage["category"] {
-  const lowerName = name.toLowerCase();
-  const ext = lowerName.split(".").pop() || "";
-  const lowerMime = (mimeType || "").toLowerCase();
-
-  if (lowerMime.startsWith("video/") || ["mp4", "webm", "mkv", "mov", "avi"].includes(ext)) {
-    return "video";
-  }
-  if (lowerMime.startsWith("audio/") || ["mp3", "wav", "ogg", "m4a", "aac", "flac"].includes(ext)) {
-    return "audio";
-  }
-  if (lowerMime === "application/pdf" || ext === "pdf") {
-    return "pdf";
-  }
-  if (lowerMime.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) {
-    return "image";
-  }
-  if (
-    lowerMime.startsWith("text/") || 
-    lowerMime.includes("json") || 
-    lowerMime.includes("javascript") ||
-    ["txt", "doc", "docx", "md", "csv", "json", "js", "ts", "py"].includes(ext)
-  ) {
-    return "document";
-  }
-  return "other";
-}
-
-/**
- * Recursively lists all objects in a Supabase Storage bucket
- */
-async function listAllBucketObjects(
-  supabase: ReturnType<typeof createAdminClient>,
-  bucketId: string,
-  folderPath: string = ""
-): Promise<RawFileObject[]> {
-  let fileList: RawFileObject[] = [];
-  
-  const { data, error } = await supabase.storage.from(bucketId).list(folderPath, { limit: 1000 });
-  if (error || !data) return fileList;
-
-  for (const item of data) {
-    const fullPath = folderPath ? `${folderPath}/${item.name}` : item.name;
-    if (!item.metadata || !item.id) {
-      // It's a folder: recurse into subfolder
-      const subFiles = await listAllBucketObjects(supabase, bucketId, fullPath);
-      fileList = fileList.concat(subFiles);
-    } else {
-      fileList.push({
-        id: item.id,
-        name: item.name,
-        bucket: bucketId,
-        path: fullPath,
-        metadata: item.metadata as RawFileObject["metadata"],
-        created_at: item.created_at ?? undefined,
-      });
-    }
-  }
-
-  return fileList;
+export function invalidateHealthCache(): void {
+  cachedStorageMetrics = null;
+  cachedSystemSummary = null;
 }
 
 /**
@@ -106,14 +37,9 @@ export async function getStorageHealthMetrics(forceRefresh: boolean = false): Pr
   }
 
   try {
-    const supabase = createAdminClient();
-    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    const allFiles = await listAllStorageObjectsWithResourceLinks();
 
-    if (bucketError) {
-      throw new Error(`Failed to list storage buckets: ${bucketError.message}`);
-    }
-
-    const bucketUsages: BucketUsage[] = [];
+    const bucketTotals: Record<string, { sizeBytes: number; fileCount: number }> = {};
     const categoryTotals: Record<FileTypeCategoryUsage["category"], { sizeBytes: number; fileCount: number }> = {
       video: { sizeBytes: 0, fileCount: 0 },
       audio: { sizeBytes: 0, fileCount: 0 },
@@ -123,62 +49,42 @@ export async function getStorageHealthMetrics(forceRefresh: boolean = false): Pr
       other: { sizeBytes: 0, fileCount: 0 },
     };
 
-    const allFiles: StorageFileDetail[] = [];
     let totalSizeBytes = 0;
     let totalObjectCount = 0;
-    let growth7DaysBytes = 0;
-    let growth30DaysBytes = 0;
 
-    const sevenDaysAgoMs = now - (7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgoMs = now - (30 * 24 * 60 * 60 * 1000);
+    for (const file of allFiles) {
+      totalSizeBytes += file.sizeBytes;
+      totalObjectCount += 1;
 
-    for (const bucket of buckets || []) {
-      const objects = await listAllBucketObjects(supabase, bucket.id);
-      let bucketSizeBytes = 0;
-
-      for (const obj of objects) {
-        const size = obj.metadata?.size || 0;
-        const mime = obj.metadata?.mimetype || "";
-        const category = categorizeFileType(obj.name, mime);
-
-        bucketSizeBytes += size;
-        totalSizeBytes += size;
-        totalObjectCount += 1;
-
-        categoryTotals[category].sizeBytes += size;
-        categoryTotals[category].fileCount += 1;
-
-        // Check growth window
-        const createdMs = obj.created_at ? new Date(obj.created_at).getTime() : now;
-        if (createdMs >= sevenDaysAgoMs) growth7DaysBytes += size;
-        if (createdMs >= thirtyDaysAgoMs) growth30DaysBytes += size;
-
-        allFiles.push({
-          name: obj.name,
-          path: obj.path,
-          bucket: bucket.id,
-          sizeBytes: size,
-          created_at: obj.created_at || new Date().toISOString(),
-          fileType: category,
-        });
+      // Bucket totals
+      if (!bucketTotals[file.bucket]) {
+        bucketTotals[file.bucket] = { sizeBytes: 0, fileCount: 0 };
       }
+      bucketTotals[file.bucket].sizeBytes += file.sizeBytes;
+      bucketTotals[file.bucket].fileCount += 1;
 
-      bucketUsages.push({
-        bucketId: bucket.id,
-        bucketName: bucket.name || bucket.id,
-        sizeBytes: bucketSizeBytes,
-        objectCount: objects.length,
-        percentageOfTotal: 0, // Will be computed after totalSizeBytes is final
-      });
+      // File category totals
+      if (categoryTotals[file.fileType]) {
+        categoryTotals[file.fileType].sizeBytes += file.sizeBytes;
+        categoryTotals[file.fileType].fileCount += 1;
+      } else {
+        categoryTotals.other.sizeBytes += file.sizeBytes;
+        categoryTotals.other.fileCount += 1;
+      }
     }
 
-    // Calculate percentage per bucket
     const safeTotal = totalSizeBytes > 0 ? totalSizeBytes : 1;
-    bucketUsages.forEach((b) => {
-      b.percentageOfTotal = Number(((b.sizeBytes / safeTotal) * 100).toFixed(1));
-    });
 
-    // Calculate percentage per file category
+    // Build bucket usage breakdown
+    const bucketUsages: BucketUsage[] = Object.entries(bucketTotals).map(([bId, data]) => ({
+      bucketId: bId,
+      bucketName: bId,
+      sizeBytes: data.sizeBytes,
+      objectCount: data.fileCount,
+      percentageOfTotal: Number(((data.sizeBytes / safeTotal) * 100).toFixed(1)),
+    }));
+
+    // Build file category usage breakdown
     const fileTypes: FileTypeCategoryUsage[] = Object.entries(categoryTotals).map(([cat, data]) => ({
       category: cat as FileTypeCategoryUsage["category"],
       sizeBytes: data.sizeBytes,
@@ -187,7 +93,7 @@ export async function getStorageHealthMetrics(forceRefresh: boolean = false): Pr
     }));
 
     // Sort largest files
-    const largestFiles = allFiles
+    const largestFiles = [...allFiles]
       .sort((a, b) => b.sizeBytes - a.sizeBytes)
       .slice(0, 10);
 
@@ -196,22 +102,8 @@ export async function getStorageHealthMetrics(forceRefresh: boolean = false): Pr
     const usagePercentage = Number(((totalSizeBytes / limitBytes) * 100).toFixed(1));
     const status = calculateHealthStatus(usagePercentage);
 
-    // Calculate estimated time to warning (70%) and critical (80%) thresholds based on 7-day rate
-    let estimatedDaysToWarning: number | null = null;
-    let estimatedDaysToCritical: number | null = null;
-
-    if (growth7DaysBytes > 0) {
-      const dailyGrowthRateBytes = growth7DaysBytes / 7;
-      const warningTargetBytes = limitBytes * (GUARDRAIL_CONFIG.thresholds.warningPercent / 100);
-      const criticalTargetBytes = limitBytes * (GUARDRAIL_CONFIG.thresholds.criticalPercent / 100);
-
-      if (totalSizeBytes < warningTargetBytes) {
-        estimatedDaysToWarning = Math.round((warningTargetBytes - totalSizeBytes) / dailyGrowthRateBytes);
-      }
-      if (totalSizeBytes < criticalTargetBytes) {
-        estimatedDaysToCritical = Math.round((criticalTargetBytes - totalSizeBytes) / dailyGrowthRateBytes);
-      }
-    }
+    // Calculate growth and forecast data
+    const forecast = calculateGrowthAndForecast(allFiles, limitBytes, totalSizeBytes);
 
     const metrics: StorageHealthMetrics = {
       totalSizeBytes,
@@ -223,10 +115,8 @@ export async function getStorageHealthMetrics(forceRefresh: boolean = false): Pr
       buckets: bucketUsages.sort((a, b) => b.sizeBytes - a.sizeBytes),
       fileTypes: fileTypes.sort((a, b) => b.sizeBytes - a.sizeBytes),
       largestFiles,
-      growth7DaysBytes,
-      growth30DaysBytes,
-      estimatedDaysToWarning,
-      estimatedDaysToCritical,
+      allFiles: allFiles.sort((a, b) => b.sizeBytes - a.sizeBytes),
+      forecast,
       lastUpdated: new Date().toISOString(),
       isAvailable: true,
     };
@@ -250,10 +140,17 @@ export async function getStorageHealthMetrics(forceRefresh: boolean = false): Pr
       buckets: [],
       fileTypes: [],
       largestFiles: [],
-      growth7DaysBytes: 0,
-      growth30DaysBytes: 0,
-      estimatedDaysToWarning: null,
-      estimatedDaysToCritical: null,
+      allFiles: [],
+      forecast: {
+        growth7DaysBytes: 0,
+        growth30DaysBytes: 0,
+        dailyGrowthRate7Days: 0,
+        dailyGrowthRate30Days: 0,
+        growthMethod: "Estimated Prediction",
+        forecast80Percent: { date: null, daysRemaining: null },
+        forecast90Percent: { date: null, daysRemaining: null },
+        forecast100Percent: { date: null, daysRemaining: null },
+      },
       lastUpdated: new Date().toISOString(),
       isAvailable: false,
       errorMessage: "Usage data temporarily unavailable.",
@@ -281,7 +178,6 @@ export async function getSystemHealthSummary(forceRefresh: boolean = false): Pro
   let estimatedDbBytes = 0;
 
   try {
-    // Check main tables for row counts to construct an estimated database footprint
     const tables = ["courses", "resources", "profiles", "cbt_attempts", "rag_documents", "discussions"];
     let totalRows = 0;
     for (const t of tables) {
@@ -289,17 +185,26 @@ export async function getSystemHealthSummary(forceRefresh: boolean = false): Pro
       if (count) totalRows += count;
     }
     databaseTableCount = tables.length;
-    // Rough estimation: average ~1.5 KB per row + base pg schema overhead (~15 MB)
     estimatedDbBytes = (totalRows * 1500) + (15 * 1024 * 1024);
   } catch {
     estimatedDbBytes = 15 * 1024 * 1024;
   }
 
-  const storageQuota = calculateQuotaMetric(storageMetrics.totalSizeBytes, storageMetrics.limitBytes);
-  const dbQuota = calculateQuotaMetric(estimatedDbBytes, GUARDRAIL_CONFIG.planLimits.databaseBytes);
-  const egressQuota = calculateQuotaMetric(0, GUARDRAIL_CONFIG.planLimits.egressBytesMonthly);
+  const storageQuota = {
+    ...calculateQuotaMetric(storageMetrics.totalSizeBytes, storageMetrics.limitBytes),
+    resetBehavior: "Persistent Quota" as const,
+  };
 
-  // Overall status is the worst status among core metrics
+  const dbQuota = {
+    ...calculateQuotaMetric(estimatedDbBytes, GUARDRAIL_CONFIG.planLimits.databaseBytes),
+    resetBehavior: "Persistent Quota" as const,
+  };
+
+  const egressQuota = {
+    ...calculateQuotaMetric(0, GUARDRAIL_CONFIG.planLimits.egressBytesMonthly),
+    resetBehavior: "Resets Monthly" as const,
+  };
+
   const statuses = [storageQuota.status, dbQuota.status, egressQuota.status];
   let overallStatus: SystemHealthSummary["overallStatus"] = "Healthy";
   if (statuses.includes("Exhausted")) overallStatus = "Exhausted";
