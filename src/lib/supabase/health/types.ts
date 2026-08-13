@@ -10,6 +10,7 @@ export interface QuotaMetricStatus {
   percentage: number;
   remainingBytes: number;
   status: HealthStatus;
+  resetBehavior: "Persistent Quota" | "Resets Monthly";
 }
 
 export interface BucketUsage {
@@ -27,13 +28,39 @@ export interface FileTypeCategoryUsage {
   percentageOfTotal: number;
 }
 
+export interface LinkedApplicationResource {
+  id: string;
+  title: string;
+  courseCode: string;
+  courseTitle?: string;
+  slug: string;
+  type: string;
+  status: string;
+}
+
 export interface StorageFileDetail {
+  id?: string;
   name: string;
   path: string;
   bucket: string;
   sizeBytes: number;
   created_at: string;
-  fileType: string;
+  fileType: FileTypeCategoryUsage["category"];
+  publicUrl?: string;
+  resourceAppUrl?: string;
+  courseAppUrl?: string;
+  linkedResource?: LinkedApplicationResource;
+}
+
+export interface ForecastDetails {
+  growth7DaysBytes: number;
+  growth30DaysBytes: number;
+  dailyGrowthRate7Days: number;
+  dailyGrowthRate30Days: number;
+  growthMethod: "Exact Derived Metrics" | "Estimated Prediction";
+  forecast80Percent: { date: string | null; daysRemaining: number | null };
+  forecast90Percent: { date: string | null; daysRemaining: number | null };
+  forecast100Percent: { date: string | null; daysRemaining: number | null };
 }
 
 export interface StorageHealthMetrics {
@@ -46,10 +73,8 @@ export interface StorageHealthMetrics {
   buckets: BucketUsage[];
   fileTypes: FileTypeCategoryUsage[];
   largestFiles: StorageFileDetail[];
-  growth7DaysBytes: number;
-  growth30DaysBytes: number;
-  estimatedDaysToWarning: number | null;
-  estimatedDaysToCritical: number | null;
+  allFiles: StorageFileDetail[];
+  forecast: ForecastDetails;
   lastUpdated: string;
   isAvailable: boolean;
   errorMessage?: string;
@@ -59,9 +84,6 @@ export interface SystemHealthSummary {
   storage: QuotaMetricStatus;
   database: QuotaMetricStatus & { tableCount?: number };
   egress: QuotaMetricStatus;
-  cachedEgress?: QuotaMetricStatus;
-  realtime?: { activeConnections: number; status: HealthStatus };
-  edgeFunctions?: { invocations: number; status: HealthStatus };
   overallStatus: HealthStatus;
   lastChecked: string;
   isAvailable: boolean;
