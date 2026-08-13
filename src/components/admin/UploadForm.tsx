@@ -222,6 +222,21 @@ export function UploadForm({ courses }: UploadFormProps) {
     );
 
     try {
+      // 🛡️ Pre-upload Storage Health Guardrail Check
+      const guardResponse = await fetch("/api/admin/check-guardrail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileSize: fileUpload.file.size,
+          resourceType: fileUpload.type,
+        }),
+      });
+      const guardData = await guardResponse.json();
+
+      if (guardData.success && !guardData.allowed) {
+        throw new Error(guardData.reason || "Upload blocked: this file would push Supabase Storage beyond the safe limit.");
+      }
+
       // Determine bucket
       const bucket = isRAG ? STORAGE_BUCKET : 
                    (fileUpload.type === "audio" || fileUpload.type === "video" || fileUpload.type === "pdf") 
