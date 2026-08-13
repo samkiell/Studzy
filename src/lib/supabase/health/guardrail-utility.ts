@@ -21,7 +21,8 @@ export function calculateHealthStatus(
 export function calculateQuotaMetric(
   currentUsageBytes: number,
   limitBytes: number,
-  thresholds: QuotaThresholds = GUARDRAIL_CONFIG.thresholds
+  thresholds: QuotaThresholds = GUARDRAIL_CONFIG.thresholds,
+  resetBehavior: "Persistent Quota" | "Resets Monthly" = "Persistent Quota"
 ): QuotaMetricStatus {
   const safeLimit = limitBytes > 0 ? limitBytes : 1;
   const rawPercentage = (currentUsageBytes / safeLimit) * 100;
@@ -35,6 +36,7 @@ export function calculateQuotaMetric(
     percentage,
     remainingBytes,
     status,
+    resetBehavior,
   };
 }
 
