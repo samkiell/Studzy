@@ -112,6 +112,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🛡️ Supabase Storage Health Guardrail Check
+    const { checkUploadGuardrail } = await import("@/lib/supabase/health");
+    const guardrail = await checkUploadGuardrail(file.size, type);
+    if (!guardrail.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: guardrail.reason || "Upload blocked: file exceeds safe storage limit.",
+        },
+        { status: 400 }
+      );
+    }
+
     // Generate unique filename
     const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
     const timestamp = Date.now();
