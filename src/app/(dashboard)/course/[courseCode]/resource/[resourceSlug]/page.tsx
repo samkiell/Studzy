@@ -269,7 +269,9 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   try {
     if (resource.file_url) {
       let key = resource.file_url;
-      if (key.includes(".s3.filebase.com/")) {
+      if (key.startsWith("/api/storage/")) {
+        key = key.replace(/^\/api\/storage\//, "");
+      } else if (key.includes(".s3.filebase.com/")) {
         key = key.split(".s3.filebase.com/")[1];
       } else if (key.startsWith("https://s3.filebase.com/")) {
         const parts = key.replace("https://s3.filebase.com/", "").split("/");
