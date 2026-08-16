@@ -44,8 +44,8 @@ export default async function AuthenticatedLayout({
       role={user.role || "student"}
       user={{
         username: user.username || user.name || "Student",
-        full_name: user.full_name || user.name,
-        avatar_url: user.avatar_url || user.image,
+        full_name: (user.full_name || user.name) ?? undefined,
+        avatar_url: (user.avatar_url || user.image) ?? undefined,
         email: user.email || "",
       }}
     >
