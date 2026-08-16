@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase/client";
 
 interface StudentIDCardProps {
   displayName: string;
@@ -292,12 +291,13 @@ export function StudentIDCard({
                         setShowStackMenu(false);
                         const loadingToast = toast.loading(`Saving role as ${opt}...`);
                         
-                        const supabase = createClient();
-                        const { error } = await supabase.auth.updateUser({
-                          data: { stack: opt }
+                        const res = await fetch("/api/profile/update", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ stack: opt }),
                         });
                         
-                        if (error) {
+                        if (!res.ok) {
                           toast.error("Failed to save role", { id: loadingToast });
                         } else {
                           toast.success(`Role saved as ${opt}`, { id: loadingToast });
