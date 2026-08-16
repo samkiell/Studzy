@@ -1,6 +1,17 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import NextAuth from "next-auth";
+import authConfig from "@/auth.config";
 
-export async function proxy(request: NextRequest) {
-  return NextResponse.next();
-}
+export const { auth: proxy } = NextAuth(authConfig);
+
+export const config = {
+  matcher: [
+    /*
+     * Match all protected routes
+     */
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/cbt/:path*",
+    "/cbtx/:path*",
+    "/studzyai/:path*",
+  ],
+};
