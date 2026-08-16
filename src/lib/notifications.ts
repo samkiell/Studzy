@@ -18,14 +18,17 @@ type NewResource = {
   slug?: string | null;
 };
 
-type NewQuestions = {
-  kind: "questions";
+type NewBatchResources = {
+  kind: "batch_resources";
   courseId: string;
-  courseCode?: string;
-  count: number;
+  items: Array<{
+    title: string;
+    type: string;
+    slug?: string | null;
+  }>;
 };
 
-type NewContent = NewResource | NewQuestions;
+type NewContent = NewResource | NewQuestions | NewBatchResources;
 
 function siteUrl(): string {
   return (
@@ -99,25 +102,40 @@ export async function notifyStudentsOfNewContent(content: NewContent): Promise<v
     const courseUrl = `${base}/course/${course.code}`;
 
     const messages = recipients.map((recipient) => {
-      const email =
-        content.kind === "resource"
-          ? getNewContentEmail({
-              kind: "resource",
-              courseCode: course.code,
-              courseTitle: course.title,
-              recipientName: recipient.name,
-              itemTitle: content.resourceTitle,
-              resourceType: content.resourceType,
-              url: content.slug ? `${courseUrl}/resource/${content.slug}` : courseUrl,
-            })
-          : getNewContentEmail({
-              kind: "questions",
-              courseCode: course.code,
-              courseTitle: course.title,
-              recipientName: recipient.name,
-              count: content.count,
-              url: `${base}/cbt`,
-            });
+      let email;
+      if (content.kind === "batch_resources") {
+        email = getNewContentEmail({
+          kind: "batch_resources",
+          courseCode: course.code,
+          courseTitle: course.title,
+          recipientName: recipient.name,
+          items: content.items.map((item) => ({
+            title: item.title,
+            type: item.type,
+            url: item.slug ? `${courseUrl}/resource/${item.slug}` : courseUrl,
+          })),
+          url: courseUrl,
+        });
+      } else if (content.kind === "resource") {
+        email = getNewContentEmail({
+          kind: "resource",
+          courseCode: course.code,
+          courseTitle: course.title,
+          recipientName: recipient.name,
+          itemTitle: content.resourceTitle,
+          resourceType: content.resourceType,
+          url: content.slug ? `${courseUrl}/resource/${content.slug}` : courseUrl,
+        });
+      } else {
+        email = getNewContentEmail({
+          kind: "questions",
+          courseCode: course.code,
+          courseTitle: course.title,
+          recipientName: recipient.name,
+          count: content.count,
+          url: `${base}/cbt`,
+        });
+      }
       return { to: recipient.email, subject: email.subject, html: email.html };
     });
 
