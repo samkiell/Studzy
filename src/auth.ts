@@ -1,7 +1,10 @@
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema/auth";
+import { eq, or } from "drizzle-orm";
 import authConfig from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -12,6 +15,52 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     verificationTokensTable: verificationTokens,
   }),
   session: { strategy: "jwt" },
+  providers: [
+    ...authConfig.providers,
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        identifier: { label: "Email or Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.identifier || !credentials?.password) {
+          return null;
+        }
+
+        const identifier = credentials.identifier as string;
+        const password = credentials.password as string;
+
+        // Find user by email or username
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(
+            or(
+              eq(users.email, identifier.toLowerCase().trim()),
+              eq(users.username, identifier.trim())
+            )
+          )
+          .limit(1);
+
+        if (!user || !user.password_hash) {
+          return null;
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.full_name || user.username || user.name,
+          image: user.avatar_url || user.image,
+        };
+      },
+    }),
+  ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -26,5 +75,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
-  ...authConfig,
+  pages: {
+    signIn: "/login",
+  },
 });
