@@ -7,7 +7,7 @@ import { GrowthForecastCard } from "@/components/admin/health/GrowthForecastCard
 import { StorageManagementSection } from "@/components/admin/health/StorageManagementSection";
 import { SystemHealthSummaryWidget } from "@/components/admin/health/SystemHealthSummaryWidget";
 import { GUARDRAIL_CONFIG } from "@/config/storage-guardrails";
-import { ShieldCheck, RefreshCw, Layers } from "lucide-react";
+import { ShieldCheck, RefreshCw } from "lucide-react";
 
 export const revalidate = 600; // 10 minutes cache revalidation
 
@@ -26,77 +26,64 @@ export default async function AdminHealthPage() {
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Supabase Control Panel & Health</h1>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Centralized monitoring, growth forecasting, and interactive storage file management
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Storage Control Panel & Health</h1>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              Live Filebase storage monitoring, quota management, and platform metrics
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <RefreshCw className="h-3.5 w-3.5" />
-          <span>Last updated: {new Date(storageMetrics.lastUpdated).toLocaleTimeString()}</span>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
-      {/* Warning Alert Banner if thresholds reached */}
+      {/* Storage Warning Banner */}
       <StorageWarningBanner status={storageMetrics.status} percentage={storageMetrics.usagePercentage} />
 
-      {/* 2. Quota Overview Cards */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Layers className="h-5 w-5 text-primary-600" />
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Quota Overview</h2>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <HealthMetricCard
-            title="Supabase Storage"
-            subtitle={`${storageMetrics.objectCount} total objects`}
-            metric={systemSummary.storage}
-            iconType="storage"
-            extraInfo="Persistent Quota"
-          />
+      {/* Top 3 Core Quota Cards */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <HealthMetricCard
+          title="Filebase Storage"
+          subtitle="File & Document Storage"
+          metric={systemSummary.storage}
+          iconType="storage"
+        />
+        <HealthMetricCard
+          title="Neon Database"
+          subtitle="PostgreSQL Rows & Tables"
+          metric={systemSummary.database}
+          iconType="database"
+        />
+        <HealthMetricCard
+          title="Network Egress"
+          subtitle="Monthly Bandwidth"
+          metric={systemSummary.egress}
+          iconType="egress"
+        />
+      </div>
 
-          <HealthMetricCard
-            title="Database Footprint"
-            subtitle={`Tables monitored: ${systemSummary.database.tableCount || 0}`}
-            metric={systemSummary.database}
-            iconType="database"
-            extraInfo="Persistent Quota"
-          />
-
-          <HealthMetricCard
-            title="Monthly Egress"
-            subtitle="Data bandwidth limit"
-            metric={systemSummary.egress}
-            iconType="egress"
-            extraInfo="Resets 1st of month"
-          />
-        </div>
-      </section>
-
-      {/* 3. Growth & Forecast Dashboard */}
-      <section>
-        <GrowthForecastCard forecast={storageMetrics.forecast} />
-      </section>
-
-      {/* 4. Storage Deep-Dive */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Storage Breakdown</h2>
+      {/* Storage Breakdown & Growth Forecast Grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <StorageBreakdownCard metrics={storageMetrics} />
-      </section>
+        <GrowthForecastCard forecast={storageMetrics.forecast} />
+      </div>
 
-      {/* 5. Storage File Management Control Panel (Search, Sort, Filter, App Links & Bulk Delete) */}
-      <section>
-        <StorageManagementSection initialMetrics={storageMetrics} />
-      </section>
+      {/* Storage Object File Management Section */}
+      <StorageManagementSection initialMetrics={storageMetrics} />
 
-      {/* 6. Active Guardrail Policy Overview */}
+      {/* Active Guardrail Policy Overview */}
       <section className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 space-y-4">
         <h3 className="font-bold text-neutral-900 dark:text-white">Active Guardrail Policy Configuration</h3>
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-          Upload safety rules are dynamically enforced server-side across all application paths before initiating Supabase Storage uploads.
+          Upload safety rules are dynamically enforced server-side across all application paths before initiating Filebase Storage uploads.
         </p>
-
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Threshold Rules */}
           <div>
