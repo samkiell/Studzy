@@ -2,9 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { LoginForm } from "@/components/auth/LoginForm";
 
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import { Footer } from "@/components/ui/Footer";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/dashboard");
+  }
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
       <main className="flex flex-1 items-center justify-center px-4">
