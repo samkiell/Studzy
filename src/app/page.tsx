@@ -3,7 +3,12 @@ import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Footer } from "@/components/ui/Footer";
 
-export default function Home() {
+import { auth } from "@/auth";
+
+export default async function Home() {
+  const session = await auth();
+  const isLoggedIn = !!session?.user;
+
   return (
     <main className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
       {/* Navigation */}
@@ -13,16 +18,26 @@ export default function Home() {
           <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">Studzy</span>
         </div>
         <div className="flex gap-4">
-          <Link href="/login">
-            <Button variant="ghost" className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
-              Log in
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button className="bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">
-              Sign up
-            </Button>
-          </Link>
+          {isLoggedIn ? (
+            <Link href="/dashboard">
+              <Button className="bg-primary-600 text-white hover:bg-primary-700">
+                Dashboard →
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">
+                  Sign up
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -43,16 +58,26 @@ export default function Home() {
           Resources your lecturers don&apos;t want you to see, organised and summarised podcast, videos, audios, pdf and more.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link href="/signup">
-            <Button size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto text-white">
-              Get Started
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="outline" size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto">
-              I Already Have an Account
-            </Button>
-          </Link>
+          {isLoggedIn ? (
+            <Link href="/dashboard">
+              <Button size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto text-white bg-primary-600 hover:bg-primary-700">
+                Go to Dashboard →
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/signup">
+                <Button size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto text-white">
+                  Get Started
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline" size="lg" className="h-12 w-full px-8 text-base font-medium sm:w-auto">
+                  I Already Have an Account
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
