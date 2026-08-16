@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Video, Music, FileText, ChevronRight, FileCode } from "lucide-react";
 
 interface RecentResource {
@@ -21,58 +20,17 @@ export function ContinueStudying() {
 
   useEffect(() => {
     async function fetchRecentResources() {
-      const supabase = createClient();
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      try {
+        const res = await fetch("/api/recent-resources");
+        const json = await res.json();
+        if (json.data) {
+          setResources(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load recent resources:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // Fetch recent activity with resource and course info
-      const { data: activities } = await supabase
-        .from("user_activity")
-        .select(`
-          resource_id,
-          created_at,
-          resources (
-            id,
-            title,
-            slug,
-            type,
-            course_id,
-            courses (
-              code
-            )
-          )
-        `)
-        .eq("user_id", user.id)
-        .eq("action_type", "view_resource")
-        .neq("resources.type", "question_bank")
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (activities) {
-        const uniqueResources = new Map();
-        
-        activities.forEach((a: any) => {
-          if (a.resources && !uniqueResources.has(a.resources.id)) {
-            uniqueResources.set(a.resources.id, {
-              id: a.resources.id,
-              title: a.resources.title,
-              slug: a.resources.slug,
-              type: a.resources.type,
-              course_id: a.resources.course_id,
-              course_code: a.resources.courses?.code || "Unknown",
-              created_at: a.created_at,
-            });
-          }
-        });
-
-        setResources(Array.from(uniqueResources.values()).slice(0, 3));
-      }
-      setLoading(false);
     }
 
     fetchRecentResources();
@@ -104,7 +62,7 @@ export function ContinueStudying() {
     video: <Video className="h-5 w-5" />,
     audio: <Music className="h-5 w-5" />,
     pdf: <FileText className="h-5 w-5" />,
-    image: <Video className="h-5 w-5" />, // Placeholder icon for image
+    image: <Video className="h-5 w-5" />,
     document: <FileCode className="h-5 w-5" />,
     question_bank: <FileCode className="h-5 w-5" />,
   };

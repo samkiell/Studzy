@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { signup } from "@/app/auth/actions";
-import { ResendButton } from "@/components/auth/ResendButton";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -17,24 +16,13 @@ export function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError("");
     try {
-      const supabase = createClient();
-      const { error: err } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-        },
-      });
-      if (err) {
-        setError(err.message);
-        setGoogleLoading(false);
-      }
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (err: any) {
       console.error("Google sign in error:", err);
       setError("An unexpected error occurred. Please try again.");
@@ -77,37 +65,14 @@ export function SignupForm() {
         setLoading(false);
         return;
       }
-
-      if (result?.success) {
-        setSuccess(true);
-        setLoading(false);
-        return;
+    } catch (err: any) {
+      if (err?.digest?.startsWith("NEXT_REDIRECT")) {
+        throw err;
       }
-
-      router.push("/dashboard");
-      router.refresh();
-    } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center dark:border-green-800 dark:bg-green-900/20">
-        <svg className="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <h3 className="mt-4 text-lg font-semibold text-green-900 dark:text-green-100">Check your email</h3>
-        <p className="mt-2 text-sm text-green-700 dark:text-green-300">
-          We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
-        </p>
-        <div className="mt-6">
-          <ResendButton email={email} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -218,7 +183,7 @@ export function SignupForm() {
       </Button>
 
       <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
-        By signing up, you agree that you will not cheat on the day of the exam, if you do.. walai dem go catch you!
+        By signing up, you agree to the Studzy terms and academic code of honor.
       </p>
     </form>
   );

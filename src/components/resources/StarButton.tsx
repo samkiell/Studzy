@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 interface StarButtonProps {
@@ -12,7 +11,6 @@ interface StarButtonProps {
 export function StarButton({ resourceId }: StarButtonProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {

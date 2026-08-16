@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 interface StudyBuddiesProps {
   courseId: string;
@@ -10,27 +9,25 @@ interface StudyBuddiesProps {
 
 export function StudyBuddies({ courseId }: StudyBuddiesProps) {
   const [count, setCount] = useState<number>(0);
-  const supabase = createClient();
 
   useEffect(() => {
     const fetchCount = async () => {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { count: buddyCount, error } = await supabase
-        .from("study_presence")
-        .select("*", { count: "exact", head: true })
-        .eq("course_id", courseId)
-        .gt("last_pulse", fiveMinutesAgo);
-
-      if (!error && buddyCount !== null) {
-        setCount(buddyCount);
+      try {
+        const res = await fetch(`/api/study/buddies?courseId=${encodeURIComponent(courseId)}`);
+        const data = await res.json();
+        if (typeof data.count === "number") {
+          setCount(data.count);
+        }
+      } catch (err) {
+        console.error("Failed to load study buddies count:", err);
       }
     };
 
     fetchCount();
-    const interval = setInterval(fetchCount, 30000); // Refresh every 30s
+    const interval = setInterval(fetchCount, 30000);
 
     return () => clearInterval(interval);
-  }, [courseId, supabase]);
+  }, [courseId]);
 
   if (count <= 1) return null;
 

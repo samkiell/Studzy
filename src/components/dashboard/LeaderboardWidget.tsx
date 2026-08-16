@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Trophy, Medal, User } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 interface LeaderboardEntry {
   id: string;
@@ -17,39 +16,38 @@ export function LeaderboardWidget() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [limit, setLimit] = useState(5);
   const [hasMore, setHasMore] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, total_study_seconds, avatar_url, role")
-        .neq("role", "admin")
-        .order("total_study_seconds", { ascending: false })
-        .limit(limit);
+      try {
+        const res = await fetch(`/api/leaderboard?limit=${limit}`);
+        const data = await res.json();
 
-      if (!error && data) {
-        setEntries(data as LeaderboardEntry[]);
-        // If we got fewer results than the limit, there's no more data
-        setHasMore(data.length === limit);
+        if (data.data) {
+          setEntries(data.data as LeaderboardEntry[]);
+          setHasMore(data.data.length === limit);
+        }
+      } catch (err) {
+        console.error("Failed to load leaderboard:", err);
+      } finally {
+        setLoading(false);
+        setIsFetchingMore(false);
       }
-      setLoading(false);
-      setIsFetchingMore(false);
     };
 
     fetchLeaderboard();
-  }, [supabase, limit]);
+  }, [limit]);
 
   const handleSeeMore = () => {
     setIsFetchingMore(true);
-    setLimit(prev => prev + 10);
+    setLimit((prev) => prev + 10);
   };
 
   if (loading) return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 animate-pulse">
       <div className="h-6 w-32 bg-neutral-200 dark:bg-neutral-800 rounded mb-4"></div>
       <div className="space-y-3">
-        {[1, 2, 3].map(i => <div key={i} className="h-10 bg-neutral-100 dark:bg-neutral-800 rounded"></div>)}
+        {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-neutral-100 dark:bg-neutral-800 rounded"></div>)}
       </div>
     </div>
   );
@@ -88,7 +86,7 @@ export function LeaderboardWidget() {
                   {entry.username || "Anonymous"}
                 </p>
                 <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                  {Math.floor(entry.total_study_seconds / 3600)}h {Math.floor((entry.total_study_seconds % 3600) / 60)}m studied
+                  {Math.floor((entry.total_study_seconds || 0) / 3600)}h {Math.floor(((entry.total_study_seconds || 0) % 3600) / 60)}m studied
                 </p>
               </div>
             </div>

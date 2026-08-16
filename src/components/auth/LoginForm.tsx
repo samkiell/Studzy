@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { login } from "@/app/auth/actions";
-import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,17 +19,7 @@ export function LoginForm() {
     setGoogleLoading(true);
     setError("");
     try {
-      const supabase = createClient();
-      const { error: err } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-        },
-      });
-      if (err) {
-        setError(err.message);
-        setGoogleLoading(false);
-      }
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (err: any) {
       console.error("Google sign in error:", err);
       setError("An unexpected error occurred. Please try again.");
@@ -55,21 +43,17 @@ export function LoginForm() {
       formData.append("email", email);
       formData.append("password", password);
 
-      // Call Server Action
       const result = await login(formData);
 
       if (result?.error) {
         setError(result.error);
         setLoading(false);
-      } else {
-        // Successful login will redirect from server
       }
     } catch (err: any) {
-      // Next.js redirect() throws a special error — let it propagate
       if (err?.digest?.startsWith("NEXT_REDIRECT")) {
         throw err;
       }
-      console.error("Login catch error:", err);
+      console.error("Login error:", err);
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }

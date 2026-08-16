@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { MessageSquare, Send, Reply, User as UserIcon, Loader2, Trash2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
 
@@ -40,15 +39,14 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
 
   useEffect(() => {
     async function fetchUser() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, role")
-          .eq("id", user.id)
-          .single();
-        setCurrentUser(data);
+      try {
+        const res = await fetch("/api/profile/me");
+        const json = await res.json();
+        if (json.user) {
+          setCurrentUser(json.user);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user profile:", err);
       }
     }
     fetchUser();
@@ -78,7 +76,7 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
       body: JSON.stringify({
         resourceId,
         content,
-        parentId: replyTo?.id || null
+        parentId: replyTo?.id || null,
       }),
     });
 
@@ -111,7 +109,7 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
     }
   };
 
-  const rootDiscussions = discussions.filter(d => !d.parent_id);
+  const rootDiscussions = discussions.filter((d) => !d.parent_id);
 
   return (
     <div className="mt-12 border-t border-neutral-200 pt-8 dark:border-neutral-800">
@@ -151,23 +149,23 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
 
       {loading ? (
         <div className="space-y-4">
-          {[1, 2].map(i => <div key={i} className="h-24 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded-xl"></div>)}
+          {[1, 2].map((i) => <div key={i} className="h-24 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded-xl"></div>)}
         </div>
       ) : (
         <div className="space-y-6">
           {rootDiscussions.length === 0 ? (
             <p className="text-center text-sm text-neutral-500 py-8">No discussions yet. Be the first to ask!</p>
           ) : (
-            rootDiscussions.map(discussion => (
+            rootDiscussions.map((discussion) => (
               <DiscussionItem 
                 key={discussion.id} 
                 discussion={discussion} 
                 allDiscussions={discussions}
                 onReply={(d) => {
                   setReplyTo(d);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                isAdmin={currentUser?.role === 'admin'}
+                isAdmin={currentUser?.role === "admin"}
                 onDelete={handleDelete}
               />
             ))
@@ -179,13 +177,13 @@ export function DiscussionPanel({ resourceId }: DiscussionPanelProps) {
 }
 
 function DiscussionItem({ discussion, allDiscussions, onReply, isAdmin, onDelete }: { 
-  discussion: Discussion, 
-  allDiscussions: Discussion[], 
-  onReply: (d: Discussion) => void,
-  isAdmin: boolean,
-  onDelete: (id: string) => void
+  discussion: Discussion; 
+  allDiscussions: Discussion[]; 
+  onReply: (d: Discussion) => void;
+  isAdmin: boolean;
+  onDelete: (id: string) => void;
 }) {
-  const replies = allDiscussions.filter(d => d.parent_id === discussion.id);
+  const replies = allDiscussions.filter((d) => d.parent_id === discussion.id);
 
   return (
     <div className="space-y-4">
@@ -232,7 +230,7 @@ function DiscussionItem({ discussion, allDiscussions, onReply, isAdmin, onDelete
 
       {replies.length > 0 && (
         <div className="ml-14 space-y-6 border-l-2 border-neutral-100 pl-6 dark:border-neutral-800">
-          {replies.map(reply => (
+          {replies.map((reply) => (
             <DiscussionItem 
               key={reply.id} 
               discussion={reply} 
