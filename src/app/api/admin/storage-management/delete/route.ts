@@ -1,39 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { deleteStorageObjectsServer, invalidateHealthCache, getStorageHealthMetrics } from "@/lib/supabase/health";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check admin status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
     const body = await request.json();
     const { bucket, paths } = body as { bucket: string; paths: string[] };
 
-    if (!bucket || !paths || !Array.isArray(paths) || paths.length === 0) {
+    if (!paths || !Array.isArray(paths) || paths.length === 0) {
       return NextResponse.json({ success: false, message: "Invalid payload parameters" }, { status: 400 });
     }
 
-    const result = await deleteStorageObjectsServer(bucket, paths);
+    const result = await deleteStorageObjectsServer(bucket || "studzy", paths);
 
     if (result.success) {
-      // Invalidate server metrics cache & trigger fresh recalculation
       invalidateHealthCache();
       const updatedMetrics = await getStorageHealthMetrics(true);
 
