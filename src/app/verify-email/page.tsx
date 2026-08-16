@@ -1,19 +1,12 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { ResendButton } from "@/components/auth/ResendButton";
 
 export default async function VerifyEmailPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
-  }
-
-  if (user.email_confirmed_at) {
-    redirect("/dashboard");
   }
 
   return (
@@ -25,19 +18,15 @@ export default async function VerifyEmailPage() {
           </svg>
         </div>
         <h1 className="mt-6 text-2xl font-semibold text-neutral-900 dark:text-white">
-          Verify your email
+          Account Confirmed
         </h1>
         <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-          We&apos;ve sent a verification link to <strong>{user.email}</strong>. Please check your inbox and click the link to continue.
+          Your account is active. You can now access all Studzy resources.
         </p>
         
         <div className="mt-8 space-y-4">
-          <p className="text-xs text-neutral-500">
-            Can&apos;t find the email? Check your spam folder or click below to resend.
-          </p>
-          <ResendButton email={user.email!} />
-          <Link href="/login" className="block text-sm font-medium text-primary-600 hover:text-primary-500">
-            Back to login
+          <Link href="/dashboard" className="block text-sm font-medium text-primary-600 hover:text-primary-500">
+            Go to Dashboard
           </Link>
         </div>
       </div>
