@@ -254,7 +254,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
         <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <LockedResourcePreview
-            resourceType={resource.type}
+            resourceType={resource.type as any}
             title={resource.title}
             description={resource.description}
             courseCode={course.code}
