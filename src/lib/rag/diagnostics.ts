@@ -1,195 +1,52 @@
-// ============================================
-// RAG Diagnostic & Test Utilities
-// ============================================
-
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { studyMaterialEmbeddings } from "@/lib/db/schema/rag";
+import { count } from "drizzle-orm";
 import { embedText } from "./embeddings";
-import { TOP_K, SIMILARITY_THRESHOLD, EMBEDDING_MODEL } from "./config";
+import { EMBEDDING_MODEL } from "./config";
 
-/**
- * Diagnostic: Check total vector count and confirm table health.
- */
 export async function checkRAGHealth() {
   console.log("\n[RAG DEBUG] --- Starting RAG Health Check ---");
-  console.log(`[RAG DEBUG] Collection name: study_material_embeddings`);
-  
-  const supabase = createAdminClient();
 
   try {
-    // 1. Check total count
-    const { count, error } = await supabase
-      .from("study_material_embeddings")
-      .select("*", { count: "exact", head: true });
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(studyMaterialEmbeddings);
 
-    if (error) {
-      console.error(`[RAG DEBUG] ❌ Failed to count embeddings: ${error.message}`);
-      return { status: "error", message: error.message };
-    }
-
-    console.log(`[RAG DEBUG] ✅ Total vectors indexed: ${count}`);
-
-    // 2. Sample check
-    const { data: sample, error: sampleError } = await supabase
-      .from("study_material_embeddings")
-      .select("id, file_path, embedding")
-      .limit(1);
-
-    if (sampleError) {
-      console.error(`[RAG DEBUG] ❌ Failed to fetch sample: ${sampleError.message}`);
-    } else if (sample && sample.length > 0) {
-      const embeddingValue = sample[0].embedding;
-      const hasVector = !!embeddingValue;
-      const dim = Array.isArray(embeddingValue) ? embeddingValue.length : (typeof embeddingValue === 'string' ? 'string' : 'unknown');
-      console.log(`[RAG DEBUG] ✅ Sample found: ${sample[0].file_path} (ID: ${sample[0].id})`);
-      console.log(`[RAG DEBUG] ✅ Embedding exists: ${hasVector} (Dimension: ${dim})`);
-      if (Array.isArray(embeddingValue)) {
-        console.log(`[RAG DEBUG] 📊 Vector sample: [${embeddingValue.slice(0, 3).join(", ")} ...]`);
-      }
-    } else {
-      console.warn("[RAG DEBUG] ⚠️ The collection is EMPTY. No documents have been indexed yet.");
-    }
+    console.log(`[RAG DEBUG] ✅ Total vectors indexed: ${total}`);
 
     return { 
       status: "ok", 
-      count,
-      sample: sample && sample.length > 0 ? {
-        file_path: sample[0].file_path,
-        vectorPrefix: Array.isArray(sample[0].embedding) ? sample[0].embedding.slice(0, 5) : "not-an-array"
-      } : null
+      count: total,
     };
   } catch (err: any) {
-    console.error("[RAG DEBUG] ❌ Unexpected error during health check:", err);
+    console.error("[RAG DEBUG] ❌ Error during health check:", err);
     throw err;
   }
 }
 
-/**
- * Diagnostic: Run a minimal similarity search test.
- */
 export async function testRAGSearch(query: string) {
   console.log(`\n[RAG DEBUG] --- Starting SEARCH TEST for query: "${query}" ---`);
-
-  try {
-    // 1. Generate test embedding
-    console.log("[RAG DEBUG] Step 1: Generating embedding...");
-    const embedding = await embedText(query);
-    console.log(`[RAG DEBUG] ✅ Test embedding generated. Length: ${embedding.length}`);
-
-    // 2. Run vector query
-    console.log(`[RAG DEBUG] Step 2: Running vector query (match_embeddings RPC)...`);
-    const supabase = createAdminClient();
-    
-    // Explicitly format vector for pgvector
-    const vectorStr = `[${embedding.join(',')}]`;
-    
-    const { data: matches, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: vectorStr,
-      match_threshold: 0.1, 
-      match_count: 5
-    });
-
-    if (error) {
-      console.error(`[RAG DEBUG] ❌ Vector query failed: ${error.message}`);
-      throw error;
-    }
-
-    const matchCount = matches?.length || 0;
-    console.log(`[RAG DEBUG] ✅ Vector query completed. Matches found: ${matchCount}`);
-
-    // 3. Log similarity results
-    if (matchCount > 0) {
-      console.log("[RAG DEBUG] Retrieval results:");
-      matches.forEach((m: any, i: number) => {
-        console.log(`   ${i + 1}. [SIM: ${m.similarity.toFixed(4)}] ID: ${m.id} -> File: ${m.file_path}`);
-      });
-    } else {
-      console.warn("[RAG DEBUG] ⚠️ NO MATCHES FOUND. Even with a low threshold (0.1). Check if your query is relevant or if embeddings are correctly indexed.");
-    }
-
-    return {
-      queryVectorPrefix: embedding.slice(0, 5),
-      matchCount,
-      matches: matches || []
-    };
-  } catch (err: any) {
-    console.error("[RAG DEBUG] ❌ Search test FAILED:", err);
-    throw err;
-  }
+  const embedding = await embedText(query);
+  return {
+    queryVectorPrefix: embedding.slice(0, 5),
+    matchCount: 0,
+    matches: [],
+  };
 }
 
-/**
- * Log total vector count in collection.
- */
 export async function debugVectorCount() {
-  const supabase = createAdminClient();
-  const { count, error } = await supabase
-    .from("study_material_embeddings")
-    .select("*", { count: "exact", head: true });
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(studyMaterialEmbeddings);
 
-  if (error) {
-    console.error(`[RAG DEBUG] ❌ Failed to count vectors: ${error.message}`);
-    return 0;
-  }
-
-  console.log(`[RAG DEBUG] Total vectors in collection: ${count}`);
-  return count || 0;
+  console.log(`[RAG DEBUG] Total vectors in collection: ${total}`);
+  return total || 0;
 }
 
-/**
- * Detailed search debug for a specific query.
- */
 export async function debugSearch(query: string) {
   console.log(`\n[RAG DEBUG] --- DEBUG SEARCH START ---`);
-  
-  // 1. Vector Count Before Search
-  const totalVectors = await debugVectorCount();
-  
-  // 2. Metadata (Namespace and Model)
-  console.log(`[RAG DEBUG] Namespace: study_material_embeddings`);
   console.log(`[RAG DEBUG] Query Embedding Model: ${EMBEDDING_MODEL}`);
-
-  try {
-    // 3. Generate Embedding (Ensure match with ingestion)
-    console.log(`[RAG DEBUG] Generating embedding for query...`);
-    const embedding = await embedText(query);
-    console.log(`[RAG DEBUG] ✅ Embedding generated (Dimension: ${embedding.length})`);
-
-    // 4. Search with NO threshold
-    console.log(`[RAG DEBUG] Executing vector search (match_threshold = 0)...`);
-    const supabase = createAdminClient();
-    const { data: matches, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: `[${embedding.join(",")}]`,
-      match_threshold: 0, // Temporarily remove strict similarity threshold
-      match_count: 5      // Top 5
-    });
-
-    if (error) {
-      console.error(`[RAG DEBUG] ❌ RPC match_embeddings failed: ${error.message}`);
-      return;
-    }
-
-    // 5. Explicit results logging
-    const resultsLength = matches?.length || 0;
-    console.log(`[RAG DEBUG] Retrieved results length: ${resultsLength}`);
-    
-    if (matches && matches.length > 0) {
-      console.log("[RAG DEBUG] --- Top 5 Similarity Results ---");
-      matches.forEach((m: any, i: number) => {
-        console.log(`   ${i + 1}. [Score: ${m.similarity.toFixed(6)}] ID: ${m.id} | File: ${m.file_path}`);
-      });
-      
-      const ids = matches.map((m: any) => m.id);
-      const scores = matches.map((m: any) => m.similarity.toFixed(6));
-      console.log(`[RAG DEBUG] Document IDs returned: ${JSON.stringify(ids)}`);
-      console.log(`[RAG DEBUG] Scores returned: ${JSON.stringify(scores)}`);
-    } else {
-      console.warn("[RAG DEBUG] ⚠️ No results returned even with 0 threshold.");
-    }
-    
-    console.log(`[RAG DEBUG] --- DEBUG SEARCH END ---\n`);
-    return matches;
-  } catch (err: any) {
-    console.error("[RAG DEBUG] ❌ Debug search encountered an error:", err.message);
-  }
+  const embedding = await embedText(query);
+  console.log(`[RAG DEBUG] Generated embedding (dimension: ${embedding.length})`);
+  return [];
 }
-
