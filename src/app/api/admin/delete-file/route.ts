@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { deleteFile } from "@/lib/storage";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check admin status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
@@ -29,31 +16,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "No file path provided" }, { status: 400 });
     }
 
-    // Delete file from storage
-    // Try to find which bucket it's in or just try both.
-    // PDF, Audio, Video are in studzy-materials, others in RAG.
-    let bucket = "RAG";
-    if (path.startsWith("pdf/") || path.startsWith("audio/") || path.startsWith("video/")) {
-      bucket = "studzy-materials";
-    }
-
-    const { error: deleteError } = await supabase.storage
-      .from(bucket)
-      .remove([path]);
-    
-    // Fallback: if delete failed, try the other bucket (legacy or mixed)
-    if (deleteError) {
-        const otherBucket = bucket === "RAG" ? "studzy-materials" : "RAG";
-        await supabase.storage.from(otherBucket).remove([path]);
-    }
-
-    if (deleteError) {
-      console.error("Storage delete error:", deleteError);
-      return NextResponse.json({
-        success: false,
-        message: `Delete failed: ${deleteError.message}`,
-      }, { status: 500 });
-    }
+    // Delete from Filebase
+    await deleteFile(path);
 
     return NextResponse.json({
       success: true,

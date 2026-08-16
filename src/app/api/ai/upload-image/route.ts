@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { uploadFile } from "@/lib/storage";
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
@@ -13,10 +14,8 @@ const ALLOWED_TYPES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -39,45 +38,27 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // 🛡️ Supabase Storage Health Guardrail Check
-    const { checkUploadGuardrail } = await import("@/lib/supabase/health");
-    const guardrail = await checkUploadGuardrail(file.size, "image");
-    if (!guardrail.allowed) {
-      return NextResponse.json({
-        error: guardrail.reason || "Upload blocked: file exceeds safe storage limit.",
-      }, { status: 400 });
-    }
-
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 9);
-    const fileName = `chat-images/${user.id}/${timestamp}-${randomId}.${ext}`;
+    const key = `chat-images/${user.id}/${timestamp}-${randomId}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("RAG")
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("Chat image upload error:", uploadError);
-      return NextResponse.json({
-        error: `Upload failed: ${uploadError.message}`,
-      }, { status: 500 });
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("RAG")
-      .getPublicUrl(uploadData.path);
+    // Upload to Filebase
+    const fileUrl = await uploadFile({
+      key,
+      body: buffer,
+      contentType: file.type,
+      metadata: {
+        userId: user.id,
+      },
+    });
 
     return NextResponse.json({
-      url: urlData.publicUrl,
-      path: uploadData.path,
+      url: fileUrl,
+      path: key,
     });
   } catch (error) {
     console.error("Chat image upload error:", error);

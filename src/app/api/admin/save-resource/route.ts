@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { resources } from "@/lib/db/schema/courses";
+import { eq, and } from "drizzle-orm";
 import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check admin status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
@@ -50,18 +39,21 @@ export async function POST(request: NextRequest) {
         .replace(/^-+|-+$/g, "") || "resource";
     }
 
-    // Check for existing slug in this course and handle uniqueness
     let finalSlug = cleanSlug;
     let counter = 1;
     let isUnique = false;
 
     while (!isUnique) {
-      const { data: existing } = await supabase
-        .from("resources")
-        .select("id")
-        .eq("course_id", courseId)
-        .eq("slug", finalSlug)
-        .maybeSingle();
+      const [existing] = await db
+        .select({ id: resources.id })
+        .from(resources)
+        .where(
+          and(
+            eq(resources.course_id, courseId),
+            eq(resources.slug, finalSlug)
+          )
+        )
+        .limit(1);
 
       if (!existing) {
         isUnique = true;
@@ -72,9 +64,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert resource into database
-    const { data: resource, error: insertError } = await supabase
-      .from("resources")
-      .insert({
+    const [resource] = await db
+      .insert(resources)
+      .values({
         course_id: courseId,
         title: title.trim(),
         slug: finalSlug,
@@ -85,18 +77,9 @@ export async function POST(request: NextRequest) {
         uploader_id: user.id,
         email_sent: (status || "published") === "published",
       })
-      .select()
-      .single();
+      .returning();
 
-    if (insertError) {
-      console.error("Database insert error:", insertError);
-      return NextResponse.json({
-        success: false,
-        message: `Failed to save: ${insertError.message}`,
-      }, { status: 500 });
-    }
-
-    // 📧 Notify students of the new resource (after the response is sent).
+    // Notify students of the new resource
     if (resource.status === "published") {
       after(() =>
         notifyStudentsOfNewContent({
@@ -105,7 +88,7 @@ export async function POST(request: NextRequest) {
           resourceTitle: title.trim(),
           resourceType: type,
           slug: resource.slug ?? finalSlug,
-        }),
+        })
       );
     }
 
@@ -125,14 +108,10 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check admin status
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-    if (profile?.role !== "admin") return NextResponse.json({ success: false, message: "Admin only" }, { status: 403 });
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ success: false, message: "Admin only" }, { status: 403 });
+    }
 
     const body = await request.json();
     const { id, title, slug, type, description, status, featured } = body;
@@ -147,17 +126,21 @@ export async function PATCH(request: NextRequest) {
     if (status !== undefined) updateData.status = status;
     if (featured !== undefined) updateData.featured = featured;
 
-    // Check if status is transitioning to published, and if email was already sent
     if (status === "published") {
-      const { data: existingResource } = await supabase
-        .from("resources")
-        .select("email_sent, course_id, title, type, slug")
-        .eq("id", id)
-        .single();
+      const [existingResource] = await db
+        .select({
+          email_sent: resources.email_sent,
+          course_id: resources.course_id,
+          title: resources.title,
+          type: resources.type,
+          slug: resources.slug,
+        })
+        .from(resources)
+        .where(eq(resources.id, id))
+        .limit(1);
 
       if (existingResource && !existingResource.email_sent) {
         updateData.email_sent = true;
-        // Trigger notification email
         after(() =>
           notifyStudentsOfNewContent({
             kind: "resource",
@@ -170,19 +153,14 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const { error: updateError } = await supabase
-      .from("resources")
-      .update(updateData)
-      .eq("id", id);
-
-    if (updateError) throw updateError;
+    await db.update(resources).set(updateData).where(eq(resources.id, id));
 
     return NextResponse.json({ success: true, message: "Resource updated successfully" });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Update resource error:", error);
     return NextResponse.json({
       success: false,
-      message: error instanceof Error ? error.message : "Update failed",
+      message: error.message || "Update failed",
     }, { status: 500 });
   }
 }

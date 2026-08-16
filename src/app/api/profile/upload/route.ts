@@ -1,18 +1,13 @@
-import { v2 as cloudinary } from "cloudinary";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { eq } from "drizzle-orm";
+import { uploadFile } from "@/lib/storage";
 import { NextResponse } from "next/server";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -38,38 +33,32 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
-    const uploadResponse = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          folder: "studzy",
-          public_id: `avatar_${user.id}`,
-          overwrite: true,
-          resource_type: "image",
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(buffer);
-    }) as any;
+    const fileExtension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const key = `avatars/${user.id}-${Date.now()}.${fileExtension}`;
 
-    const avatarUrl = uploadResponse.secure_url;
+    // Upload to Filebase
+    const avatarUrl = await uploadFile({
+      key,
+      body: buffer,
+      contentType: file.type,
+      metadata: {
+        userId: user.id,
+      },
+    });
 
-    // Update Supabase profile
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: avatarUrl })
-      .eq("id", user.id);
-
-    if (updateError) {
-      console.error("Supabase update error:", updateError);
-      return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
-    }
+    // Update user profile in Neon via Drizzle
+    await db
+      .update(users)
+      .set({
+        avatar_url: avatarUrl,
+        image: avatarUrl,
+        updated_at: new Date(),
+      })
+      .where(eq(users.id, user.id));
 
     return NextResponse.json({ url: avatarUrl });
-  } catch (error) {
-    console.error("Upload handler error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Avatar upload error:", error);
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }

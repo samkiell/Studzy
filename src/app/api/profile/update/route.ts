@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { eq } from "drizzle-orm";
 
 export async function PATCH(req: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    const updatePayload: any = {
-      updated_at: new Date().toISOString()
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date(),
     };
 
     if (body.fullName !== undefined) {
@@ -35,19 +36,16 @@ export async function PATCH(req: Request) {
       updatePayload.learning_goal = body.learningGoal;
     }
 
-    const { error } = await supabase
-      .from("profiles")
-      .update(updatePayload)
-      .eq("id", user.id);
-
-    if (error) {
-      if (error.code === "23505") {
+    try {
+      await db.update(users).set(updatePayload).where(eq(users.id, user.id));
+    } catch (err: any) {
+      if (err.code === "23505") {
         return NextResponse.json(
           { error: "Username is already taken." },
           { status: 400 }
         );
       }
-      throw error;
+      throw err;
     }
 
     return NextResponse.json({ success: true });

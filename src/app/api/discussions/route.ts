@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { discussions } from "@/lib/db/schema/activity";
+import { users } from "@/lib/db/schema/auth";
+import { eq, asc } from "drizzle-orm";
 
 export async function GET(req: Request) {
   try {
@@ -10,20 +14,24 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "resourceId is required" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("discussions")
-      .select(`
-        *,
-        profiles:user_id (
-          username,
-          avatar_url
-        )
-      `)
-      .eq("resource_id", resourceId)
-      .order("created_at", { ascending: true });
-
-    if (error) throw error;
+    const data = await db
+      .select({
+        id: discussions.id,
+        resource_id: discussions.resource_id,
+        user_id: discussions.user_id,
+        content: discussions.content,
+        parent_id: discussions.parent_id,
+        created_at: discussions.created_at,
+        updated_at: discussions.updated_at,
+        profiles: {
+          username: users.username,
+          avatar_url: users.avatar_url,
+        },
+      })
+      .from(discussions)
+      .leftJoin(users, eq(discussions.user_id, users.id))
+      .where(eq(discussions.resource_id, resourceId))
+      .orderBy(asc(discussions.created_at));
 
     return NextResponse.json(data);
   } catch (error: any) {
@@ -33,10 +41,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -46,20 +53,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from("discussions")
-      .insert({
+    const [created] = await db
+      .insert(discussions)
+      .values({
         resource_id: resourceId,
         user_id: user.id,
         content,
-        parent_id: parentId || null
+        parent_id: parentId || null,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    return NextResponse.json(created);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -67,21 +71,13 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    if (user.role !== "admin") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
@@ -91,17 +87,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Discussion ID is required" }, { status: 400 });
     }
 
-    // Delete discussion and all replies (replies might need cascade delete in DB, assuming DB handles it or we delete recursively. 
-    // Usually Supabase/Postgres foreign keys can be set to ON DELETE CASCADE. 
-    // If not, we might need to delete replies first. 
-    // Let's assume standard cascade or simple delete for now. The requirement is just "delete comments").
-    
-    const { error } = await supabase
-      .from("discussions")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
+    await db.delete(discussions).where(eq(discussions.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

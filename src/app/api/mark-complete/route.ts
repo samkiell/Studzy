@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { userProgress } from "@/lib/db/schema/activity";
+import { resources } from "@/lib/db/schema/courses";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
@@ -13,9 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -24,30 +26,41 @@ export async function POST(request: NextRequest) {
     }
 
     // Upsert progress record
-    const { error } = await supabase
-      .from("user_progress")
-      .upsert(
-        {
-          user_id: user.id,
-          resource_id: resourceId,
-          completed: true,
-          completed_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,resource_id" }
-      );
+    const [existing] = await db
+      .select({ id: userProgress.id })
+      .from(userProgress)
+      .where(
+        and(
+          eq(userProgress.user_id, user.id),
+          eq(userProgress.resource_id, resourceId)
+        )
+      )
+      .limit(1);
 
-    if (error) {
-      console.error("Error marking resource complete:", error);
-      return NextResponse.json(
-        { error: "Failed to mark resource complete" },
-        { status: 500 }
-      );
+    if (existing) {
+      await db
+        .update(userProgress)
+        .set({
+          completed: true,
+          completed_at: new Date(),
+        })
+        .where(eq(userProgress.id, existing.id));
+    } else {
+      await db.insert(userProgress).values({
+        user_id: user.id,
+        resource_id: resourceId,
+        completed: true,
+        completed_at: new Date(),
+      });
     }
 
     // Increment completion_count in resources table
-    await supabase.rpc("increment_completion_count", {
-      resource_id_input: resourceId,
-    });
+    await db
+      .update(resources)
+      .set({
+        completion_count: sql`COALESCE(${resources.completion_count}, 0) + 1`,
+      })
+      .where(eq(resources.id, resourceId));
 
     // Log activity
     await logActivity("complete_resource", resourceId);
@@ -68,9 +81,7 @@ export async function GET(request: NextRequest) {
     const resourceId = searchParams.get("resourceId");
     const courseId = searchParams.get("courseId");
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -80,39 +91,47 @@ export async function GET(request: NextRequest) {
 
     // Get progress for a single resource
     if (resourceId) {
-      const { data } = await supabase
-        .from("user_progress")
-        .select("completed")
-        .eq("user_id", user.id)
-        .eq("resource_id", resourceId)
-        .single();
+      const [data] = await db
+        .select({ completed: userProgress.completed })
+        .from(userProgress)
+        .where(
+          and(
+            eq(userProgress.user_id, user.id),
+            eq(userProgress.resource_id, resourceId)
+          )
+        )
+        .limit(1);
 
       return NextResponse.json({ completed: data?.completed || false });
     }
 
     // Get progress for all resources in a course
     if (courseId) {
-      const { data: resources } = await supabase
-        .from("resources")
-        .select("id")
-        .eq("course_id", courseId);
+      const courseResources = await db
+        .select({ id: resources.id })
+        .from(resources)
+        .where(eq(resources.course_id, courseId));
 
-      if (!resources || resources.length === 0) {
+      if (!courseResources || courseResources.length === 0) {
         return NextResponse.json({ completed: [], total: 0 });
       }
 
-      const resourceIds = resources.map((r) => r.id);
+      const resourceIds = courseResources.map((r) => r.id);
 
-      const { data: progress } = await supabase
-        .from("user_progress")
-        .select("resource_id")
-        .eq("user_id", user.id)
-        .in("resource_id", resourceIds)
-        .eq("completed", true);
+      const progress = await db
+        .select({ resource_id: userProgress.resource_id })
+        .from(userProgress)
+        .where(
+          and(
+            eq(userProgress.user_id, user.id),
+            inArray(userProgress.resource_id, resourceIds),
+            eq(userProgress.completed, true)
+          )
+        );
 
       return NextResponse.json({
-        completed: progress?.map((p) => p.resource_id) || [],
-        total: resources.length,
+        completed: progress.map((p) => p.resource_id),
+        total: courseResources.length,
       });
     }
 

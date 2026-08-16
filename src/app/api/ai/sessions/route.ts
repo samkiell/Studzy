@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { chatSessions } from "@/lib/db/schema/chat";
+import { eq, desc } from "drizzle-orm";
 
 // GET /api/ai/sessions — list user's chat sessions
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: sessions, error } = await supabase
-      .from("chat_sessions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching sessions:", error);
-      return NextResponse.json({ error: "Failed to fetch sessions" }, { status: 500 });
-    }
+    const sessions = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.user_id, user.id))
+      .orderBy(desc(chatSessions.updated_at));
 
     return NextResponse.json({ sessions: sessions || [] });
   } catch (error) {
@@ -32,29 +29,22 @@ export async function GET() {
 // POST /api/ai/sessions — create a new chat session
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json().catch(() => ({}));
     const title = body.title || "New Chat";
 
-    const { data: session, error } = await supabase
-      .from("chat_sessions")
-      .insert({
+    const [session] = await db
+      .insert(chatSessions)
+      .values({
         user_id: user.id,
         title,
       })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating session:", error);
-      return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
-    }
+      .returning();
 
     return NextResponse.json({ session });
   } catch (error) {

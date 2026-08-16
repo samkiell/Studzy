@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { examResults } from "@/lib/db/schema/theory";
 import { GradingQuestion, ExamResult } from "@/types/grading";
 import { gradeExam } from "@/lib/ai/gradeExam";
 
@@ -14,14 +16,9 @@ export async function submitExam({
   examId: string;
   questions: GradingQuestion[];
 }) {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
@@ -29,24 +26,18 @@ export async function submitExam({
     // 1. Run the AI grading pipeline
     const gradingResult: ExamResult = await gradeExam(questions);
 
-    // 2. Store results in Supabase
-    const { data, error: insertError } = await supabase
-      .from("exam_results")
-      .insert({
+    // 2. Store results in Neon via Drizzle
+    const [data] = await db
+      .insert(examResults)
+      .values({
         exam_id: examId,
         user_id: user.id,
-        total_score: gradingResult.totalScore,
-        max_score: gradingResult.maxScore,
-        percentage: gradingResult.percentage,
-        results_json: gradingResult, // Store the full hydrated result
+        total_score: String(gradingResult.totalScore),
+        max_score: String(gradingResult.maxScore),
+        percentage: String(gradingResult.percentage),
+        results_json: gradingResult,
       })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error("Failed to store exam results:", insertError);
-      throw new Error(`Database error: ${insertError.message}`);
-    }
+      .returning();
 
     return {
       success: true,

@@ -1,4 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { userActivity } from "@/lib/db/schema/activity";
+import { eq, and } from "drizzle-orm";
 
 export type ActivityAction = 
   | "login" 
@@ -9,28 +12,46 @@ export type ActivityAction =
   | "ai_code";
 
 export async function logActivity(actionType: ActivityAction, resourceId?: string, metadata: any = {}) {
-  const supabase = await createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: null };
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { error: null };
 
-  const { error } = await supabase.from("user_activity").upsert({
-    user_id: user.id,
-    action_type: actionType,
-    resource_id: resourceId || null,
-    metadata,
-    last_accessed: new Date().toISOString()
-  }, {
-    onConflict: 'user_id, action_type, resource_id'
-  });
+    // Try finding existing activity record or insert new one
+    const conditions = [
+      eq(userActivity.user_id, user.id),
+      eq(userActivity.action_type, actionType),
+    ];
+    if (resourceId) {
+      conditions.push(eq(userActivity.resource_id, resourceId));
+    }
 
-  if (error) {
-    console.error("Failed to log activity:", {
-      code: error.code,
-      message: error.message,
-      details: error.details
-    });
+    const [existing] = await db
+      .select({ id: userActivity.id })
+      .from(userActivity)
+      .where(and(...conditions))
+      .limit(1);
+
+    if (existing) {
+      await db
+        .update(userActivity)
+        .set({
+          metadata,
+          last_accessed: new Date(),
+        })
+        .where(eq(userActivity.id, existing.id));
+    } else {
+      await db.insert(userActivity).values({
+        user_id: user.id,
+        action_type: actionType,
+        resource_id: resourceId || null,
+        metadata,
+        last_accessed: new Date(),
+      });
+    }
+
+    return { error: null };
+  } catch (error: any) {
+    console.error("Failed to log activity:", error);
+    return { error };
   }
-
-  return { error };
 }

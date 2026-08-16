@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { eq } from "drizzle-orm";
+import { uploadFile } from "@/lib/storage";
 import type { ResourceType } from "@/types/database";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -26,22 +30,13 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     // Check admin status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, username")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    if (user.role !== "admin") {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
@@ -70,77 +65,52 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // 🛡️ Supabase Storage Health Guardrail Check
-    const { checkUploadGuardrail } = await import("@/lib/supabase/health");
-    const guardrail = await checkUploadGuardrail(file.size, type || "document");
-    if (!guardrail.allowed) {
-      return NextResponse.json({
-        success: false,
-        message: guardrail.reason || "Upload blocked: file exceeds safe storage limit.",
-      }, { status: 400 });
-    }
-
     // Generate unique filename
     const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 9);
     const isRAG = formData.get("isRAG") === "true";
-    const bucketName = isRAG ? "RAG" : 
-                    (type === "audio" || type === "video" || type === "pdf") 
-                    ? "studzy-materials" : "RAG";
-    const fileName = `${type}/${timestamp}-${randomId}.${fileExtension}`;
+    const folder = isRAG ? "rag" : "materials";
+    const key = `${folder}/${type}/${timestamp}-${randomId}.${fileExtension}`;
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
+    // Upload to Filebase
+    const fileUrl = await uploadFile({
+      key,
+      body: buffer,
+      contentType: file.type,
+      metadata: {
+        uploadedBy: user.id,
+        originalName: file.name,
+      },
+    });
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      return NextResponse.json({
-        success: false,
-        message: `Upload failed: ${uploadError.message}`,
-      }, { status: 500 });
-    }
-
-    // 🎓 If this is a RAG upload, trigger ingestion automatically
-    // We support PDF and generic text documents
+    // If RAG upload, trigger ingestion
     if (isRAG && (type === "pdf" || type === "document")) {
       try {
         const { ingestFile } = await import("@/lib/rag/ingestion");
-        console.log(`[RAG Upload] Triggering auto-ingestion for: ${uploadData.path}`);
-        
-        // This runs asynchronously in the background
+        console.log(`[RAG Upload] Triggering auto-ingestion for: ${key}`);
+
         ingestFile({
-          filePath: uploadData.path,
+          filePath: key,
           force: true,
-          username: profile?.username || user.email || "admin", // Tag with username
-        }).catch(err => {
-          console.error(`[RAG Upload] Ingestion failed for ${uploadData.path}:`, err);
+          username: user.username || user.email || "admin",
+        }).catch((err) => {
+          console.error(`[RAG Upload] Ingestion failed for ${key}:`, err);
         });
       } catch (err) {
         console.error(`[RAG Upload] Failed to trigger ingestion:`, err);
       }
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(uploadData.path);
-
     return NextResponse.json({
       success: true,
       message: isRAG ? "File uploaded and triggered for RAG ingestion" : "File uploaded successfully",
-      fileUrl: urlData.publicUrl,
-      storagePath: uploadData.path,
+      fileUrl,
+      storagePath: key,
     });
   } catch (error) {
     console.error("Upload file error:", error);

@@ -1,6 +1,9 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { theoryAttempts, theoryQuestions, theorySubQuestions } from "@/lib/db/schema/theory";
+import { eq, and, asc } from "drizzle-orm";
 import type {
   TheoryAnswers,
   TheoryQuestion,
@@ -114,7 +117,6 @@ IMPORTANT:
     return parsed;
   } catch (error) {
     console.error(`[TheoryGrading] Failed to grade question ${question.question_number}:`, error);
-    // Fallback: return zero score with error feedback
     return {
       score: 0,
       strengths: [],
@@ -126,7 +128,6 @@ IMPORTANT:
 
 /**
  * Grades a full theory exam attempt.
- * Loops through each answered question, grades via AI, aggregates, and saves to DB.
  */
 export async function gradeTheoryExam({
   attempt_id,
@@ -137,49 +138,53 @@ export async function gradeTheoryExam({
   exam_id: string;
   answers: TheoryAnswers;
 }): Promise<TheoryAttemptFeedback> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
   // Verify attempt ownership
-  const { data: attempt, error: attemptError } = await supabase
-    .from("theory_attempts")
-    .select("*")
-    .eq("id", attempt_id)
-    .eq("user_id", user.id)
-    .single();
+  const [attempt] = await db
+    .select()
+    .from(theoryAttempts)
+    .where(
+      and(
+        eq(theoryAttempts.id, attempt_id),
+        eq(theoryAttempts.user_id, user.id)
+      )
+    )
+    .limit(1);
 
-  if (attemptError || !attempt) {
+  if (!attempt) {
     throw new Error("Attempt not found or unauthorized");
   }
 
   if (attempt.completed_at) {
-    // Already graded — return existing feedback
     return attempt.feedback as TheoryAttemptFeedback;
   }
 
-  // Fetch all questions with sub-questions for this exam
-  const { data: questions, error: questionsError } = await supabase
-    .from("theory_questions")
-    .select("*, theory_sub_questions(*)")
-    .eq("exam_id", exam_id)
-    .order("question_number");
+  // Fetch all questions for this exam
+  const questions = await db
+    .select()
+    .from(theoryQuestions)
+    .where(eq(theoryQuestions.exam_id, exam_id))
+    .orderBy(asc(theoryQuestions.question_number));
 
-  if (questionsError || !questions) {
+  if (!questions || questions.length === 0) {
     throw new Error("Failed to fetch exam questions");
   }
+
+  // Fetch all sub-questions for these questions
+  const subQuestions = await db
+    .select()
+    .from(theorySubQuestions);
 
   // Map sub_questions properly
   const mappedQuestions: TheoryQuestion[] = questions.map((q: any) => ({
     ...q,
-    sub_questions: q.theory_sub_questions || [],
+    key_points: (q.key_points as string[]) || [],
+    sub_questions: subQuestions.filter((sq) => sq.question_id === q.id),
   }));
 
   // Grade each question
@@ -192,7 +197,6 @@ export async function gradeTheoryExam({
     maxScore += question.marks;
 
     if (!answer) {
-      // Unanswered question
       questionFeedbacks.push({
         question_id: question.id,
         question_number: question.question_number,
@@ -220,10 +224,8 @@ export async function gradeTheoryExam({
       continue;
     }
 
-    // 🕒 Rate Limit Protection: Wait 0.5s between calls for Gemini (higher quotas than Mistral)
     if (questionFeedbacks.length > 0) {
-      console.log(`[TheoryGrading] 🕒 Waiting 0.5s to respect rate limits...`);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     const grading = await gradeTheoryQuestion(question, studentAnswerText);
@@ -248,27 +250,22 @@ export async function gradeTheoryExam({
   };
 
   // Save to database
-  const { error: updateError } = await supabase
-    .from("theory_attempts")
-    .update({
+  await db
+    .update(theoryAttempts)
+    .set({
       answers,
       total_score: totalScore,
       max_score: maxScore,
       feedback,
-      completed_at: new Date().toISOString(),
+      completed_at: new Date(),
     })
-    .eq("id", attempt_id);
-
-  if (updateError) {
-    console.error("[TheoryGrading] Failed to save attempt:", updateError);
-    throw new Error("Failed to save grading results");
-  }
+    .where(eq(theoryAttempts.id, attempt_id));
 
   return feedback;
 }
 
 /**
- * Grades a single question in study mode (immediate feedback).
+ * Grades a single question in study mode.
  */
 export async function gradeTheoryQuestionStudyMode({
   question_id,
@@ -279,32 +276,37 @@ export async function gradeTheoryQuestionStudyMode({
   exam_id: string;
   answer: { main?: string; sub: Record<string, string> };
 }): Promise<TheoryQuestionFeedback> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  // Fetch the single question with sub-questions
-  const { data: question, error: questionError } = await supabase
-    .from("theory_questions")
-    .select("*, theory_sub_questions(*)")
-    .eq("id", question_id)
-    .eq("exam_id", exam_id)
-    .single();
+  // Fetch the single question
+  const [question] = await db
+    .select()
+    .from(theoryQuestions)
+    .where(
+      and(
+        eq(theoryQuestions.id, question_id),
+        eq(theoryQuestions.exam_id, exam_id)
+      )
+    )
+    .limit(1);
 
-  if (questionError || !question) {
+  if (!question) {
     throw new Error("Question not found");
   }
 
+  const subQuestions = await db
+    .select()
+    .from(theorySubQuestions)
+    .where(eq(theorySubQuestions.question_id, question_id));
+
   const mappedQuestion: TheoryQuestion = {
     ...question,
-    sub_questions: question.theory_sub_questions || [],
+    key_points: (question.key_points as string[]) || [],
+    sub_questions: subQuestions || [],
   };
 
   const studentAnswerText = buildStudentAnswerText(answer, mappedQuestion);

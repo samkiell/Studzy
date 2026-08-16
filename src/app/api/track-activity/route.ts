@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { resources } from "@/lib/db/schema/courses";
+import { eq, sql } from "drizzle-orm";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Resource ID required" }, { status: 400 });
     }
 
-    // Log activity using centralized function
+    // Log activity
     const { error } = await logActivity("view_resource", resourceId);
 
     if (error) {
@@ -26,19 +26,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Failed to log activity" }, { status: 500 });
     }
 
-    // Also increment view_count on the resource
-    const { data: resource } = await supabase
-      .from("resources")
-      .select("view_count")
-      .eq("id", resourceId)
-      .single();
-
-    if (resource) {
-      await supabase
-        .from("resources")
-        .update({ view_count: (resource.view_count || 0) + 1 })
-        .eq("id", resourceId);
-    }
+    // Increment view_count on the resource
+    await db
+      .update(resources)
+      .set({
+        view_count: sql`COALESCE(${resources.view_count}, 0) + 1`,
+      })
+      .where(eq(resources.id, resourceId));
 
     return NextResponse.json({ success: true });
   } catch (error) {

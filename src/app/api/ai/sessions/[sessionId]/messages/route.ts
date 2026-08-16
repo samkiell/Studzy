@@ -1,96 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { chatSessions, chatMessages } from "@/lib/db/schema/chat";
+import { eq, and, asc } from "drizzle-orm";
 import { GoogleGenerativeAI, Part } from "@google/generative-ai";
-import { embedText } from "@/lib/rag/embeddings";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { TOP_K, SIMILARITY_THRESHOLD } from "@/lib/rag/config";
 
 // Initialize Gemini
 function getGeminiAI() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Gemini API Key not configured");
   return new GoogleGenerativeAI(apiKey);
-}
-
-/**
- * Search study material embeddings for context relevant to the user's question.
- */
-async function getRAGContext(
-  question: string,
-  courseCode?: string,
-  level?: string
-): Promise<string | null> {
-  // 🔴 TEMPORARILY DISABLED BY USER REQUEST (TOKENS SAVING)
-  console.log(`[RAG] 🚫 RAG is temporarily disabled. Skipping context retrieval.`);
-  return null;
-
-  try {
-    console.log(`[RAG] 🔍 Querying embeddings for: "${question.substring(0, 100)}..."`);
-    const queryEmbedding = await embedText(question);
-    const supabase = createAdminClient();
-
-    const { data, error } = await supabase.rpc("match_embeddings", {
-      query_embedding: JSON.stringify(queryEmbedding),
-      match_threshold: SIMILARITY_THRESHOLD,
-      match_count: TOP_K,
-      filter_course_code: courseCode || null,
-      filter_level: level || null,
-    });
-
-    // 🌍 Fallback: If no course-specific materials, search across the entire "RAG Bucket"
-    if (!error && (!data || data.length === 0) && courseCode) {
-      console.log(`[RAG] 🌍 Course search returned nothing. Retrying with Global wildcard scope...`);
-      const { data: globalData, error: globalError } = await supabase.rpc("match_embeddings", {
-        query_embedding: JSON.stringify(queryEmbedding),
-        match_threshold: SIMILARITY_THRESHOLD,
-        match_count: TOP_K,
-        filter_course_code: null, // Global wildcard search
-        filter_level: null,
-      });
-
-      if (!globalError && globalData && globalData.length > 0) {
-        console.log(`[RAG] ✅ Success! Found ${globalData.length} materials in Global scope.`);
-        return formatRAGPrompt(globalData);
-      }
-    }
-
-    if (error) {
-      console.error("[RAG] ❌ RPC Error:", error);
-      return null;
-    }
-
-    if (!data || data.length === 0) {
-      console.log("[RAG] ⚠️ No matching study materials found in ANY scope.");
-      return null;
-    }
-
-    console.log(`[RAG] ✅ Found ${data.length} relevant chunks:`);
-    return formatRAGPrompt(data);
-  } catch (err) {
-    console.error("[RAG] ❌ Context retrieval failed:", err);
-    return null;
-  }
-}
-
-/**
- * Helper to format retrieval data into a system prompt.
- */
-function formatRAGPrompt(data: any[]): string {
-  const contextBlocks = data
-    .map(
-      (chunk: any, i: number) =>
-        `--- Source ${i + 1} (${chunk.file_path}, relevance: ${(chunk.similarity * 100).toFixed(1)}%) ---\n${chunk.content}`
-    )
-    .join("\n\n");
-
-  return `RELEVANT STUDY MATERIALS FOUND:
-${contextBlocks}
-
-INSTRUCTIONS FOR USING STUDY MATERIALS:
-1. START YOUR RESPONSE by acknowledging the materials found, but DO NOT show raw technical file paths. Instead, use descriptive terms if possible or just refer to them as "uploaded study materials".
-2. Use the provided study materials to answer the student's question accurately.
-3. If the study materials don't cover the topic, answer from your general knowledge.
-4. Format responses with markdown for readability.`;
 }
 
 // POST /api/ai/sessions/[sessionId]/messages — save a message and get AI response
@@ -100,22 +19,25 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Verify session ownership
-    const { data: session, error: sessionError } = await supabase
-      .from("chat_sessions")
-      .select("*")
-      .eq("id", sessionId)
-      .eq("user_id", user.id)
-      .single();
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(
+        and(
+          eq(chatSessions.id, sessionId),
+          eq(chatSessions.user_id, user.id)
+        )
+      )
+      .limit(1);
 
-    if (sessionError || !session) {
+    if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
@@ -131,42 +53,35 @@ export async function POST(
 
     // Save user message (SKIP if trigger_only is true)
     if (!trigger_only) {
-      const { error: userMsgError } = await supabase
-        .from("chat_messages")
-        .insert({
-          session_id: sessionId,
-          role: body.role || "user",
-          content: content || "",
-          mode: mode || "chat",
-          image_url: finalImageUrl || null,
-        });
-
-      if (userMsgError) {
-        console.error("Error saving user message:", userMsgError);
-        return NextResponse.json({ error: "Failed to save message" }, { status: 500 });
-      }
+      await db.insert(chatMessages).values({
+        session_id: sessionId,
+        role: body.role || "user",
+        content: content || "",
+        mode: mode || "chat",
+        image_url: finalImageUrl || null,
+      });
     }
 
     // Fetch all messages for context
-    const { data: allMessages } = await supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("session_id", sessionId)
-      .order("created_at", { ascending: true });
+    const allMessages = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.session_id, sessionId))
+      .orderBy(asc(chatMessages.created_at));
 
     // Auto-generate title from first user message
     if (session.title === "New Chat" && content) {
       const autoTitle = content.length > 50 ? content.substring(0, 50) + "..." : content;
-      await supabase
-        .from("chat_sessions")
-        .update({ title: autoTitle, updated_at: new Date().toISOString() })
-        .eq("id", sessionId);
+      await db
+        .update(chatSessions)
+        .set({ title: autoTitle, updated_at: new Date() })
+        .where(eq(chatSessions.id, sessionId));
     } else {
       // Update session timestamp
-      await supabase
-        .from("chat_sessions")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", sessionId);
+      await db
+        .update(chatSessions)
+        .set({ updated_at: new Date() })
+        .where(eq(chatSessions.id, sessionId));
     }
 
     // 🚀 Call Gemini AI with streaming
@@ -179,10 +94,7 @@ export async function POST(
       allMessages || [], 
       mode, 
       enable_search || mode === "search", 
-      !!(images && images.length > 0), 
-      content,
-      session.course_code,
-      session.level
+      !!(images && images.length > 0)
     );
 
     const readableStream = new ReadableStream({
@@ -202,7 +114,7 @@ export async function POST(
 
           // Save assistant message to DB after stream completes
           if (fullContent) {
-            await supabase.from("chat_messages").insert({
+            await db.insert(chatMessages).values({
               session_id: sessionId,
               role: "assistant",
               content: fullContent,
@@ -245,10 +157,7 @@ async function callGeminiAIStream(
   messages: DBMessage[],
   mode: string,
   enableSearch: boolean,
-  hasImageRequest: boolean,
-  latestUserContent?: string,
-  courseCode?: string,
-  level?: string
+  hasImageRequest: boolean
 ) {
   // Optimize: filter once and map roles
   const geminiContents = messages
@@ -276,12 +185,6 @@ Mission: Help DevCore'23 students (200L SWE) study smarter.
 - Rules: Be accurate, use clean structure, no em dashes, no "in simple terms".
 - If unsure: "I don’t have enough verified information to answer that accurately."`;
 
-  // SKIP RAG if disabled (as per current hardcoded logic in getRAGContext)
-  // if (latestUserContent) {
-  //   const ragContext = await getRAGContext(latestUserContent, courseCode, level);
-  //   if (ragContext) systemPrompt += ragContext + "\n\n";
-  // }
-
   if (mode === "search" || enableSearch) {
     systemPrompt += `SEARCH MODE ACTIVE. Provide findings clearly in markdown.\n\n`;
   }
@@ -289,8 +192,6 @@ Mission: Help DevCore'23 students (200L SWE) study smarter.
   const model = client.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: systemPrompt.trim(),
-    generationConfig: {
-    }
   });
 
   return model.generateContentStream({

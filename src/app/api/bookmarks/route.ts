@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { bookmarks } from "@/lib/db/schema/courses";
+import { eq, and } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -17,30 +18,27 @@ export async function POST(req: Request) {
     }
 
     // Check if bookmark exists
-    const { data: existing } = await supabase
-      .from("bookmarks")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("resource_id", resourceId)
-      .maybeSingle();
+    const [existing] = await db
+      .select({ id: bookmarks.id })
+      .from(bookmarks)
+      .where(
+        and(
+          eq(bookmarks.user_id, user.id),
+          eq(bookmarks.resource_id, resourceId)
+        )
+      )
+      .limit(1);
 
     if (existing) {
       // Remove it
-      const { error } = await supabase
-        .from("bookmarks")
-        .delete()
-        .eq("id", existing.id);
-      if (error) throw error;
+      await db.delete(bookmarks).where(eq(bookmarks.id, existing.id));
       return NextResponse.json({ bookmarked: false });
     } else {
       // Add it
-      const { error } = await supabase
-        .from("bookmarks")
-        .insert({
-          user_id: user.id,
-          resource_id: resourceId
-        });
-      if (error) throw error;
+      await db.insert(bookmarks).values({
+        user_id: user.id,
+        resource_id: resourceId,
+      });
       return NextResponse.json({ bookmarked: true });
     }
   } catch (error: any) {
@@ -57,16 +55,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "resourceId is required" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ bookmarked: false });
 
-    const { data } = await supabase
-      .from("bookmarks")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("resource_id", resourceId)
-      .maybeSingle();
+    const [data] = await db
+      .select({ id: bookmarks.id })
+      .from(bookmarks)
+      .where(
+        and(
+          eq(bookmarks.user_id, user.id),
+          eq(bookmarks.resource_id, resourceId)
+        )
+      )
+      .limit(1);
 
     return NextResponse.json({ bookmarked: !!data });
   } catch (error: any) {

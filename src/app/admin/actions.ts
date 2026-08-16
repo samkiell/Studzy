@@ -1,12 +1,17 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
-import { STORAGE_BUCKET, MATERIALS_BUCKET } from "@/lib/rag/config";
+import { db } from "@/lib/db";
+import { courses, resources } from "@/lib/db/schema/courses";
+import { questions } from "@/lib/db/schema/cbt";
+import { eq, desc, and } from "drizzle-orm";
+import { uploadFile, deleteFile } from "@/lib/storage";
+import { validateCBTQuestionList } from "@/lib/cbt/validation";
+import { CBTQuestion } from "@/types/cbt";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
@@ -38,10 +43,7 @@ interface UploadResult {
 
 export async function uploadResource(formData: FormData): Promise<UploadResult> {
   try {
-    // Check admin status
-    await requireAdmin();
-
-    const supabase = await createClient();
+    const admin = await requireAdmin();
 
     // Extract form data
     const courseId = formData.get("courseId") as string;
@@ -50,7 +52,6 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
     const description = formData.get("description") as string | null;
     const file = formData.get("file") as File | null;
 
-    // Validate required fields
     if (!courseId) {
       return { success: false, message: "Please select a course" };
     }
@@ -67,7 +68,6 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
       return { success: false, message: "Please select a file to upload" };
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return {
         success: false,
@@ -75,7 +75,6 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
       };
     }
 
-    // Validate file type
     const allowedMimeTypes = ALLOWED_TYPES[type];
     if (!allowedMimeTypes.includes(file.type)) {
       return {
@@ -84,97 +83,63 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
       };
     }
 
-    // 🛡️ Supabase Storage Health Guardrail Check
-    const { checkUploadGuardrail } = await import("@/lib/supabase/health");
-    const guardrail = await checkUploadGuardrail(file.size, type);
-    if (!guardrail.allowed) {
-      return {
-        success: false,
-        message: guardrail.reason || "Upload blocked: file exceeds safe storage limit.",
-      };
-    }
-
-    // Generate unique filename
+    // Generate unique storage key
     const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
     const timestamp = Date.now();
     const sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    const fileName = `${type}/${courseId}/${timestamp}-${sanitizedTitle}.${fileExtension}`;
+    const key = `materials/${type}/${courseId}/${timestamp}-${sanitizedTitle}.${fileExtension}`;
 
-    // Determine bucket: Audio, Video, PDF go to studzy-materials. Documents/Images go to RAG?
-    // The user said: "just make sure that audios and pdf for courses and fecthed from studzymaterials. the way video is being fecthed from studzy bucket."
-    // Wait, the user said "studzy-materials bucket" but refers to it as "studzymaterials" and "studzy bucket".
-    // I defined MATERIALS_BUCKET as "studzy-materials" in config.ts.
-    const bucket = (type === "audio" || type === "video" || type === "pdf") ? MATERIALS_BUCKET : STORAGE_BUCKET;
+    // Upload to Filebase
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Upload file to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    const fileUrl = await uploadFile({
+      key,
+      body: buffer,
+      contentType: file.type,
+      metadata: {
+        uploaderId: admin.id,
+        courseId,
+      },
+    });
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      return {
-        success: false,
-        message: `Failed to upload file: ${uploadError.message}`,
-      };
-    }
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(uploadData.path);
-
-    const fileUrl = urlData.publicUrl;
+    const slug = `${sanitizedTitle}-${timestamp}`.slice(0, 90);
 
     // Insert resource into database
-    const { data: resource, error: insertError } = await supabase
-      .from("resources")
-      .insert({
+    const [resource] = await db
+      .insert(resources)
+      .values({
         course_id: courseId,
         title: title.trim(),
+        slug,
         type,
         file_url: fileUrl,
         description: description?.trim() || null,
+        uploader_id: admin.id,
         email_sent: true,
+        status: "published",
       })
-      .select()
-      .single();
+      .returning();
 
-    if (insertError) {
-      // Try to clean up the uploaded file
-      await supabase.storage.from(bucket).remove([uploadData.path]);
-
-      console.error("Database insert error:", insertError);
-      return {
-        success: false,
-        message: `Failed to save resource: ${insertError.message}`,
-      };
-    }
-
-    // 🎓 RAG: Trigger ingestion automatically for searchable types
+    // RAG: Trigger ingestion automatically for searchable types
     if (type === "pdf" || type === "document") {
       try {
         const { ingestFile } = await import("@/lib/rag/ingestion");
-        console.log(`[Admin Upload] Triggering auto-ingestion for: ${uploadData.path}`);
+        console.log(`[Admin Upload] Triggering auto-ingestion for: ${key}`);
         
-        // This runs asynchronously in the background
         ingestFile({
-          filePath: uploadData.path,
+          filePath: key,
           courseCode: courseId,
           force: true,
-          username: "admin", // Tag as admin-uploaded
-        }).catch(err => {
-          console.error(`[Admin Upload] Ingestion failed for ${uploadData.path}:`, err);
+          username: "admin",
+        }).catch((err) => {
+          console.error(`[Admin Upload] Ingestion failed for ${key}:`, err);
         });
       } catch (err) {
         console.error(`[Admin Upload] Failed to trigger ingestion:`, err);
       }
     }
 
-    // Revalidate the course page to show new resource
     revalidatePath(`/course/${courseId}`);
     revalidatePath("/dashboard");
     revalidatePath("/admin/upload");
@@ -204,50 +169,31 @@ export async function uploadResource(formData: FormData): Promise<UploadResult> 
 export async function deleteResource(resourceId: string): Promise<UploadResult> {
   try {
     await requireAdmin();
-    const supabase = await createClient();
 
-    // Get the resource to find the file URL
-    const { data: resource, error: fetchError } = await supabase
-      .from("resources")
-      .select("*")
-      .eq("id", resourceId)
-      .single();
+    const [resource] = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, resourceId))
+      .limit(1);
 
-    if (fetchError || !resource) {
+    if (!resource) {
       return { success: false, message: "Resource not found" };
     }
 
-    // Extract file path from URL
-    const url = new URL(resource.file_url);
-    // Find where the object path starts (after the bucket name)
-    const bucketInUrl = resource.file_url.includes(`/${MATERIALS_BUCKET}/`) ? MATERIALS_BUCKET : STORAGE_BUCKET;
-    const pathParts = url.pathname.split(`/storage/v1/object/public/${bucketInUrl}/`);
-    const filePath = pathParts[1];
-
-    if (filePath) {
-      // Delete from storage
-      // Try to find which bucket it's in by checking the URL or just trying both
-      // But we can determine it from the URL path.
-      const bucketInUrl = resource.file_url.includes(`/${MATERIALS_BUCKET}/`) ? MATERIALS_BUCKET : STORAGE_BUCKET;
-      
-      const { error: storageError } = await supabase.storage
-        .from(bucketInUrl)
-        .remove([filePath]);
-
-      if (storageError) {
-        console.error("Storage delete error:", storageError);
+    // Try deleting from storage if URL is Filebase S3
+    try {
+      if (resource.file_url.includes(".s3.filebase.com/")) {
+        const key = resource.file_url.split(".s3.filebase.com/")[1];
+        if (key) {
+          await deleteFile(key);
+        }
       }
+    } catch (storageError) {
+      console.error("Storage delete error:", storageError);
     }
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from("resources")
-      .delete()
-      .eq("id", resourceId);
-
-    if (deleteError) {
-      return { success: false, message: `Failed to delete resource: ${deleteError.message}` };
-    }
+    await db.delete(resources).where(eq(resources.id, resourceId));
 
     revalidatePath(`/course/${resource.course_id}`);
     revalidatePath("/dashboard");
@@ -262,7 +208,6 @@ export async function deleteResource(resourceId: string): Promise<UploadResult> 
 export async function createCourse(formData: FormData): Promise<UploadResult> {
   try {
     await requireAdmin();
-    const supabase = await createClient();
 
     const code = (formData.get("code") as string)?.trim().toUpperCase();
     const title = (formData.get("title") as string)?.trim();
@@ -273,16 +218,10 @@ export async function createCourse(formData: FormData): Promise<UploadResult> {
       return { success: false, message: "Code and Title are required" };
     }
 
-    const { data: course, error } = await supabase
-      .from("courses")
-      .insert({ code, title, description, is_cbt })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Create course error:", error);
-      return { success: false, message: `Failed to create course: ${error.message}` };
-    }
+    const [course] = await db
+      .insert(courses)
+      .values({ code, title, description, is_cbt })
+      .returning();
 
     revalidatePath("/dashboard");
     revalidatePath("/admin/courses");
@@ -296,7 +235,6 @@ export async function createCourse(formData: FormData): Promise<UploadResult> {
 export async function updateCourse(formData: FormData): Promise<UploadResult> {
   try {
     await requireAdmin();
-    const supabase = await createClient();
 
     const id = formData.get("id") as string;
     const code = (formData.get("code") as string)?.trim().toUpperCase();
@@ -308,15 +246,10 @@ export async function updateCourse(formData: FormData): Promise<UploadResult> {
       return { success: false, message: "ID, Code, and Title are required" };
     }
 
-    const { error } = await supabase
-      .from("courses")
-      .update({ code, title, description, is_cbt })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Update course error:", error);
-      return { success: false, message: `Failed to update course: ${error.message}` };
-    }
+    await db
+      .update(courses)
+      .set({ code, title, description, is_cbt })
+      .where(eq(courses.id, id));
 
     revalidatePath("/dashboard");
     revalidatePath(`/course/${code}`);
@@ -331,29 +264,21 @@ export async function updateCourse(formData: FormData): Promise<UploadResult> {
 export async function deleteCourse(courseId: string): Promise<UploadResult> {
   try {
     await requireAdmin();
-    const supabase = await createClient();
 
     // Check if course has resources
-    const { count } = await supabase
-      .from("resources")
-      .select("*", { count: "exact", head: true })
-      .eq("course_id", courseId);
+    const courseResources = await db
+      .select({ id: resources.id })
+      .from(resources)
+      .where(eq(resources.course_id, courseId));
 
-    if (count && count > 0) {
+    if (courseResources && courseResources.length > 0) {
       return { 
         success: false, 
-        message: `Cannot delete course with ${count} resources. Please delete or move resources first.` 
+        message: `Cannot delete course with ${courseResources.length} resources. Please delete or move resources first.` 
       };
     }
 
-    const { error } = await supabase
-      .from("courses")
-      .delete()
-      .eq("id", courseId);
-
-    if (error) {
-      return { success: false, message: `Failed to delete course: ${error.message}` };
-    }
+    await db.delete(courses).where(eq(courses.id, courseId));
 
     revalidatePath("/dashboard");
     revalidatePath("/admin/courses");
@@ -364,13 +289,9 @@ export async function deleteCourse(courseId: string): Promise<UploadResult> {
   }
 }
 
-import { validateCBTQuestionList } from "@/lib/cbt/validation";
-import { CBTQuestion } from "@/types/cbt";
-
 export async function uploadCBTQuestions(formData: FormData) {
   try {
     const admin = await requireAdmin();
-    const supabase = await createClient();
 
     const file = formData.get("file") as File | null;
     const courseCode = formData.get("courseCode") as string;
@@ -383,64 +304,55 @@ export async function uploadCBTQuestions(formData: FormData) {
       return { success: false, message: "Course code is required" };
     }
 
-    // 1. Upload the file to Storage
+    // 1. Upload the file to Filebase Storage
     const timestamp = Date.now();
-    const fileName = `question-banks/${courseCode}/${timestamp}-${file.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(fileName, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    const key = `question-banks/${courseCode}/${timestamp}-${file.name}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      return { success: false, message: `Failed to upload file to storage: ${uploadError.message}` };
-    }
+    const fileUrl = await uploadFile({
+      key,
+      body: buffer,
+      contentType: file.type || "application/json",
+      metadata: {
+        courseCode,
+        uploaderId: admin.id,
+      },
+    });
 
     // 2. Resolve Course ID
-    const { data: courseData, error: courseError } = await supabase
-      .from("courses")
-      .select("id")
-      .eq("code", courseCode)
-      .single();
+    const [courseData] = await db
+      .select({ id: courses.id })
+      .from(courses)
+      .where(eq(courses.code, courseCode))
+      .limit(1);
     
-    if (courseError || !courseData) {
-       return { success: false, message: `Course not found for code: ${courseCode}` };
+    if (!courseData) {
+      return { success: false, message: `Course not found for code: ${courseCode}` };
     }
 
-    // 2b. Record the uploaded JSON as a question_bank resource (the "file"), so the
-    // admin can later delete the whole batch in one click. Questions get stamped with
-    // this resource's id (bank_id); deleting the file cascades to all its questions.
-    const { data: bankUrlData } = supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(uploadData.path);
-
-    // resources.slug is NOT NULL; build a unique slug (timestamp keeps it unique).
+    // 2b. Record the uploaded JSON as a question_bank resource
     const bankSlug = `qb-${timestamp}-${file.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")}`.slice(0, 90);
 
-    const { data: bankResource, error: bankError } = await supabase
-      .from("resources")
-      .insert({
+    const [bankResource] = await db
+      .insert(resources)
+      .values({
         course_id: courseData.id,
         title: file.name,
         slug: bankSlug,
         type: "question_bank",
-        file_url: bankUrlData.publicUrl,
+        file_url: fileUrl,
         status: "published",
+        uploader_id: admin.id,
       })
-      .select("id")
-      .single();
+      .returning({ id: resources.id });
 
-    if (bankError) {
-      console.error("[CBT Upload] Failed to create question-bank record:", bankError.message);
-    }
     const bankId = bankResource?.id ?? null;
 
-    // 3. Process the Questions (Existing Logic)
+    // 3. Process the Questions
     const content = await file.text();
     let data: unknown;
     try {
@@ -449,7 +361,6 @@ export async function uploadCBTQuestions(formData: FormData) {
       return { success: false, message: "Invalid JSON format" };
     }
 
-    // Validate the questions
     let validatedQuestions: CBTQuestion[];
     try {
       validatedQuestions = validateCBTQuestionList(data, courseCode);
@@ -457,8 +368,7 @@ export async function uploadCBTQuestions(formData: FormData) {
       return { success: false, message: `Validation failed: ${err.message}` };
     }
 
-    // Ensure all questions belong to the selected course code (security check)
-    const mismatched = validatedQuestions.filter(q => q.course_code !== courseCode);
+    const mismatched = validatedQuestions.filter((q) => q.course_code !== courseCode);
     if (mismatched.length > 0) {
       return { 
         success: false, 
@@ -467,118 +377,79 @@ export async function uploadCBTQuestions(formData: FormData) {
     }
 
     // 4. Calculate Offset for Additive Uploads
-    // Fetch the current maximum question_id for this course to append new questions instead of overwriting.
-    // CRITICAL: Use admin client to bypass RLS and see ALL questions, otherwise we might see 0 and overwrite.
-    const { createAdminClient } = await import("@/lib/supabase/admin");
-    const supabaseAdmin = createAdminClient();
+    const [maxIdData] = await db
+      .select({ question_id: questions.question_id })
+      .from(questions)
+      .where(eq(questions.course_id, courseData.id))
+      .orderBy(desc(questions.question_id))
+      .limit(1);
 
-    const { data: maxIdData, error: maxIdError } = await supabaseAdmin
-      .from("questions")
-      .select("question_id")
-      .eq("course_id", courseData.id)
-      .order("question_id", { ascending: false })
-      .limit(1)
-      .single();
+    const currentMaxId = maxIdData?.question_id || 0;
 
-    let currentMaxId = 0;
-    if (!maxIdError && maxIdData) {
-      currentMaxId = maxIdData.question_id;
-    }
-    
-    console.log(`[CBT Upload] Found existing max question_id: ${currentMaxId} (via Admin Client). Applying offset.`);
+    // Insert questions
+    const questionValues = validatedQuestions.map((q, idx) => ({
+      course_id: courseData.id,
+      bank_id: bankId,
+      course_code: courseCode,
+      question_id: currentMaxId + (idx + 1),
+      difficulty: q.difficulty || null,
+      topic: q.topic || null,
+      question_text: q.question_text,
+      options: q.options,
+      correct_option: q.correct_option || null,
+      explanation: q.explanation || null,
+      question_type: q.question_type || "multiple_choice",
+      model_answer: q.model_answer || null,
+      key_points: q.key_points || null,
+      rubric: q.rubric || null,
+      sub_questions: q.sub_questions || null,
+    }));
 
-    // Bulk Upsert into Supabase with Offset
-    // We use upsert so that (course_code, question_id) constraint handles duplicates if they still exist,
-    // but the offset should prevent collisions for new batches.
-    const { data: upsertedData, error: upsertError } = await supabase
-      .from("questions")
-      .upsert(
-        validatedQuestions.map((q, idx) => ({
-          course_id: courseData.id,
-          bank_id: bankId,
-          course_code: courseCode,
-          question_id: currentMaxId + (idx + 1),
-          difficulty: q.difficulty,
-          topic: q.topic,
-          question_text: q.question_text,
-          options: q.options,
-          correct_option: q.correct_option,
-          explanation: q.explanation,
-          // Theory-specific fields (null for MCQs)
-          question_type: q.question_type || 'mcq',
-          model_answer: q.model_answer || null,
-          key_points: q.key_points || null,
-          rubric: q.rubric || null,
-          sub_questions: q.sub_questions || null,
-        })),
-        { onConflict: "course_code,question_id" } 
-      )
-      .select();
-
-    if (upsertError) {
-      console.error("CBT Upsert Error:", upsertError);
-      return { success: false, message: `Database error: ${upsertError.message}` };
+    if (questionValues.length > 0) {
+      await db.insert(questions).values(questionValues);
     }
 
-    const totalUploaded = validatedQuestions.length;
-    const inserted = upsertedData?.length || 0;
-
-    // Ensure the course is flagged as a CBT course so it appears on /cbt.
-    // Uses the admin client (bypasses RLS) and only writes when it actually changes.
-    const { error: cbtFlagError } = await supabaseAdmin
-      .from("courses")
-      .update({ is_cbt: true })
-      .eq("id", courseData.id)
-      .eq("is_cbt", false);
-    if (cbtFlagError) {
-      console.error("[CBT Upload] Failed to enable is_cbt:", cbtFlagError.message);
-    }
+    // Ensure the course is flagged as a CBT course
+    await db
+      .update(courses)
+      .set({ is_cbt: true })
+      .where(and(eq(courses.id, courseData.id), eq(courses.is_cbt, false)));
 
     revalidatePath("/admin/upload");
-    revalidatePath("/admin/questions"); // Revalidate this too
+    revalidatePath("/admin/questions");
     revalidatePath("/cbt");
 
-    // 📧 Notify students that new practice questions are available (post-response).
-    if (totalUploaded > 0) {
+    if (validatedQuestions.length > 0) {
       after(() =>
         notifyStudentsOfNewContent({
           kind: "questions",
           courseId: courseData.id,
           courseCode,
-          count: totalUploaded,
-        }),
+          count: validatedQuestions.length,
+        })
       );
     }
 
     return {
       success: true,
-      message: `Successfully processed ${totalUploaded} questions.`,
+      message: `Successfully processed ${validatedQuestions.length} questions.`,
       summary: {
-        total: totalUploaded,
-        inserted: inserted,
-        skipped: totalUploaded - inserted, 
+        total: validatedQuestions.length,
+        inserted: validatedQuestions.length,
+        skipped: 0, 
       }
     };
-
   } catch (error: any) {
     console.error("CBT Upload Error:", error);
     return { success: false, message: error.message || "An unexpected error occurred" };
   }
 }
 
-export async function deleteQuestion(questionId: string | number): Promise<UploadResult> {
+export async function deleteQuestion(questionId: string): Promise<UploadResult> {
   try {
     await requireAdmin();
-    const supabase = await createClient();
 
-    const { error } = await supabase
-      .from("questions")
-      .delete()
-      .eq("id", questionId);
-
-    if (error) {
-      return { success: false, message: `Failed to delete question: ${error.message}` };
-    }
+    await db.delete(questions).where(eq(questions.id, questionId));
 
     revalidatePath("/admin/questions");
     revalidatePath("/cbt");
@@ -589,33 +460,19 @@ export async function deleteQuestion(questionId: string | number): Promise<Uploa
   }
 }
 
-/**
- * Delete an entire uploaded question bank: every question that came from that
- * JSON file, plus the file record and the stored JSON itself.
- */
 export async function deleteQuestionBank(resourceId: string): Promise<UploadResult> {
   try {
     await requireAdmin();
-    const { createAdminClient } = await import("@/lib/supabase/admin");
-    const admin = createAdminClient();
 
-    // 1. Delete all questions belonging to this bank (admin client bypasses RLS).
-    const { error: qError, count } = await admin
-      .from("questions")
-      .delete({ count: "exact" })
-      .eq("bank_id", resourceId);
+    // 1. Delete all questions belonging to this bank
+    await db.delete(questions).where(eq(questions.bank_id, resourceId));
 
-    if (qError) {
-      return { success: false, message: `Failed to delete questions: ${qError.message}` };
-    }
-
-    // 2. Delete the file record + the stored JSON (also disables the course's CBT
-    //    if no questions remain is left to the admin; we just remove this batch).
+    // 2. Delete the file record + storage object
     const fileResult = await deleteResource(resourceId);
     if (!fileResult.success) {
       return {
         success: false,
-        message: `Deleted ${count ?? 0} questions, but removing the file failed: ${fileResult.message}`,
+        message: `Deleted questions, but removing the file failed: ${fileResult.message}`,
       };
     }
 
@@ -624,7 +481,7 @@ export async function deleteQuestionBank(resourceId: string): Promise<UploadResu
 
     return {
       success: true,
-      message: `Deleted ${count ?? 0} question${count === 1 ? "" : "s"} and the file.`,
+      message: `Deleted question bank and its questions successfully.`,
     };
   } catch (error: any) {
     return { success: false, message: error.message || "An unexpected error occurred" };

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { chatSessions, chatMessages } from "@/lib/db/schema/chat";
+import { eq, and, asc } from "drizzle-orm";
 
 // GET /api/ai/sessions/[sessionId] — get session with messages
 export async function GET(
@@ -8,36 +11,34 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch session
-    const { data: session, error: sessionError } = await supabase
-      .from("chat_sessions")
-      .select("*")
-      .eq("id", sessionId)
-      .eq("user_id", user.id)
-      .single();
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(
+        and(
+          eq(chatSessions.id, sessionId),
+          eq(chatSessions.user_id, user.id)
+        )
+      )
+      .limit(1);
 
-    if (sessionError || !session) {
+    if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
     // Fetch messages
-    const { data: messages, error: messagesError } = await supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("session_id", sessionId)
-      .order("created_at", { ascending: true });
-
-    if (messagesError) {
-      console.error("Error fetching messages:", messagesError);
-      return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
-    }
+    const messages = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.session_id, sessionId))
+      .orderBy(asc(chatMessages.created_at));
 
     return NextResponse.json({ session, messages: messages || [] });
   } catch (error) {
@@ -53,30 +54,31 @@ export async function PATCH(
 ) {
   try {
     const { sessionId } = await params;
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = { updated_at: new Date() };
     
     if (body.title !== undefined) updates.title = body.title;
     if (body.is_starred !== undefined) updates.is_starred = body.is_starred;
     if (body.is_pinned !== undefined) updates.is_pinned = body.is_pinned;
 
-    const { data: session, error } = await supabase
-      .from("chat_sessions")
-      .update(updates)
-      .eq("id", sessionId)
-      .eq("user_id", user.id)
-      .select()
-      .single();
+    const [session] = await db
+      .update(chatSessions)
+      .set(updates)
+      .where(
+        and(
+          eq(chatSessions.id, sessionId),
+          eq(chatSessions.user_id, user.id)
+        )
+      )
+      .returning();
 
-    if (error) {
-      console.error("Error updating session:", error);
+    if (!session) {
       return NextResponse.json({ error: "Failed to update session" }, { status: 500 });
     }
 
@@ -94,23 +96,20 @@ export async function DELETE(
 ) {
   try {
     const { sessionId } = await params;
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { error } = await supabase
-      .from("chat_sessions")
-      .delete()
-      .eq("id", sessionId)
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Error deleting session:", error);
-      return NextResponse.json({ error: "Failed to delete session" }, { status: 500 });
-    }
+    await db
+      .delete(chatSessions)
+      .where(
+        and(
+          eq(chatSessions.id, sessionId),
+          eq(chatSessions.user_id, user.id)
+        )
+      );
 
     return NextResponse.json({ success: true });
   } catch (error) {
