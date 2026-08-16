@@ -2,7 +2,9 @@
 // Ingestion Pipeline Orchestrator
 // ============================================
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { studyMaterialEmbeddings } from "@/lib/db/schema/rag";
+import { eq, count } from "drizzle-orm";
 import { extractPDFFromStorage } from "./pdf-extractor";
 import { cleanText, hasSubstantialContent } from "./text-cleaner";
 import { chunkText, type TextChunk } from "./chunker";
@@ -33,23 +35,21 @@ export interface IngestionResult {
  * Check if a file has already been ingested (deduplication).
  */
 async function isAlreadyIngested(filePath: string): Promise<boolean> {
-  const supabase = createAdminClient();
-  const { count, error } = await supabase
-    .from("study_material_embeddings")
-    .select("id", { count: "exact", head: true })
-    .eq("file_path", filePath);
+  try {
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(studyMaterialEmbeddings)
+      .where(eq(studyMaterialEmbeddings.file_path, filePath));
 
-  if (error) {
+    return (total ?? 0) > 0;
+  } catch (error: any) {
     console.warn(`[RAG] Dedup check failed for ${filePath}:`, error.message);
-    return false; // Proceed with ingestion if check fails
+    return false;
   }
-
-  return (count ?? 0) > 0;
 }
 
 /**
- * Store chunks and their embeddings into Supabase.
- * Uses batch insert for efficiency.
+ * Store chunks and their embeddings into Neon via Drizzle.
  */
 async function storeChunksWithEmbeddings(
   chunks: TextChunk[],
@@ -59,34 +59,22 @@ async function storeChunksWithEmbeddings(
   level?: string,
   username?: string
 ): Promise<number> {
-  const supabase = createAdminClient();
-
-  // Build rows for insertion
   const rows = chunks.map((chunk, i) => ({
     file_path: filePath,
     content: chunk.content,
-    embedding: JSON.stringify(embeddings[i]),
+    embedding: embeddings[i],
     course_code: courseCode || null,
     level: level || null,
     username: username || null,
+    created_at: new Date(),
   }));
 
-  // Insert in batches of 50 to avoid payload size limits
   const BATCH_SIZE = 50;
   let totalInserted = 0;
 
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
-    const { error } = await supabase
-      .from("study_material_embeddings")
-      .insert(batch);
-
-    if (error) {
-      throw new Error(
-        `Failed to store chunks (batch ${Math.floor(i / BATCH_SIZE) + 1}): ${error.message}`
-      );
-    }
-
+    await db.insert(studyMaterialEmbeddings).values(batch as any);
     totalInserted += batch.length;
     console.log(
       `[RAG] Stored ${totalInserted}/${rows.length} chunks for ${filePath}`
@@ -98,15 +86,6 @@ async function storeChunksWithEmbeddings(
 
 /**
  * Run the full ingestion pipeline for a single PDF file.
- *
- * Pipeline steps:
- * 1. Filter: ONLY process .pdf files
- * 2. Deduplication check (skip if already ingested unless force=true)
- * 3. Fetch PDF from Supabase Storage & Extract text
- * 4. Clean and Chunk the text
- * 5. Generate embeddings via Mistral API
- * 6. (If forced) Clear existing embeddings for this file
- * 7. Store new chunks + embeddings into Supabase
  */
 export async function ingestFile(
   options: IngestionOptions
@@ -117,7 +96,6 @@ export async function ingestFile(
   console.log(`[RAG] Starting ingestion for: ${filePath}`);
 
   try {
-    // Step 1: Filter - PDF ONLY
     const extension = filePath.split(".").pop()?.toLowerCase();
     if (extension !== "pdf") {
       console.log(`[RAG] Skipping unsupported file type: ${extension || "unknown"}`);
@@ -133,7 +111,6 @@ export async function ingestFile(
       };
     }
 
-    // Step 2: Deduplication check
     if (!force) {
       const alreadyDone = await isAlreadyIngested(filePath);
       if (alreadyDone) {
@@ -151,7 +128,6 @@ export async function ingestFile(
       }
     }
 
-    // Step 3: Fetch and extract PDF content
     console.log(`[RAG] Extracting text from PDF...`);
     const { text: rawText, pageCount, fileName } = await extractPDFFromStorage(filePath);
     
@@ -159,7 +135,6 @@ export async function ingestFile(
       `[RAG] Extracted ${rawText.length} chars from ${pageCount} pages (${fileName})`
     );
 
-    // Step 4: Clean and Chunk text
     const cleanedText = cleanText(rawText);
 
     if (!hasSubstantialContent(cleanedText)) {
@@ -193,27 +168,21 @@ export async function ingestFile(
       };
     }
 
-    // Step 5: Generate embeddings (batched)
     console.log(`[RAG] Generating embeddings for ${chunks.length} chunks...`);
     const texts = chunks.map((c) => c.content);
     const embeddings = await embedBatch(texts);
 
-    // Step 6: If forcing, delete OLD embeddings ONLY now that we have successful extraction/embeddings
     if (force) {
       console.log(`[RAG] Clearing existing embeddings for ${filePath} (forced re-ingestion)`);
-      const supabase = createAdminClient();
-      const { error: deleteError } = await supabase
-        .from("study_material_embeddings")
-        .delete()
-        .eq("file_path", filePath);
-
-      if (deleteError) {
-        console.warn(`[RAG] Failed to clear old embeddings during force re-ingest:`, deleteError.message);
-        // We continue anyway to insert new ones, which might cause duplicates but ensures we don't block
+      try {
+        await db
+          .delete(studyMaterialEmbeddings)
+          .where(eq(studyMaterialEmbeddings.file_path, filePath));
+      } catch (err: any) {
+        console.warn(`[RAG] Failed to clear old embeddings during force re-ingest:`, err.message);
       }
     }
 
-    // Step 7: Store in Supabase
     console.log(`[RAG] Storing chunks in database...`);
     const stored = await storeChunksWithEmbeddings(
       chunks,
@@ -255,9 +224,6 @@ export async function ingestFile(
   }
 }
 
-/**
- * Ingest multiple files sequentially.
- */
 export async function ingestMultipleFiles(
   files: IngestionOptions[]
 ): Promise<IngestionResult[]> {
@@ -270,4 +236,3 @@ export async function ingestMultipleFiles(
 
   return results;
 }
-
