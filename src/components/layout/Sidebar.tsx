@@ -20,7 +20,11 @@ export function Sidebar({ isCollapsed, onToggle, role }: SidebarProps) {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    await signOut({ callbackUrl: "/login" });
+    try {
+      await signOut({ callbackUrl: "/login", redirectTo: "/login", redirect: true });
+    } catch {
+      window.location.href = "/login";
+    }
   };
 
   return (
