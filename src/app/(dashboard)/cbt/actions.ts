@@ -211,12 +211,20 @@ export async function syncOfflineAttempt(offlineAttempt: {
     throw new Error("Unauthorized");
   }
 
-  // 1. Create a server-side attempt record
+  // 1. Fetch course code if available
+  const [course] = await db
+    .select({ code: coursesTable.code })
+    .from(coursesTable)
+    .where(eq(coursesTable.id, offlineAttempt.course_id))
+    .limit(1);
+
+  // 2. Create a server-side attempt record
   const [attempt] = await db
     .insert(attempts)
     .values({
       user_id: user.id,
       course_id: offlineAttempt.course_id,
+      course_code: course?.code || "CBT",
       mode: offlineAttempt.mode,
       total_questions: offlineAttempt.total_questions,
       score: offlineAttempt.score,
