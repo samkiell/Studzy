@@ -1,5 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { attempts, questions as questionsTable } from "@/lib/db/schema/cbt";
+import { courses as coursesTable } from "@/lib/db/schema/courses";
+import { eq, inArray } from "drizzle-orm";
 import CbtInterface from "@/components/cbt/CbtInterface";
 import { Question, Attempt } from "@/types/cbt";
 import { shuffle } from "@/lib/utils";
@@ -10,82 +14,63 @@ interface CbtAttemptPageProps {
 
 export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   const { attemptId } = await params;
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login");
   }
 
   // 1. Fetch the attempt record
-  const { data: attemptData, error: attemptError } = await supabase
-    .from("attempts")
-    .select("*")
-    .eq("id", attemptId)
-    .eq("user_id", user.id)
-    .single();
+  const [attemptData] = await db
+    .select()
+    .from(attempts)
+    .where(eq(attempts.id, attemptId))
+    .limit(1);
 
-  if (attemptError || !attemptData) {
-    console.error("Attempt fetch error:", attemptError);
-    throw new Error(`CBT Attempt fetch error: ${attemptError?.message || "No data found"}`);
+  if (!attemptData) {
+    notFound();
   }
 
   // 2. Fetch the course title
-  const { data: course, error: courseError } = await supabase
-    .from("courses")
-    .select("title, code")
-    .eq("id", attemptData.course_id)
-    .single();
+  const [course] = await db
+    .select({
+      title: coursesTable.title,
+      code: coursesTable.code,
+    })
+    .from(coursesTable)
+    .where(eq(coursesTable.id, attemptData.course_id))
+    .limit(1);
 
-  if (courseError) {
-    console.error("Course fetch error:", courseError);
-  }
-
-  // Hydrate attempt with title
   const attempt: Attempt = {
     ...attemptData,
+    created_at: attemptData.created_at ? new Date(attemptData.created_at).toISOString() : "",
+    completed_at: attemptData.completed_at ? new Date(attemptData.completed_at).toISOString() : null,
+    started_at: attemptData.started_at ? new Date(attemptData.started_at).toISOString() : "",
     course_title: course?.title || "Unknown Course",
-    course_code: course?.code || "CBT"
-  } as Attempt;
-
-  if (attempt.completed_at) {
-    // If completed, just show results (CbtInterface handles isSubmitted state if we pass it, 
-    // but ideally we'd show a summary. For now, we pass the attempt and it might show the result view)
-  }
+    course_code: course?.code || "CBT",
+    question_ids: (attemptData.question_ids as string[]) || [],
+  } as unknown as Attempt;
 
   // 3. Fetch questions
-  // We use the persisted question_ids to ensure the user sees the exact same questions in order.
   let questions: Question[] = [];
-  
-  if (attempt.question_ids && attempt.question_ids.length > 0) {
-    const { data: fetchedQuestions, error: questError } = await supabase
-      .from("questions")
-      .select("*")
-      .in("id", attempt.question_ids);
+  const qIds = attempt.question_ids || [];
 
-    if (questError || !fetchedQuestions) {
-      console.error("Questions fetch error:", questError);
-      throw new Error("Failed to load persisted questions");
-    }
+  if (qIds.length > 0) {
+    const fetchedQuestions = await db
+      .select()
+      .from(questionsTable)
+      .where(inArray(questionsTable.id, qIds));
 
-    // Sort to match the exact order in question_ids
-    questions = attempt.question_ids
-      .map(id => fetchedQuestions.find(q => q.id === id))
-      .filter((q): q is Question => !!q);
+    questions = qIds
+      .map((id) => fetchedQuestions.find((q) => q.id === id))
+      .filter((q): q is any => !!q);
   } else {
-    // FALLBACK: For legacy attempts without question_ids
-    const { data: allQuestions, error: questError } = await supabase
-      .from("questions")
-      .select("*")
-      .eq("course_id", attemptData.course_id);
+    const allQuestions = await db
+      .select()
+      .from(questionsTable)
+      .where(eq(questionsTable.course_id, attemptData.course_id));
 
-    if (questError || !allQuestions) {
-      console.error("Questions fetch error:", questError);
-      throw new Error("Failed to load questions");
-    }
-
-    // Randomize and select N questions (legacy behavior)
-    questions = shuffle(allQuestions as Question[]).slice(0, attempt.total_questions);
+    questions = shuffle(allQuestions as unknown as Question[]).slice(0, attempt.total_questions);
   }
 
   return (

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { getTheoryAttemptSession } from "../actions";
 import TheoryExamEngine from "@/components/theory/TheoryExamEngine";
 
@@ -11,11 +11,7 @@ export default async function TheoryAttemptPage({
   params,
 }: TheoryAttemptPageProps) {
   const { attemptId } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");

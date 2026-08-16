@@ -1,56 +1,60 @@
-import { createClient } from "@/lib/supabase/server";
-import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { bookmarks } from "@/lib/db/schema/courses";
+import { users } from "@/lib/db/schema/auth";
+import { userActivity } from "@/lib/db/schema/activity";
+import { eq, and, gt, ne, count } from "drizzle-orm";
+import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { Settings, ShieldCheck, GraduationCap, Clock, Award, Bookmark, Eye } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  // Fetch profile data
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
   // Fetch stats for ID card
-  const { count: bookmarksCount } = await supabase
-    .from("bookmarks")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id);
+  const [{ total: bookmarksCount }] = await db
+    .select({ total: count() })
+    .from(bookmarks)
+    .where(eq(bookmarks.user_id, user.id));
 
-  const totalSeconds = profile?.total_study_seconds || 0;
+  const totalSeconds = user.total_study_seconds || 0;
 
   // Fetch rank based on study time among non-admins
-  const { count: higherRankCount } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .gt("total_study_seconds", totalSeconds)
-    .neq("role", "admin");
+  const [{ total: higherRankCount }] = await db
+    .select({ total: count() })
+    .from(users)
+    .where(
+      and(
+        gt(users.total_study_seconds, totalSeconds),
+        ne(users.role, "admin")
+      )
+    );
 
   const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
 
-  // Fetch all activity to calculate views
-  const { data: activityLogs } = await supabase
-    .from("user_activity")
-    .select("resource_id, action_type")
-    .eq("user_id", user.id);
+  // Fetch all user activity to calculate views
+  const activityLogs = await db
+    .select({
+      resource_id: userActivity.resource_id,
+      action_type: userActivity.action_type,
+    })
+    .from(userActivity)
+    .where(eq(userActivity.user_id, user.id));
 
   const uniqueViews = new Set(
     activityLogs
-      ?.filter(a => a.action_type === "view_resource" && a.resource_id)
-      .map(a => a.resource_id)
+      .filter((a) => a.action_type === "view_resource" && a.resource_id)
+      .map((a) => a.resource_id)
   ).size;
 
-  const displayName = profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Student";
-  const username = profile?.username || user.email?.split("@")[0] || "student";
+  const displayName = user.full_name || user.name || user.username || "Student";
+  const username = user.username || user.name?.split(" ")[0] || "student";
 
   return (
     <div className="space-y-8">
@@ -79,18 +83,18 @@ export default async function ProfilePage() {
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-neutral-400 text-center lg:text-left">
               Digital Student ID
             </h3>
-            {profile?.is_verified ? (
+            {user.is_verified ? (
               <StudentIDCard 
                 displayName={displayName}
                 username={username}
-                role={profile?.role === "admin" ? "Admin" : "Student"}
-                avatarUrl={profile?.avatar_url}
-                initialStack={user?.user_metadata?.stack || "Frontend Dev"}
+                role={user.role === "admin" ? "Admin" : "Student"}
+                avatarUrl={user.avatar_url || user.image}
+                initialStack="Software Engineering"
                 stats={{
                   resourcesViewed: uniqueViews,
                   hours: Math.floor(totalSeconds / 3600),
                   rank: userRank,
-                  bookmarks: bookmarksCount || 0
+                  bookmarks: bookmarksCount || 0,
                 }}
               />
             ) : (
@@ -186,14 +190,14 @@ export default async function ProfilePage() {
               </p>
               <div className="flex flex-wrap items-center gap-2 pt-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-850 dark:text-neutral-400">
-                  Role: {profile?.role === "admin" ? "Administrator" : "Student"}
+                  Role: {user.role === "admin" ? "Administrator" : "Student"}
                 </span>
                 <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                  profile?.is_verified 
+                  user.is_verified 
                     ? "bg-green-500/10 text-green-500" 
                     : "bg-amber-500/10 text-amber-500"
                 }`}>
-                  Status: {profile?.is_verified ? "Verified ✓" : "Verification Pending"}
+                  Status: {user.is_verified ? "Verified ✓" : "Verification Pending"}
                 </span>
               </div>
             </div>

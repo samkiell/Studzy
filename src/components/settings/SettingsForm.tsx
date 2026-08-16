@@ -17,8 +17,6 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase/client";
-import { updatePassword } from "@/app/auth/actions";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
 interface Profile {
@@ -120,7 +118,6 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
     const t = toast.loading("Saving changes...");
 
     try {
-      // 1. Update profiles table
       const profileRes = await fetch("/api/profile/update", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -128,20 +125,12 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
           fullName,
           username,
           bio,
-          learningGoal
-        })
+          learningGoal,
+        }),
       });
 
       const profileData = await profileRes.json();
       if (!profileRes.ok) throw new Error(profileData.error || "Failed to update profile info");
-
-      // 2. Update user metadata for stack
-      const supabase = createClient();
-      const { error: metaError } = await supabase.auth.updateUser({
-        data: { stack }
-      });
-
-      if (metaError) throw metaError;
 
       toast.success("Profile saved successfully!", { id: t });
     } catch (err: any) {
@@ -173,18 +162,43 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
     setPwdSuccess("");
     setIsUpdatingPwd(true);
 
-    const formData = new FormData(e.currentTarget);
-    const result = await updatePassword(formData);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const password = formData.get("password") as string;
+      const confirmPassword = formData.get("confirmPassword") as string;
 
-    if (result.error) {
-      setPwdError(result.error);
-      toast.error(result.error);
-    } else {
-      setPwdSuccess(result.message || "Password updated!");
+      if (password !== confirmPassword) {
+        setPwdError("Passwords do not match");
+        setIsUpdatingPwd(false);
+        return;
+      }
+
+      if (password.length < 6) {
+        setPwdError("Password must be at least 6 characters");
+        setIsUpdatingPwd(false);
+        return;
+      }
+
+      const res = await fetch("/api/profile/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update password");
+      }
+
+      setPwdSuccess("Password updated successfully!");
       toast.success("Password changed successfully!");
       e.currentTarget.reset();
+    } catch (err: any) {
+      setPwdError(err.message || "Failed to update password");
+      toast.error(err.message || "Failed to update password");
+    } finally {
+      setIsUpdatingPwd(false);
     }
-    setIsUpdatingPwd(false);
   };
 
   return (

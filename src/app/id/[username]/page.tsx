@@ -1,9 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { bookmarks } from "@/lib/db/schema/courses";
+import { userActivity } from "@/lib/db/schema/activity";
+import { eq, and, gt, ne, count, ilike } from "drizzle-orm";
+import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { ShieldCheck } from "lucide-react";
 
 interface PageProps {
@@ -14,59 +17,54 @@ interface PageProps {
 
 export default async function PublicIDPage({ params }: PageProps) {
   const { username } = await params;
-  const supabase = await createClient();
 
-  // Fetch profile by username (case-insensitive search using ilike or making sure the column uses citext)
-  // If the citext migration hasn't fully applied yet, we can use ilike to be safe.
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .ilike("username", username)
-    .single();
+  // Fetch user by username (case-insensitive)
+  const [profile] = await db
+    .select()
+    .from(users)
+    .where(ilike(users.username, username))
+    .limit(1);
 
-  if (error || !profile) {
+  if (!profile) {
     notFound();
   }
 
-  // Fetch bookmarks count for stats
-  const { count: bookmarksCount } = await supabase
-    .from("bookmarks")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", profile.id);
+  // Fetch bookmarks count
+  const [{ total: bookmarksCount }] = await db
+    .select({ total: count() })
+    .from(bookmarks)
+    .where(eq(bookmarks.user_id, profile.id));
 
-  // Fetch all activity to calculate views
-  const { data: activityLogs } = await supabase
-    .from("user_activity")
-    .select("resource_id, action_type")
-    .eq("user_id", profile.id);
+  // Fetch all user activity to calculate views
+  const activityLogs = await db
+    .select({
+      resource_id: userActivity.resource_id,
+      action_type: userActivity.action_type,
+    })
+    .from(userActivity)
+    .where(eq(userActivity.user_id, profile.id));
 
   const uniqueViews = new Set(
     activityLogs
-      ?.filter(a => a.action_type === "view_resource" && a.resource_id)
-      .map(a => a.resource_id)
+      .filter((a) => a.action_type === "view_resource" && a.resource_id)
+      .map((a) => a.resource_id)
   ).size;
 
-  const displayName = profile.full_name || profile.username || username;
-  const currentStreak = profile.current_streak || 0;
+  const displayName = profile.full_name || profile.name || profile.username || username;
   const totalSeconds = profile.total_study_seconds || 0;
 
   // Fetch rank based on study time among non-admins
-  const { count: higherRankCount } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .gt("total_study_seconds", totalSeconds)
-    .neq("role", "admin");
+  const [{ total: higherRankCount }] = await db
+    .select({ total: count() })
+    .from(users)
+    .where(
+      and(
+        gt(users.total_study_seconds, totalSeconds),
+        ne(users.role, "admin")
+      )
+    );
 
   const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
-
-  // Fetch true stack from user\_metadata securely using admin key on server
-  const adminAuthClient = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  
-  const { data: { user: adminUserRef } } = await adminAuthClient.auth.admin.getUserById(profile.id);
-  const userStack = adminUserRef?.user_metadata?.stack || "Frontend Dev";
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -90,15 +88,15 @@ export default async function PublicIDPage({ params }: PageProps) {
           <StudentIDCard 
             displayName={displayName}
             username={profile.username || username}
-            avatarUrl={profile.avatar_url}
+            avatarUrl={profile.avatar_url || profile.image}
             isViewOnly={true}
             role={profile.role === "admin" ? "Admin" : "Student"}
-            initialStack={userStack}
+            initialStack="Software Engineering"
             stats={{
               resourcesViewed: uniqueViews,
-              hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours
+              hours: Math.floor(totalSeconds / 3600),
               rank: userRank, 
-              bookmarks: bookmarksCount || 0
+              bookmarks: bookmarksCount || 0,
             }}
           />
         </div>
@@ -127,4 +125,3 @@ export default async function PublicIDPage({ params }: PageProps) {
     </main>
   );
 }
-

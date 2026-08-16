@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { Metadata } from "next";
 
@@ -9,23 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
-  }
-
-  // Fetch user profile info
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (error || !profile) {
-    console.error("Failed to load user profile in settings:", error);
-    throw new Error("Could not load settings data");
   }
 
   return (
@@ -40,8 +27,17 @@ export default async function SettingsPage() {
       </div>
 
       <SettingsForm 
-        profile={profile} 
-        initialStack={user.user_metadata?.stack || "Frontend Dev"}
+        profile={{
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          full_name: user.full_name,
+          avatar_url: user.avatar_url || user.image,
+          bio: user.bio,
+          learning_goal: user.learning_goal,
+          role: user.role,
+        }} 
+        initialStack="Software Engineering"
       />
     </div>
   );
