@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "react-hot-toast";
 import { InstallPWA } from "@/components/pwa/InstallPWA";
+import { PWASplashScreen } from "@/components/pwa/PWASplashScreen";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -83,10 +84,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#4f46e5" />
+        <meta name="theme-color" content="#09090b" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Studzy" />
         <script
           dangerouslySetInnerHTML={{
@@ -128,6 +129,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} antialiased flex flex-col min-h-screen`} suppressHydrationWarning>
+        <PWASplashScreen />
         <UserPresence />
           <LoadingProvider>
             <AIProvider>
