@@ -216,6 +216,7 @@ export function UploadForm({ courses }: UploadFormProps) {
       const formData = new FormData();
       formData.append("file", fileUpload.file);
       formData.append("type", fileUpload.type);
+      if (selectedCourseId) formData.append("courseId", selectedCourseId);
       if (isRAG) formData.append("isRAG", "true");
 
       const response = await fetch("/api/admin/upload-file", {
@@ -249,7 +250,7 @@ export function UploadForm({ courses }: UploadFormProps) {
       );
       return null;
     }
-  }, [isRAG]);
+  }, [isRAG, selectedCourseId]);
 
   const handleFilesSelect = async (newFiles: File[]) => {
     if (!selectedCourseId && !isRAG) {
@@ -259,8 +260,14 @@ export function UploadForm({ courses }: UploadFormProps) {
 
     const validFiles: FileUpload[] = [];
     const errors: string[] = [];
+    const currentFileNames = new Set(files.map((f) => f.file.name.toLowerCase()));
 
     newFiles.forEach((file) => {
+      if (currentFileNames.has(file.name.toLowerCase())) {
+        errors.push(`${file.name}: already added to upload queue`);
+        return;
+      }
+
       if (file.size > MAX_FILE_SIZE) {
         errors.push(`${file.name}: exceeds 100MB limit`);
         return;

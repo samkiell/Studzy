@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema/auth";
-import { eq } from "drizzle-orm";
+import { resources } from "@/lib/db/schema/courses";
+import { eq, and, or, sql } from "drizzle-orm";
 import { uploadFile } from "@/lib/storage";
 import type { ResourceType } from "@/types/database";
 
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const type = formData.get("type") as ResourceType;
+    const courseId = formData.get("courseId") as string | null;
+    const isRAG = formData.get("isRAG") === "true";
 
     if (!file || file.size === 0) {
       return NextResponse.json({ success: false, message: "No file provided" }, { status: 400 });
@@ -65,11 +68,38 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Check for duplicate resource in course
+    if (courseId && !isRAG) {
+      const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim();
+      const rawName = file.name.replace(/\.[^/.]+$/, "").trim();
+
+      const [existingResource] = await db
+        .select({ id: resources.id, title: resources.title })
+        .from(resources)
+        .where(
+          and(
+            eq(resources.course_id, courseId),
+            or(
+              sql`LOWER(${resources.title}) = LOWER(${baseName})`,
+              sql`LOWER(${resources.title}) = LOWER(${rawName})`,
+              sql`LOWER(${resources.title}) = LOWER(${file.name})`
+            )
+          )
+        )
+        .limit(1);
+
+      if (existingResource) {
+        return NextResponse.json({
+          success: false,
+          message: `Resource "${existingResource.title}" already exists for this course. Please remove or rename it to avoid duplicate uploads.`,
+        }, { status: 409 });
+      }
+    }
+
     // Generate unique filename
     const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 9);
-    const isRAG = formData.get("isRAG") === "true";
     const folder = isRAG ? "rag" : "materials";
     const key = `${folder}/${type}/${timestamp}-${randomId}.${fileExtension}`;
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { resources } from "@/lib/db/schema/courses";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
 
@@ -26,6 +26,28 @@ export async function POST(request: NextRequest) {
 
     if (!courseId || !title || !slug || !type || !fileUrl) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
+    }
+
+    // Check if resource already exists in this course
+    const [existingDuplicate] = await db
+      .select({ id: resources.id, title: resources.title })
+      .from(resources)
+      .where(
+        and(
+          eq(resources.course_id, courseId),
+          or(
+            sql`LOWER(${resources.title}) = LOWER(${title.trim()})`,
+            eq(resources.file_url, fileUrl)
+          )
+        )
+      )
+      .limit(1);
+
+    if (existingDuplicate) {
+      return NextResponse.json({
+        success: false,
+        message: `A resource titled "${existingDuplicate.title}" is already saved in this course.`,
+      }, { status: 409 });
     }
 
     // Ensure slug is clean
