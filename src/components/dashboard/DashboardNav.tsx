@@ -1,30 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { SmartLink } from "@/components/ui/SmartLink";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
-import type { User } from "@supabase/supabase-js";
 
 interface DashboardNavProps {
-  user: User | null;
+  user: {
+    email?: string | null;
+    name?: string | null;
+    image?: string | null;
+  } | null;
   isAdmin?: boolean;
 }
 
 export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleSignOut = async () => {
     setLoading(true);
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      router.push("/");
-      router.refresh();
+      await signOut({ callbackUrl: "/" });
     } catch (error) {
       console.error("Error signing out:", error);
       setLoading(false);
@@ -64,7 +61,7 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
             <>
               <div className="hidden items-center gap-2 sm:flex">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-                  {user.email?.charAt(0).toUpperCase()}
+                  {user.email?.charAt(0).toUpperCase() || "U"}
                 </div>
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
                   {user.email}
