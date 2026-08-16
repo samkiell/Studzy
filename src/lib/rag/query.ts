@@ -3,12 +3,11 @@
 // ============================================
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { studyMaterialEmbeddings } from "@/lib/db/schema/rag";
+import { sql } from "drizzle-orm";
 import { embedText } from "./embeddings";
-import {
-  CHAT_MODEL,
-  TOP_K,
-} from "./config";
+import { CHAT_MODEL, TOP_K } from "./config";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -36,67 +35,50 @@ export interface QueryResult {
 }
 
 /**
- * Search for relevant chunks using pgvector cosine similarity.
+ * Search for relevant chunks using pgvector cosine similarity via Drizzle.
  */
 async function searchEmbeddings(
   queryEmbedding: number[],
   courseCode?: string,
   level?: string,
   topK: number = TOP_K,
-  threshold: number = 0 // Temporarily relaxed threshold for ML Infrastructure debug
+  threshold: number = 0
 ): Promise<RetrievedChunk[]> {
-  const supabase = createAdminClient();
+  try {
+    const vectorStr = `[${queryEmbedding.join(",")}]`;
 
-  // ML Infrastructure Debug Logging
-  const { count: totalVectors } = await supabase
-    .from("study_material_embeddings")
-    .select("*", { count: "exact", head: true });
+    // Query vectors using pgvector cosine distance operator (<=>)
+    const results = await db.execute(sql`
+      SELECT 
+        id, 
+        file_path, 
+        content, 
+        course_code, 
+        level, 
+        1 - (embedding <=> ${vectorStr}::vector) as similarity
+      FROM study_material_embeddings
+      WHERE 
+        (${courseCode || null}::text IS NULL OR course_code = ${courseCode || null})
+        AND (${level || null}::text IS NULL OR level = ${level || null})
+        AND (1 - (embedding <=> ${vectorStr}::vector)) >= ${threshold}
+      ORDER BY similarity DESC
+      LIMIT ${topK};
+    `);
 
-  console.log(`[RAG Search] --- Search Diagnostics ---`);
-  console.log(`[RAG Search] Total vectors in collection: ${totalVectors || 0}`);
-  console.log(`[RAG Search] Namespace: study_material_embeddings`);
-  console.log(`[RAG Search] Parameters: topK=${topK}, threshold=${threshold}`);
+    const rows = (results.rows || []) as any[];
 
-  const { data, error } = await supabase.rpc("match_embeddings", {
-    query_embedding: `[${queryEmbedding.join(",")}]`,
-    match_threshold: threshold,
-    match_count: topK,
-    filter_course_code: courseCode || null,
-    filter_level: level || null,
-  });
-
-  if (error) {
-    console.error(`[RAG Search] ❌ Embedding search failed: ${error?.message || 'Unknown error'}`);
-    throw new Error(`Embedding search failed: ${error?.message || 'Unknown error'}`);
+    return rows.map((row: any) => ({
+      id: row.id,
+      filePath: row.file_path,
+      content: row.content,
+      courseCode: row.course_code,
+      level: row.level,
+      similarity: Number(row.similarity) || 0,
+    }));
+  } catch (error: any) {
+    console.error(`[RAG Search] ❌ Embedding search error:`, error);
+    return [];
   }
-
-  const results = (data || []).map((row: any) => ({
-    id: row.id,
-    filePath: row.file_path,
-    content: row.content,
-    courseCode: row.course_code,
-    level: row.level,
-    similarity: row.similarity,
-  }));
-
-  console.log(`[RAG Search] Retrieved results length: ${results.length}`);
-  
-  if (results.length > 0) {
-    console.log(`[RAG Search] --- Top Similarity Scores ---`);
-    results.slice(0, 5).forEach((r: RetrievedChunk, i: number) => {
-      console.log(`   ${i + 1}. [Score: ${r.similarity.toFixed(6)}] ID: ${r.id} | File: ${r.filePath}`);
-    });
-
-    const ids = results.map((r: RetrievedChunk) => r.id);
-    const scores = results.map((r: RetrievedChunk) => r.similarity.toFixed(6));
-    console.log(`[RAG Search] Document IDs returned: ${JSON.stringify(ids)}`);
-    console.log(`[RAG Search] Scores returned: ${JSON.stringify(scores)}`);
-  } else {
-    console.warn(`[RAG Search] ⚠️ No matching study materials found.`);
-  }
-
-  console.log(`[RAG Search] --- Search End ---\n`);
-  return results;
 }
 
 /**
@@ -138,15 +120,11 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
     courseCode,
     level,
     topK = TOP_K,
-    threshold = 0, // Relaxed
+    threshold = 0,
   } = options;
 
-  console.log(`[RAG Query] Question: "${question.substring(0, 80)}..."`);
-
-  // Step 1: Embed the question
   const queryEmbedding = await embedText(question);
 
-  // Step 2: Search for relevant chunks
   const chunks = await searchEmbeddings(
     queryEmbedding,
     courseCode,
@@ -155,20 +133,10 @@ export async function queryRAG(options: QueryOptions): Promise<QueryResult> {
     threshold
   );
 
-  if (chunks.length === 0) {
-    console.log("[RAG Query] ⚠️ No matching study materials found.");
-  }
-
-  // Step 3: Build system prompt
   const systemPrompt = buildSystemPrompt(chunks);
 
-  // Step 4: Generate response
   const model = genAI.getGenerativeModel({ 
     model: CHAT_MODEL,
-    generationConfig: {
-      // @ts-ignore
-      thinking_level: "minimal"
-    }
   });
 
   const response = await model.generateContent({
@@ -197,17 +165,11 @@ export async function queryRAGStream(
     courseCode,
     level,
     topK = TOP_K,
-    threshold = 0, // Relaxed
+    threshold = 0,
   } = options;
 
-  console.log(
-    `[RAG Query Stream] Question: "${question.substring(0, 80)}..."`
-  );
-
-  // Step 1: Embed the question
   const queryEmbedding = await embedText(question);
 
-  // Step 2: Search for relevant chunks
   const chunks = await searchEmbeddings(
     queryEmbedding,
     courseCode,
@@ -216,20 +178,10 @@ export async function queryRAGStream(
     threshold
   );
 
-  if (chunks.length === 0) {
-    console.log("[RAG Query Stream] ⚠️ No matching study materials found.");
-  }
-
-  // Step 3: Build system prompt
   const systemPrompt = buildSystemPrompt(chunks);
 
-  // Step 4: Create streaming response
   const model = genAI.getGenerativeModel({ 
     model: CHAT_MODEL,
-    generationConfig: {
-      // @ts-ignore
-      thinking_level: "minimal"
-    }
   });
 
   const streamResponse = await model.generateContentStream({
@@ -287,4 +239,3 @@ export async function queryRAGStream(
 
   return { stream: readableStream, sources: chunks };
 }
-
