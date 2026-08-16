@@ -1,21 +1,17 @@
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { courses as coursesTable } from "@/lib/db/schema/courses";
+import { asc } from "drizzle-orm";
 import { UploadForm } from "@/components/admin/UploadForm";
 import type { Course } from "@/types/database";
 
 export default async function AdminUploadPage() {
-  const supabase = await createClient();
-
   // Fetch all courses for the dropdown
-  const { data: courses, error } = await supabase
-    .from("courses")
-    .select("*")
-    .order("code", { ascending: true });
+  const courses = await db
+    .select()
+    .from(coursesTable)
+    .orderBy(asc(coursesTable.code));
 
-  if (error) {
-    console.error("Error fetching courses:", error);
-  }
-
-  const typedCourses = (courses as Course[]) || [];
+  const typedCourses = (courses as unknown as Course[]) || [];
 
   return (
     <div>
@@ -50,7 +46,7 @@ export default async function AdminUploadPage() {
               <ul className="mt-1 list-inside list-disc text-blue-600 dark:text-blue-400">
                 <li>Maximum file size: 100MB</li>
                 <li>Supported formats: MP4, WebM, MP3, WAV, PDF, Images</li>
-                <li>Files are stored securely in Supabase Storage</li>
+                <li>Files are stored securely in Filebase S3 Storage</li>
               </ul>
             </div>
           </div>

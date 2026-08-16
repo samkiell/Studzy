@@ -14,7 +14,6 @@ import {
   Image as ImageIcon,
   Info
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import type { Course, ResourceType, ResourceStatus } from "@/types/database";
 import { uploadCBTQuestions } from "@/app/admin/actions";
 import { CBTUploadToggle } from "./cbt/CBTUploadToggle";
@@ -22,7 +21,6 @@ import { CourseSelector } from "./cbt/CourseSelector";
 import { JSONFileInput } from "./cbt/JSONFileInput";
 import { UploadSummary } from "./cbt/UploadSummary";
 import { CBTPreview } from "./cbt/CBTPreview";
-import { STORAGE_BUCKET, MATERIALS_BUCKET } from "@/lib/rag/config";
 
 interface UploadFormProps {
   courses: Course[];
@@ -206,92 +204,40 @@ export function UploadForm({ courses }: UploadFormProps) {
     }
   }, [selectedCourseId, isRAG]);
 
-  // Upload file to storage immediately (Client-Side to bypass Vercel limits)
+  // Upload file to Filebase storage via backend
   const uploadFileToStorage = useCallback(async (fileUpload: FileUpload): Promise<{ fileUrl: string; storagePath: string } | null> => {
-    const supabase = createClient();
-    const fileExtension = fileUpload.file.name.split(".").pop()?.toLowerCase() || "";
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 9);
-    // Use the same folder structure as before: type/filename
-    const fileName = `${fileUpload.type}/${timestamp}-${randomId}.${fileExtension}`;
-
     setFiles((prev) =>
       prev.map((f) =>
-        f.id === fileUpload.id ? { ...f, status: "uploading", progress: 10, message: "Starting upload..." } : f
+        f.id === fileUpload.id ? { ...f, status: "uploading", progress: 20, message: "Uploading to storage..." } : f
       )
     );
 
     try {
-      // 🛡️ Pre-upload Storage Health Guardrail Check
-      const guardResponse = await fetch("/api/admin/check-guardrail", {
+      const formData = new FormData();
+      formData.append("file", fileUpload.file);
+      formData.append("type", fileUpload.type);
+      if (isRAG) formData.append("isRAG", "true");
+
+      const response = await fetch("/api/admin/upload-file", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileSize: fileUpload.file.size,
-          resourceType: fileUpload.type,
-        }),
+        body: formData,
       });
-      const guardData = await guardResponse.json();
 
-      if (guardData.success && !guardData.allowed) {
-        throw new Error(guardData.reason || "Upload blocked: this file would push Supabase Storage beyond the safe limit.");
-      }
+      const data = await response.json();
 
-      // Determine bucket
-      const bucket = isRAG ? STORAGE_BUCKET : 
-                   (fileUpload.type === "audio" || fileUpload.type === "video" || fileUpload.type === "pdf") 
-                   ? MATERIALS_BUCKET : STORAGE_BUCKET;
-
-      // 1. Upload directly to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, fileUpload.file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: fileExtension === "json" ? "application/json" : fileUpload.file.type || undefined,
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      setFiles((prev) =>
-        prev.map((f) => f.id === fileUpload.id ? { ...f, progress: 90, message: "Processing..." } : f)
-      );
-
-      // 2. Get Public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(data.path);
-
-      const fileUrl = urlData.publicUrl;
-      const storagePath = data.path;
-
-      // 3. Trigger RAG Ingestion (if applicable)
-      if (isRAG && (fileUpload.type === "pdf" || fileUpload.type === "document")) {
-        await fetch("/api/admin/trigger-ingestion", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filePath: storagePath,
-            // We can add courseCode/level here if we had them selected, 
-            // but for "RAG Storage Mode", we might not have a course selected.
-            // If we DO have a course selected (mixed mode?), pass it.
-            // But currently RAG mode clears course selection.
-          }),
-        });
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Upload failed");
       }
 
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileUpload.id
-            ? { ...f, progress: 100, status: "uploaded", fileUrl, storagePath, message: "Ready to save" }
+            ? { ...f, progress: 100, status: "uploaded", fileUrl: data.fileUrl, storagePath: data.storagePath, message: "Ready to save" }
             : f
         )
       );
 
-      return { fileUrl, storagePath };
-
+      return { fileUrl: data.fileUrl, storagePath: data.storagePath };
     } catch (error: any) {
       console.error("Upload failed:", error);
       setFiles((prev) =>

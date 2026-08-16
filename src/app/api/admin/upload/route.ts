@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { resources } from "@/lib/db/schema/courses";
+import { uploadFile } from "@/lib/storage";
 import { notifyStudentsOfNewContent } from "@/lib/notifications";
 import type { ResourceType } from "@/types/database";
 
@@ -27,25 +30,15 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    // Check admin status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, username")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    if (user.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "Admin access required" },
         { status: 403 }
@@ -60,7 +53,6 @@ export async function POST(request: NextRequest) {
     const description = formData.get("description") as string | null;
     const file = formData.get("file") as File | null;
 
-    // Validate required fields
     if (!courseId) {
       return NextResponse.json(
         { success: false, message: "Please select a course" },
@@ -89,7 +81,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         {
@@ -100,7 +91,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
     const allowedMimeTypes = ALLOWED_TYPES[type];
     if (allowedMimeTypes && !allowedMimeTypes.includes(file.type)) {
       return NextResponse.json(
@@ -112,101 +102,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🛡️ Supabase Storage Health Guardrail Check
-    const { checkUploadGuardrail } = await import("@/lib/supabase/health");
-    const guardrail = await checkUploadGuardrail(file.size, type);
-    if (!guardrail.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: guardrail.reason || "Upload blocked: file exceeds safe storage limit.",
-        },
-        { status: 400 }
-      );
-    }
-
     // Generate unique filename
     const fileExtension = file.name.split(".").pop()?.toLowerCase() || "";
     const timestamp = Date.now();
     const sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    const fileName = `${type}/${courseId}/${timestamp}-${sanitizedTitle}.${fileExtension}`;
+    const key = `materials/${type}/${courseId}/${timestamp}-${sanitizedTitle}.${fileExtension}`;
 
-    // Convert file to buffer for upload
+    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Determine bucket
-    const bucket = (type === "audio" || type === "video" || type === "pdf") ? "studzy-materials" : "RAG";
+    // Upload to Filebase
+    const fileUrl = await uploadFile({
+      key,
+      body: buffer,
+      contentType: file.type,
+      metadata: {
+        uploadedBy: user.id,
+        courseId,
+        originalName: file.name,
+      },
+    });
 
-    // Upload file to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      return NextResponse.json(
-        { success: false, message: `Failed to upload file: ${uploadError.message}` },
-        { status: 500 }
-      );
-    }
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(uploadData.path);
-
-    const fileUrl = urlData.publicUrl;
+    const slug = sanitizedTitle.slice(0, 50);
 
     // Insert resource into database
-    const { data: resource, error: insertError } = await supabase
-      .from("resources")
-      .insert({
+    const [resource] = await db
+      .insert(resources)
+      .values({
         course_id: courseId,
         title: title.trim(),
+        slug,
         type,
         file_url: fileUrl,
         description: description?.trim() || null,
+        status: "published",
+        uploader_id: user.id,
         email_sent: true,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (insertError) {
-      // Clean up uploaded file if database insert fails
-      await supabase.storage.from(bucket).remove([uploadData.path]);
-      console.error("Database insert error:", insertError);
-      return NextResponse.json(
-        { success: false, message: `Failed to save resource: ${insertError.message}` },
-        { status: 500 }
-      );
-    }
-
-    // 🎓 RAG: Trigger ingestion automatically for searchable types
+    // RAG auto-ingestion for searchable types
     if (type === "pdf" || type === "document") {
       try {
         const { ingestFile } = await import("@/lib/rag/ingestion");
-        console.log(`[API Upload] Triggering auto-ingestion for: ${uploadData.path}`);
+        console.log(`[API Upload] Triggering auto-ingestion for: ${key}`);
         
         ingestFile({
-          filePath: uploadData.path,
+          filePath: key,
           courseCode: courseId,
           force: true,
-          username: profile.username || user.email || "admin",
-        }).catch(err => {
-          console.error(`[API Upload] Ingestion failed for ${uploadData.path}:`, err);
+          username: user.username || user.email || "admin",
+        }).catch((err) => {
+          console.error(`[API Upload] Ingestion failed for ${key}:`, err);
         });
       } catch (err) {
         console.error(`[API Upload] Failed to trigger ingestion:`, err);
       }
     }
 
-    // 📧 Notify students of the new resource (after the response is sent so it
-    // doesn't slow the upload). Only published resources are visible to students.
     if (resource.status === "published") {
       after(() =>
         notifyStudentsOfNewContent({
@@ -214,8 +168,8 @@ export async function POST(request: NextRequest) {
           courseId,
           resourceTitle: title.trim(),
           resourceType: type,
-          slug: resource.slug,
-        }),
+          slug: resource.slug ?? slug,
+        })
       );
     }
 
