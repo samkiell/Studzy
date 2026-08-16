@@ -3,6 +3,8 @@ import authConfig from "@/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
+export const proxy = auth;
+export const middleware = auth;
 export default auth;
 
 export const config = {
