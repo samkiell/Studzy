@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { courses as coursesTable, resources } from "@/lib/db/schema/courses";
 import { eq, and } from "drizzle-orm";
 import { getPresignedUrl } from "@/lib/storage";
-import { VideoPlayer, AudioPlayer, PDFViewer, ImageViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
+import { VideoPlayer, AudioPlayer, PDFViewer, ImageViewer, QuestionBankViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
 import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 import { DiscussionPanel } from "@/components/resources/DiscussionPanel";
 import { StarButton } from "@/components/resources/StarButton";
@@ -382,6 +382,9 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
         )}
         {resource.type === "image" && (
           <ImageViewer src={mediaSrc} title={resource.title} resourceId={resource.id} />
+        )}
+        {resource.type === "question_bank" && (
+          <QuestionBankViewer src={mediaSrc} title={resource.title} courseCode={course.code} resourceId={resource.id} />
         )}
 
         <div className="mt-8">
