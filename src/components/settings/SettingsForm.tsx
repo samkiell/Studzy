@@ -158,12 +158,13 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
   // Password reset submit handler
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
     setPwdError("");
     setPwdSuccess("");
     setIsUpdatingPwd(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       const password = formData.get("password") as string;
       const confirmPassword = formData.get("confirmPassword") as string;
 
@@ -192,7 +193,7 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
 
       setPwdSuccess("Password updated successfully!");
       toast.success("Password changed successfully!");
-      e.currentTarget.reset();
+      form.reset();
     } catch (err: any) {
       setPwdError(err.message || "Failed to update password");
       toast.error(err.message || "Failed to update password");
