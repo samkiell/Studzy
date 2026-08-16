@@ -15,7 +15,8 @@ export async function GET(
       return new NextResponse("File Not Found", { status: 404 });
     }
 
-    const response = await getFile(key);
+    const rangeHeader = request.headers.get("range");
+    const response = await getFile(key, rangeHeader || undefined);
 
     if (!response.Body) {
       return new NextResponse("File Not Found", { status: 404 });
@@ -48,8 +49,12 @@ export async function GET(
     const headers = new Headers();
     headers.set("Content-Type", contentType);
     headers.set("Content-Disposition", "inline");
+    headers.set("Accept-Ranges", "bytes");
 
-    if (response.ContentLength) {
+    if (response.ContentRange) {
+      headers.set("Content-Range", response.ContentRange);
+    }
+    if (response.ContentLength !== undefined) {
       headers.set("Content-Length", response.ContentLength.toString());
     }
     if (response.ETag) {
@@ -62,8 +67,10 @@ export async function GET(
       "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400"
     );
 
+    const status = rangeHeader && response.ContentRange ? 206 : 200;
+
     return new NextResponse(stream as any, {
-      status: 200,
+      status,
       headers,
     });
   } catch (error: any) {
