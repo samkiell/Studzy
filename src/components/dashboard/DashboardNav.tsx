@@ -21,10 +21,10 @@ export function DashboardNav({ user, isAdmin = false }: DashboardNavProps) {
   const handleSignOut = async () => {
     setLoading(true);
     try {
-      await signOut({ callbackUrl: "/" });
+      await signOut({ callbackUrl: "/login", redirectTo: "/login", redirect: true });
     } catch (error) {
       console.error("Error signing out:", error);
-      setLoading(false);
+      window.location.href = "/login";
     }
   };
 
