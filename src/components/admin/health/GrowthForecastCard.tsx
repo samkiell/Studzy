@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ForecastDetails } from "@/lib/supabase/health/types";
+import { ForecastDetails } from "@/lib/health/types";
 import { TrendingUp, Calendar, AlertCircle, ShieldAlert, Sparkles } from "lucide-react";
 
 interface GrowthForecastCardProps {

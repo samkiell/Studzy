@@ -4,7 +4,7 @@ import { courses, resources } from "@/lib/db/schema/courses";
 import { attempts } from "@/lib/db/schema/cbt";
 import { studyMaterialEmbeddings } from "@/lib/db/schema/rag";
 import { count } from "drizzle-orm";
-import { GUARDRAIL_CONFIG } from "@/config/supabase-guardrails";
+import { GUARDRAIL_CONFIG } from "@/config/storage-guardrails";
 import { 
   StorageHealthMetrics, 
   SystemHealthSummary, 

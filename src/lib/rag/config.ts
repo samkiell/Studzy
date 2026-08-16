@@ -26,10 +26,10 @@ export const TOP_K = 12;
 /** Minimum similarity threshold for relevant results */
 export const SIMILARITY_THRESHOLD = 0.22;
 
-/** Supabase Storage bucket name for RAG and general dumps */
+/** Filebase Storage bucket folder for RAG knowledge documents */
 export const STORAGE_BUCKET = "RAG";
 
-/** Supabase Storage bucket name for Study Materials (Audio, video, PDF) */
+/** Filebase Storage bucket folder for Study Materials */
 export const MATERIALS_BUCKET = "studzy-materials";
 
 /** Approximate tokens per word (English text) */

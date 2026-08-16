@@ -1,11 +1,12 @@
 import React from "react";
-import { getStorageHealthMetrics, getSystemHealthSummary } from "@/lib/supabase/health";
+import { getStorageHealthMetrics, getSystemHealthSummary } from "@/lib/health";
 import { HealthMetricCard } from "@/components/admin/health/HealthMetricCard";
 import { StorageBreakdownCard } from "@/components/admin/health/StorageBreakdownCard";
 import { StorageWarningBanner } from "@/components/admin/health/StorageWarningBanner";
 import { GrowthForecastCard } from "@/components/admin/health/GrowthForecastCard";
 import { StorageManagementSection } from "@/components/admin/health/StorageManagementSection";
-import { GUARDRAIL_CONFIG } from "@/config/supabase-guardrails";
+import { SystemHealthSummaryWidget } from "@/components/admin/health/SystemHealthSummaryWidget";
+import { GUARDRAIL_CONFIG } from "@/config/storage-guardrails";
 import { ShieldCheck, RefreshCw, Layers } from "lucide-react";
 
 export const revalidate = 600; // 10 minutes cache revalidation

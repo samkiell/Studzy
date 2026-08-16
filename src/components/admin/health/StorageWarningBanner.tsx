@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { HealthStatus } from "@/lib/supabase/health/types";
+import { HealthStatus } from "@/lib/health/types";
 import { AlertTriangle, AlertCircle, XCircle, X } from "lucide-react";
 
 interface StorageWarningBannerProps {
@@ -24,17 +24,17 @@ export function StorageWarningBanner({ status, percentage }: StorageWarningBanne
     case "Warning":
       bannerStyle = "bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/80 dark:border-amber-800 dark:text-amber-200";
       Icon = AlertTriangle;
-      message = `Supabase Storage is at ${percentage}%. Monitor storage usage.`;
+      message = `Storage is at ${percentage}%. Monitor storage usage.`;
       break;
     case "Critical":
       bannerStyle = "bg-orange-50 border-orange-200 text-orange-900 dark:bg-orange-950/80 dark:border-orange-800 dark:text-orange-200";
       Icon = AlertCircle;
-      message = `Supabase Storage is critically high (${percentage}%). Large media uploads may be blocked.`;
+      message = `Storage is critically high (${percentage}%). Large media uploads may be blocked.`;
       break;
     case "Exhausted":
       bannerStyle = "bg-red-50 border-red-200 text-red-900 dark:bg-red-950/80 dark:border-red-800 dark:text-red-200";
       Icon = XCircle;
-      message = `Supabase Storage quota exhausted (${percentage}%). Media uploads are currently disabled.`;
+      message = `Storage quota exhausted (${percentage}%). Media uploads are currently disabled.`;
       break;
     default:
       return null;

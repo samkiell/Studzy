@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { SystemHealthSummary } from "@/lib/supabase/health/types";
+import { SystemHealthSummary } from "@/lib/health/types";
 import { getStatusBadgeStyle, getProgressBarColor } from "./HealthMetricCard";
 import { Activity, ArrowRight, HardDrive, Database, Network, ShieldCheck } from "lucide-react";
 
@@ -48,7 +48,7 @@ export function SystemHealthSummaryWidget({ summary }: SystemHealthSummaryWidget
           </div>
           <div>
             <h2 className="text-base font-bold text-neutral-900 dark:text-white">SYSTEM HEALTH</h2>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Supabase Quota & Protection</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Storage Quota & Health</p>
           </div>
         </div>
 

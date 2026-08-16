@@ -2,11 +2,11 @@ import { getStorageHealthMetrics } from "./metrics-service";
 import { evaluateUploadSafety } from "./guardrail-utility";
 import { logGuardrailEvent } from "./logger";
 import { UploadGuardCheckResult } from "./types";
-import { GUARDRAIL_CONFIG } from "@/config/supabase-guardrails";
+import { GUARDRAIL_CONFIG } from "@/config/storage-guardrails";
 
 /**
  * Validates whether a file upload of given size and resource type is safe to proceed.
- * MUST be invoked server-side before executing supabase.storage.from(...).upload(...).
+ * MUST be invoked server-side before executing storage upload.
  */
 export async function checkUploadGuardrail(
   incomingSizeBytes: number,

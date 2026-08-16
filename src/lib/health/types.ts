@@ -1,5 +1,5 @@
 /**
- * Supabase Health & Guardrails Type Definitions
+ * Storage Health & Guardrails Type Definitions
  */
 
 export type HealthStatus = "Healthy" | "Notice" | "Warning" | "Critical" | "Exhausted";

@@ -1,33 +1,29 @@
 import { NextResponse } from 'next/server';
 import { queueEmail } from '@/lib/email';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (!user) {
+    if (!user || !user.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { fileName, uploadId } = await request.json();
 
-    // In production, you would save the upload to DB first
-    // const { data, error } = await supabase.from('uploads').insert({ ... });
-
     // Queue the email to avoid blocking the user's UI/request
     queueEmail({
-      to: user.email!,
+      to: user.email,
       subject: 'Upload Successful',
       html: `
         <div style="font-family: sans-serif; padding: 20px;">
           <h2 style="color: #7c3aed;">File Uploaded Successfully</h2>
           <p>Your file <strong>${fileName}</strong> has been uploaded and is being processed.</p>
           <p>Upload ID: <code>${uploadId}</code></p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/uploads" 
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL || ''}/dashboard" 
              style="display: inline-block; padding: 10px 20px; background: #7c3aed; color: white; text-decoration: none; border-radius: 5px;">
-            View Uploads
+            View Dashboard
           </a>
         </div>
       `

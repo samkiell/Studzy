@@ -1,6 +1,6 @@
 /**
- * Server-side guardrail logger
- * Logs guardrail decisions, quota events, and metric status changes without exposing secrets or payload contents.
+ * Server-side storage guardrail logger
+ * Logs guardrail decisions, quota events, and metric status changes.
  */
 
 export type GuardrailEvent = 
@@ -24,12 +24,7 @@ export interface LogPayload {
 
 export function logGuardrailEvent(payload: LogPayload): void {
   const timestamp = new Date().toISOString();
-  const prefix = `[SUPABASE GUARDRAIL ${payload.event}]`;
-
-  const safeLog = {
-    timestamp,
-    ...payload,
-  };
+  const prefix = `[STORAGE GUARDRAIL ${payload.event}]`;
 
   switch (payload.event) {
     case "UPLOAD_BLOCKED":
@@ -39,14 +34,14 @@ export function logGuardrailEvent(payload: LogPayload): void {
       console.warn(`${prefix} Quota threshold entered ${payload.status} state at ${payload.projectedPercentage}% usage`);
       break;
     case "METRIC_RETRIEVAL_FAILED":
-      console.error(`${prefix} Failed to retrieve Supabase metrics: ${payload.error}`);
+      console.error(`${prefix} Failed to retrieve storage metrics: ${payload.error}`);
       break;
     case "STORAGE_HEALTH_CHANGED":
       console.info(`${prefix} Storage health changed to ${payload.status}`);
       break;
     case "UPLOAD_ALLOWED":
     default:
-      console.info(`${prefix} Allowed upload (${(payload.fileSizeBytes ? payload.fileSizeBytes / (1024*1024) : 0).toFixed(2)} MB)`);
+      console.info(`${prefix} Allowed upload (${(payload.fileSizeBytes ? payload.fileSizeBytes / (1024 * 1024) : 0).toFixed(2)} MB)`);
       break;
   }
 }

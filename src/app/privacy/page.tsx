@@ -81,7 +81,7 @@ export default function PrivacyPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">5. Third-Party Services</h2>
             <p>
-              We may utilize third-party services such as Supabase for backend infrastructure/database management, Vercel Analytics for usage insights, and Cloudinary for file uploads. These services process data in accordance with their respective privacy policies.
+              We may utilize third-party services such as Neon PostgreSQL and Filebase S3 for backend infrastructure and file storage, Google and Mistral for AI processing, and Vercel for hosting and analytics. These services process data in accordance with their respective privacy policies.
             </p>
           </section>
 

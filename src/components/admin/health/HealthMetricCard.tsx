@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { HealthStatus, QuotaMetricStatus } from "@/lib/supabase/health/types";
+import { HealthStatus, QuotaMetricStatus } from "@/lib/health/types";
 import { HardDrive, Database, Network, Activity, AlertTriangle, ShieldCheck, AlertCircle, XCircle, RotateCcw, Lock } from "lucide-react";
 
 interface HealthMetricCardProps {

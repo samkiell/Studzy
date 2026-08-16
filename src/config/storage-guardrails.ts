@@ -1,5 +1,5 @@
 /**
- * Supabase Usage & Health Guardrails Configuration
+ * Storage & Health Guardrails Configuration
  * Centralized settings for quotas, thresholds, and upload restrictions.
  */
 
@@ -12,9 +12,9 @@ export interface QuotaThresholds {
 }
 
 export interface PlanLimits {
-  storageBytes: number; // e.g. 1GB or 8GB
+  storageBytes: number; // e.g. 5GB or configured limit
   databaseBytes: number; // e.g. 500MB
-  egressBytesMonthly: number; // e.g. 2GB
+  egressBytesMonthly: number; // e.g. 10GB
   cachedEgressBytesMonthly: number;
 }
 
@@ -37,15 +37,15 @@ export const GUARDRAIL_CONFIG = {
     exhaustedPercent: 100,
   } as QuotaThresholds,
 
-  // Default Supabase quotas (Free Tier defaults, adjustable via env or plan change)
+  // Default storage quotas (Adjustable via environment variables)
   planLimits: {
-    // 1 GB Free Tier default storage limit (can be overridden by SUPABASE_STORAGE_LIMIT_MB)
-    storageBytes: (parseInt(process.env.SUPABASE_STORAGE_LIMIT_MB || "1024", 10)) * 1024 * 1024,
-    // 500 MB Free Tier default database limit
+    // 5 GB default storage limit
+    storageBytes: (parseInt(process.env.STORAGE_LIMIT_MB || "5120", 10)) * 1024 * 1024,
+    // 500 MB default database limit
     databaseBytes: 500 * 1024 * 1024,
-    // 2 GB monthly egress
-    egressBytesMonthly: 2 * 1024 * 1024 * 1024,
-    cachedEgressBytesMonthly: 5 * 1024 * 1024 * 1024,
+    // 10 GB monthly egress
+    egressBytesMonthly: 10 * 1024 * 1024 * 1024,
+    cachedEgressBytesMonthly: 20 * 1024 * 1024 * 1024,
   } as PlanLimits,
 
   // Maximum file sizes allowed per type (in bytes)

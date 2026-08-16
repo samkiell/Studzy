@@ -1,4 +1,4 @@
-import { GUARDRAIL_CONFIG, QuotaThresholds } from "@/config/supabase-guardrails";
+import { GUARDRAIL_CONFIG, QuotaThresholds } from "@/config/storage-guardrails";
 import { HealthStatus, QuotaMetricStatus, UploadGuardCheckResult } from "./types";
 
 /**
@@ -78,7 +78,6 @@ export function evaluateUploadSafety(
   const projectedPercentage = Number(projectedRawPercent.toFixed(1));
   const projectedStatus = calculateHealthStatus(projectedPercentage, thresholds);
 
-  // Reject if projected storage reaches or exceeds Critical threshold (e.g. 80%) or Exhausted (100%)
   if (projectedPercentage >= thresholds.criticalPercent) {
     const projectedMB = (projectedStorageBytes / (1024 * 1024)).toFixed(1);
     const limitMB = (storageLimitBytes / (1024 * 1024)).toFixed(1);
@@ -91,7 +90,7 @@ export function evaluateUploadSafety(
       projectedStorageBytes,
       projectedPercentage,
       status: projectedStatus,
-      reason: `Upload blocked: this file would push Supabase Storage beyond the safe limit (${projectedPercentage}% / ${projectedMB} MB of ${limitMB} MB).`,
+      reason: `Upload blocked: this file would push Storage beyond the safe limit (${projectedPercentage}% / ${projectedMB} MB of ${limitMB} MB).`,
     };
   }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { deleteStorageObjectsServer, invalidateHealthCache, getStorageHealthMetrics } from "@/lib/supabase/health";
+import { deleteStorageObjectsServer, invalidateHealthCache, getStorageHealthMetrics } from "@/lib/health";
 
 export async function POST(request: NextRequest) {
   try {

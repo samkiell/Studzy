@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { StorageFileDetail } from "@/lib/supabase/health/types";
+import { StorageFileDetail } from "@/lib/health/types";
 import { AlertTriangle, Trash2, Loader2, X, FileText, ExternalLink } from "lucide-react";
 
 interface DeleteConfirmationModalProps {
@@ -44,7 +44,7 @@ export function DeleteConfirmationModal({
             <div>
               <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Confirm Storage Deletion</h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                This action is permanent and will remove objects from Supabase Storage.
+                This action is permanent and will remove objects from Filebase Storage.
               </p>
             </div>
           </div>

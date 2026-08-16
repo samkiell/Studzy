@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { StorageFileDetail, StorageHealthMetrics } from "@/lib/supabase/health/types";
+import { StorageFileDetail, StorageHealthMetrics } from "@/lib/health/types";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { 
   Search, 

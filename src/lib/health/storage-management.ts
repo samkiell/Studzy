@@ -3,6 +3,7 @@ import { resources, courses } from "@/lib/db/schema/courses";
 import { listFiles, deleteFile, getPublicUrl } from "@/lib/storage";
 import { StorageFileDetail, LinkedApplicationResource, FileTypeCategoryUsage } from "./types";
 import { logGuardrailEvent } from "./logger";
+import { eq } from "drizzle-orm";
 
 function categorizeFileType(name: string, mimeType?: string): FileTypeCategoryUsage["category"] {
   const lowerName = name.toLowerCase();
@@ -53,7 +54,7 @@ export async function listAllStorageObjectsWithResourceLinks(): Promise<StorageF
         course_title: courses.title,
       })
       .from(resources)
-      .leftJoin(courses, resources.course_id ? undefined : undefined); // standard join
+      .leftJoin(courses, eq(resources.course_id, courses.id));
 
     // Build lookup map by file_url or filename/path match
     const resourceMap = new Map<string, LinkedApplicationResource>();

@@ -1,5 +1,5 @@
 import { StorageFileDetail } from "./types";
-import { GUARDRAIL_CONFIG } from "@/config/supabase-guardrails";
+import { GUARDRAIL_CONFIG } from "@/config/storage-guardrails";
 
 export interface ForecastData {
   growth7DaysBytes: number;
@@ -37,7 +37,6 @@ export function calculateGrowthAndForecast(
   const dailyGrowthRate7Days = growth7DaysBytes / 7;
   const dailyGrowthRate30Days = growth30DaysBytes / 30;
 
-  // Use 7-day rate as primary growth rate indicator, fall back to 30-day if 7-day is 0
   const activeDailyRate = dailyGrowthRate7Days > 0 ? dailyGrowthRate7Days : dailyGrowthRate30Days;
 
   const target80Bytes = limitBytes * 0.8;

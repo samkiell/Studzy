@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { StorageHealthMetrics } from "@/lib/supabase/health/types";
+import { StorageHealthMetrics } from "@/lib/health/types";
 import { Video, Music, FileText, Image as ImageIcon, FileCode, FolderArchive, TrendingUp, HardDrive, File } from "lucide-react";
 
 interface StorageBreakdownCardProps {
