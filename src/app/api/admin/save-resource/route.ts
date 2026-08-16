@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { courseId, title, slug, type, fileUrl, description, status } = body as {
+    const { courseId, title, slug, type, fileUrl, description, status, skipNotification } = body as {
       courseId: string;
       title: string;
       slug: string;
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       fileUrl: string;
       description?: string;
       status?: "draft" | "published";
+      skipNotification?: boolean;
     };
 
     if (!courseId || !title || !slug || !type || !fileUrl) {
@@ -96,13 +97,14 @@ export async function POST(request: NextRequest) {
         file_url: fileUrl,
         description: description?.trim() || null,
         status: status || "published",
-        uploader_id: user.id,
+        featured: false,
         email_sent: (status || "published") === "published",
+        uploader_id: user.id,
       })
       .returning();
 
-    // Notify students of the new resource
-    if (resource.status === "published") {
+    // Notify students of the new resource (only if not handled by a batch upload session)
+    if (resource.status === "published" && !skipNotification) {
       after(() =>
         notifyStudentsOfNewContent({
           kind: "resource",
