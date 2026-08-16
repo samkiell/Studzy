@@ -2,11 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { NAVIGATION_ITEMS } from "@/config/navigation";
 import { NavItem } from "./NavItem";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
@@ -17,15 +16,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isCollapsed, onToggle, role }: SidebarProps) {
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    await signOut({ callbackUrl: "/login" });
   };
 
   return (
@@ -73,7 +68,7 @@ export function Sidebar({ isCollapsed, onToggle, role }: SidebarProps) {
             Main Menu
           </p>
         )}
-        {NAVIGATION_ITEMS.filter(item => !item.adminOnly || role === 'admin').map((item) => (
+        {NAVIGATION_ITEMS.filter((item) => !item.adminOnly || role === "admin").map((item) => (
           <NavItem key={item.href} {...item} isCollapsed={isCollapsed} />
         ))}
       </div>
