@@ -32,18 +32,22 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
   }
 
   // 2. Fetch the course title
-  const [course] = await db
-    .select({
-      title: coursesTable.title,
-      code: coursesTable.code,
-    })
-    .from(coursesTable)
-    .where(eq(coursesTable.id, attemptData.course_id))
-    .limit(1);
+  let course: { title: string; code: string } | undefined = undefined;
+  if (attemptData.course_id) {
+    const [fetchedCourse] = await db
+      .select({
+        title: coursesTable.title,
+        code: coursesTable.code,
+      })
+      .from(coursesTable)
+      .where(eq(coursesTable.id, attemptData.course_id))
+      .limit(1);
+    course = fetchedCourse;
+  }
 
   const attempt: Attempt = {
     ...attemptData,
-    created_at: attemptData.created_at ? new Date(attemptData.created_at).toISOString() : "",
+    created_at: attemptData.started_at ? new Date(attemptData.started_at).toISOString() : "",
     completed_at: attemptData.completed_at ? new Date(attemptData.completed_at).toISOString() : null,
     started_at: attemptData.started_at ? new Date(attemptData.started_at).toISOString() : "",
     course_title: course?.title || "Unknown Course",
@@ -64,7 +68,7 @@ export default async function CbtAttemptPage({ params }: CbtAttemptPageProps) {
     questions = qIds
       .map((id) => fetchedQuestions.find((q) => q.id === id))
       .filter((q): q is any => !!q);
-  } else {
+  } else if (attemptData.course_id) {
     const allQuestions = await db
       .select()
       .from(questionsTable)
