@@ -107,11 +107,11 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to Filebase
+    // Upload to Filebase (use application/octet-stream to avoid free-tier video MIME quotas)
     const fileUrl = await uploadFile({
       key,
       body: buffer,
-      contentType: file.type,
+      contentType: "application/octet-stream",
       metadata: {
         uploadedBy: user.id,
         originalName: file.name,
