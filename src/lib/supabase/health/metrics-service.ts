@@ -1,11 +1,15 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { courses, resources } from "@/lib/db/schema/courses";
+import { attempts } from "@/lib/db/schema/cbt";
+import { studyMaterialEmbeddings } from "@/lib/db/schema/rag";
+import { count } from "drizzle-orm";
 import { GUARDRAIL_CONFIG } from "@/config/supabase-guardrails";
 import { 
   StorageHealthMetrics, 
   SystemHealthSummary, 
   BucketUsage, 
   FileTypeCategoryUsage, 
-  StorageFileDetail 
 } from "./types";
 import { calculateQuotaMetric, calculateHealthStatus } from "./guardrail-utility";
 import { calculateGrowthAndForecast } from "./forecasting";
@@ -25,8 +29,7 @@ export function invalidateHealthCache(): void {
 }
 
 /**
- * Retrieves detailed storage health metrics across all Supabase buckets.
- * Uses in-memory server caching unless forceRefresh is set.
+ * Retrieves detailed storage health metrics across Filebase.
  */
 export async function getStorageHealthMetrics(forceRefresh: boolean = false): Promise<StorageHealthMetrics> {
   const now = Date.now();
@@ -172,19 +175,19 @@ export async function getSystemHealthSummary(forceRefresh: boolean = false): Pro
   }
 
   const storageMetrics = await getStorageHealthMetrics(forceRefresh);
-  const supabase = createAdminClient();
 
   let databaseTableCount = 0;
   let estimatedDbBytes = 0;
 
   try {
-    const tables = ["courses", "resources", "profiles", "cbt_attempts", "rag_documents", "discussions"];
-    let totalRows = 0;
-    for (const t of tables) {
-      const { count } = await supabase.from(t).select("*", { count: "exact", head: true });
-      if (count) totalRows += count;
-    }
-    databaseTableCount = tables.length;
+    const [{ total: userCount }] = await db.select({ total: count() }).from(users);
+    const [{ total: courseCount }] = await db.select({ total: count() }).from(courses);
+    const [{ total: resourceCount }] = await db.select({ total: count() }).from(resources);
+    const [{ total: attemptCount }] = await db.select({ total: count() }).from(attempts);
+    const [{ total: embeddingCount }] = await db.select({ total: count() }).from(studyMaterialEmbeddings);
+
+    const totalRows = (userCount || 0) + (courseCount || 0) + (resourceCount || 0) + (attemptCount || 0) + (embeddingCount || 0);
+    databaseTableCount = 5;
     estimatedDbBytes = (totalRows * 1500) + (15 * 1024 * 1024);
   } catch {
     estimatedDbBytes = 15 * 1024 * 1024;
