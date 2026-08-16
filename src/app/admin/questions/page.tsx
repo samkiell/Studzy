@@ -1,7 +1,10 @@
 import { AdminQuestionBankTable } from "@/components/admin/AdminQuestionBankTable";
 import { AdminQuestionsTable } from "@/components/admin/AdminQuestionsTable";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { db } from "@/lib/db";
+import { resources, courses } from "@/lib/db/schema/courses";
+import { questions as questionsTable } from "@/lib/db/schema/cbt";
+import { eq, desc } from "drizzle-orm";
 import { Database, FileJson } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -13,67 +16,54 @@ export const metadata = {
 export default async function AdminQuestionsPage() {
   await requireAdmin();
 
-  // Use admin client to bypass RLS and see ALL questions
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
-
   // 1. Fetch question_bank resources (uploaded JSON files)
-  const { data: resources, error: resourcesError } = await supabase
-    .from("resources")
-    .select(`
-      id,
-      title,
-      file_url,
-      created_at,
-      course_id,
-      courses (
-        code
-      )
-    `)
-    .eq("type", "question_bank")
-    .order("created_at", { ascending: false });
-
-  if (resourcesError) {
-    console.error("Error fetching question banks:", resourcesError);
-  }
+  const bankResources = await db
+    .select({
+      id: resources.id,
+      title: resources.title,
+      file_url: resources.file_url,
+      created_at: resources.created_at,
+      course_id: resources.course_id,
+      course_code: courses.code,
+    })
+    .from(resources)
+    .leftJoin(courses, eq(resources.course_id, courses.id))
+    .where(eq(resources.type, "question_bank"))
+    .orderBy(desc(resources.created_at));
 
   // 2. Fetch ALL individual questions from the questions table
-  const { data: questionsData, error: questionsError } = await supabase
-    .from("questions")
-    .select("id, course_code, question_id, question_text, options, correct_option, explanation, topic, difficulty, question_type, created_at, bank_id")
-    .order("created_at", { ascending: false });
+  const questionsData = await db
+    .select()
+    .from(questionsTable)
+    .orderBy(desc(questionsTable.created_at));
 
-  if (questionsError) {
-    console.error("Error fetching questions:", questionsError);
-  }
-
-  const questions = (questionsData || []).map((q: any) => ({
+  const questions = (questionsData || []).map((q) => ({
     id: q.id,
     course_code: q.course_code || "Unknown",
     question_id: q.question_id,
     question_text: q.question_text || "",
-    options: q.options || {},
+    options: (q.options as Record<string, string>) || {},
     correct_option: q.correct_option,
     explanation: q.explanation,
     topic: q.topic,
     difficulty: q.difficulty,
     question_type: q.question_type,
-    created_at: q.created_at,
+    created_at: q.created_at ? new Date(q.created_at).toISOString() : "",
   }));
 
-  // Count questions per uploaded bank so each file row shows its size.
+  // Count questions per uploaded bank
   const countByBank = new Map<string, number>();
   for (const q of questionsData || []) {
-    const bankId = (q as any).bank_id as string | null;
+    const bankId = q.bank_id;
     if (bankId) countByBank.set(bankId, (countByBank.get(bankId) || 0) + 1);
   }
 
-  const files = (resources || []).map((r: any) => ({
+  const files = (bankResources || []).map((r) => ({
     id: r.id,
     title: r.title,
-    course_code: r.courses?.code || "Unknown",
+    course_code: r.course_code || "Unknown",
     file_url: r.file_url,
-    created_at: r.created_at,
+    created_at: r.created_at ? new Date(r.created_at).toISOString() : "",
     questionCount: countByBank.get(r.id) || 0,
   }));
 
@@ -94,7 +84,7 @@ export default async function AdminQuestionsPage() {
             </p>
           </div>
         </div>
-        <AdminQuestionsTable questions={questions} />
+        <AdminQuestionsTable questions={questions as any} />
       </div>
 
       {/* Question Bank Files Section */}
@@ -112,7 +102,7 @@ export default async function AdminQuestionsPage() {
             </p>
           </div>
         </div>
-        <AdminQuestionBankTable files={files} />
+        <AdminQuestionBankTable files={files as any} />
       </div>
     </div>
   );

@@ -1,46 +1,37 @@
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { resources, courses } from "@/lib/db/schema/courses";
+import { desc, eq } from "drizzle-orm";
 import { AdminResourceTable } from "@/components/admin/AdminResourceTable";
 import { Star } from "lucide-react";
 
 export default async function AdminResourcesPage() {
-  const supabase = await createClient();
+  const allResources = await db
+    .select({
+      id: resources.id,
+      title: resources.title,
+      type: resources.type,
+      status: resources.status,
+      featured: resources.featured,
+      file_url: resources.file_url,
+      view_count: resources.view_count,
+      created_at: resources.created_at,
+      course_code: courses.code,
+    })
+    .from(resources)
+    .leftJoin(courses, eq(resources.course_id, courses.id))
+    .orderBy(desc(resources.created_at));
 
-  // Fetch all resources with course info (admin sees everything including drafts)
-  const { data: resources } = await supabase
-    .from("resources")
-    .select(
-      `
-      id,
-      title,
-      type,
-      status,
-      featured,
-      file_url,
-      view_count,
-      created_at,
-      courses (
-        code
-      )
-    `
-    )
-    .order("created_at", { ascending: false });
-
-  const formattedResources = (resources || []).map(
-    (r: Record<string, unknown>) => {
-      const course = r.courses as { code: string } | null;
-      return {
-        id: r.id as string,
-        title: r.title as string,
-        type: r.type as string,
-        status: r.status as "draft" | "published",
-        featured: r.featured as boolean,
-        view_count: (r.view_count as number) || 0,
-        course_code: course?.code || "N/A",
-        created_at: r.created_at as string,
-        file_url: r.file_url as string,
-      };
-    }
-  );
+  const formattedResources = (allResources || []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    type: r.type,
+    status: (r.status as "draft" | "published") || "draft",
+    featured: !!r.featured,
+    view_count: r.view_count || 0,
+    course_code: r.course_code || "N/A",
+    created_at: r.created_at ? new Date(r.created_at).toISOString() : "",
+    file_url: r.file_url,
+  }));
 
   return (
     <div className="space-y-8">

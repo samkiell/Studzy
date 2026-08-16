@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { isAdmin } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Footer } from "@/components/ui/Footer";
 
@@ -10,11 +9,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   // Redirect to login if not authenticated
   if (!user) {
@@ -22,10 +17,7 @@ export default async function AdminLayout({
   }
 
   // Check admin status
-  const adminStatus = await isAdmin();
-  
-  if (!adminStatus) {
-    // Not an admin - show access denied
+  if (user.role !== "admin") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 dark:bg-neutral-950">
         <div className="max-w-md w-full text-center">

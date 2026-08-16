@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { resources, courses } from "@/lib/db/schema/courses";
+import { eq, desc } from "drizzle-orm";
 import { Star } from "lucide-react";
 
 interface ResourceAnalytics {
@@ -14,47 +16,34 @@ interface ResourceAnalytics {
 }
 
 export default async function AdminAnalyticsPage() {
-  const supabase = await createClient();
+  const allResources = await db
+    .select({
+      id: resources.id,
+      title: resources.title,
+      type: resources.type,
+      view_count: resources.view_count,
+      completion_count: resources.completion_count,
+      status: resources.status,
+      featured: resources.featured,
+      course_code: courses.code,
+      course_title: courses.title,
+    })
+    .from(resources)
+    .leftJoin(courses, eq(resources.course_id, courses.id))
+    .orderBy(desc(resources.view_count));
 
-  // Fetch all resources with course info
-  const { data: resources } = await supabase
-    .from("resources")
-    .select(
-      `
-      id,
-      title,
-      type,
-      view_count,
-      completion_count,
-      status,
-      featured,
-      courses (
-        code,
-        title
-      )
-    `
-    )
-    .order("view_count", { ascending: false });
+  const analytics: ResourceAnalytics[] = (allResources || []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    type: r.type,
+    view_count: r.view_count || 0,
+    completion_count: r.completion_count || 0,
+    status: r.status,
+    featured: !!r.featured,
+    course_code: r.course_code || "N/A",
+    course_title: r.course_title || "Unknown",
+  }));
 
-  // Combine data
-  const analytics: ResourceAnalytics[] = (resources || []).map(
-    (r: any) => {
-      const course = r.courses;
-      return {
-        id: r.id,
-        title: r.title,
-        type: r.type,
-        view_count: r.view_count || 0,
-        completion_count: r.completion_count || 0,
-        status: r.status,
-        featured: r.featured,
-        course_code: course?.code || "N/A",
-        course_title: course?.title || "Unknown",
-      };
-    }
-  );
-
-  // Summary stats
   const totalViews = analytics.reduce((sum, r) => sum + r.view_count, 0);
   const totalCompletions = analytics.reduce((sum, r) => sum + r.completion_count, 0);
   const totalResources = analytics.length;

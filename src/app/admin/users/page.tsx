@@ -1,28 +1,32 @@
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { users as usersTable } from "@/lib/db/schema/auth";
+import { userProgress } from "@/lib/db/schema/activity";
+import { resources } from "@/lib/db/schema/courses";
+import { desc, eq } from "drizzle-orm";
 import { AdminUserTable } from "@/components/admin/AdminUserTable";
-import { Users, UserPlus, UserCheck, Activity, ShieldCheck } from "lucide-react";
+import { Users, UserPlus, UserCheck, Activity } from "lucide-react";
 
 export default async function AdminUsersPage() {
-  const supabase = await createClient();
-
   // Fetch profiles and user_progress for stats
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const allUsers = await db
+    .select()
+    .from(usersTable)
+    .orderBy(desc(usersTable.created_at));
 
-  // Fetch progress to count enrolled courses
-  // Since we don't have a direct 'enrolled' table, we use resources interacted with
-  const { data: progress } = await supabase
-    .from("user_progress")
-    .select("user_id, resources!inner(course_id)");
+  const progress = await db
+    .select({
+      user_id: userProgress.user_id,
+      course_id: resources.course_id,
+    })
+    .from(userProgress)
+    .leftJoin(resources, eq(userProgress.resource_id, resources.id));
 
   // Calculate enrolled courses per user
   const progressMap = new Map<string, Set<string>>();
   if (progress) {
-    progress.forEach((p: any) => {
-      const courseId = p.resources?.course_id;
-      if (courseId) {
+    progress.forEach((p) => {
+      const courseId = p.course_id;
+      if (courseId && p.user_id) {
         if (!progressMap.has(p.user_id)) {
           progressMap.set(p.user_id, new Set());
         }
@@ -31,19 +35,17 @@ export default async function AdminUsersPage() {
     });
   }
 
-  const users = (profiles || []).map(p => ({
+  const users = (allUsers || []).map((p) => ({
     ...p,
-    courses_enrolled: progressMap.get(p.id)?.size || 0
+    courses_enrolled: progressMap.get(p.id)?.size || 0,
   }));
   
-  // Display all users so admins can manage them
   const displayUsers = users;
 
   const totalUsers = users.length;
-  const verifiedUsers = users.filter(u => u.status === 'active' && u.is_verified).length;
-  const unverifiedUsers = users.filter(u => u.status === 'active' && !u.is_verified).length;
-  const suspendedUsers = users.filter(u => u.status === 'suspended').length;
-  const admins = users.filter(u => u.role === 'admin').length;
+  const verifiedUsers = users.filter((u) => u.status === "active" && u.is_verified).length;
+  const unverifiedUsers = users.filter((u) => u.status === "active" && !u.is_verified).length;
+  const suspendedUsers = users.filter((u) => u.status === "suspended").length;
 
   return (
     <div className="space-y-8">
@@ -85,4 +87,3 @@ export default async function AdminUsersPage() {
     </div>
   );
 }
-

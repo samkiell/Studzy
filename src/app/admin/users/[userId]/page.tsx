@@ -1,11 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { userProgress, userActivity } from "@/lib/db/schema/activity";
+import { resources } from "@/lib/db/schema/courses";
+import { eq, desc } from "drizzle-orm";
 import { 
-  User, 
   Mail, 
   Calendar, 
   Clock, 
-  Shield, 
   Activity, 
   BookOpen, 
   MessageSquare,
@@ -20,63 +22,63 @@ import Link from "next/link";
 export default async function UserDetailsPage({
   params,
 }: {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }) {
-  const { userId } = params;
-  const supabase = await createClient();
+  const { userId } = await params;
 
   // Fetch user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  const [profile] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
 
   if (!profile) {
     notFound();
   }
 
-  // Fetch user progress (courses enrolled calculation based on unique courses in progress)
-  const { data: progress } = await supabase
-    .from("user_progress")
-    .select("resource_id, resources(course_id)")
-    .eq("user_id", userId);
+  // Fetch user progress
+  const progress = await db
+    .select({
+      course_id: resources.course_id,
+    })
+    .from(userProgress)
+    .leftJoin(resources, eq(userProgress.resource_id, resources.id))
+    .where(eq(userProgress.user_id, userId));
 
-  const uniqueCourses = new Set(progress?.map(p => (p.resources as any)?.course_id).filter(Boolean));
+  const uniqueCourses = new Set(progress.map((p) => p.course_id).filter(Boolean));
 
   // Fetch recent activity
-  const { data: activity } = await supabase
-    .from("user_activity")
-    .select(`
-      id,
-      action_type,
-      created_at,
-      metadata,
-      resources (
-        title
-      )
-    `)
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+  const activity = await db
+    .select({
+      id: userActivity.id,
+      action_type: userActivity.action_type,
+      created_at: userActivity.created_at,
+      metadata: userActivity.metadata,
+      resource_title: resources.title,
+    })
+    .from(userActivity)
+    .leftJoin(resources, eq(userActivity.resource_id, resources.id))
+    .where(eq(userActivity.user_id, userId))
+    .orderBy(desc(userActivity.created_at))
     .limit(20);
 
-  // AI Usage Count
-  const aiUsage = activity?.filter(a => a.action_type.startsWith('ai_')) || [];
+  const aiUsage = activity.filter((a) => a.action_type.startsWith("ai_"));
 
   const stats = [
     { label: "Courses Enrolled", value: uniqueCourses.size, icon: BookOpen, color: "text-blue-600" },
-    { label: "Resources Viewed", value: activity?.filter(a => a.action_type === 'view_resource').length || 0, icon: Activity, color: "text-purple-600" },
+    { label: "Resources Viewed", value: activity.filter((a) => a.action_type === "view_resource").length, icon: Activity, color: "text-purple-600" },
     { label: "AI Interactions", value: aiUsage.length, icon: MessageSquare, color: "text-green-600" },
   ];
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Never";
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateValue: Date | string | null) => {
+    if (!dateValue) return "Never";
+    return new Date(dateValue).toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
@@ -109,20 +111,20 @@ export default async function UserDetailsPage({
                 </h2>
                 <div className="mt-1 flex items-center justify-center gap-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                    profile.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                    profile.role === "admin" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
                   }`}>
                     {profile.role}
                   </span>
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                    profile.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    profile.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                   }`}>
                     {profile.status}
                   </span>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                    profile.is_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                    profile.is_verified ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
                   }`}>
                     {profile.is_verified ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                    {profile.is_verified ? 'Verified' : 'Unverified'}
+                    {profile.is_verified ? "Verified" : "Unverified"}
                   </span>
                 </div>
               </div>
@@ -139,7 +141,7 @@ export default async function UserDetailsPage({
               </div>
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>Last login {formatDate(profile.last_login)}</span>
+                <span>Last login {formatDate(profile.last_login_date)}</span>
               </div>
             </div>
           </div>
@@ -172,29 +174,29 @@ export default async function UserDetailsPage({
                   activity.map((act) => (
                     <div key={act.id} className="flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                        act.action_type === 'view_resource' ? 'bg-blue-50 text-blue-600' :
-                        act.action_type === 'complete_resource' ? 'bg-green-50 text-green-600' :
-                        act.action_type.startsWith('ai_') ? 'bg-purple-50 text-purple-600' :
-                        'bg-neutral-50 text-neutral-600'
+                        act.action_type === "view_resource" ? "bg-blue-50 text-blue-600" :
+                        act.action_type === "complete_resource" ? "bg-green-50 text-green-600" :
+                        act.action_type.startsWith("ai_") ? "bg-purple-50 text-purple-600" :
+                        "bg-neutral-50 text-neutral-600"
                       } dark:bg-opacity-10`}>
-                        {act.action_type === 'view_resource' ? <Eye className="h-4 w-4" /> :
-                         act.action_type === 'complete_resource' ? <ShieldCheck className="h-4 w-4" /> :
+                        {act.action_type === "view_resource" ? <Eye className="h-4 w-4" /> :
+                         act.action_type === "complete_resource" ? <ShieldCheck className="h-4 w-4" /> :
                          <Activity className="h-4 w-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {act.action_type.replace(/_/g, ' ').toUpperCase()}
+                          {act.action_type.replace(/_/g, " ").toUpperCase()}
                         </p>
                         <p className="text-xs text-neutral-500 truncate">
-                          {(act.resources as any)?.title || "System Activity"}
+                          {act.resource_title || "System Activity"}
                         </p>
                       </div>
                       <div className="text-right whitespace-nowrap">
                         <p className="text-[10px] font-bold text-neutral-400 uppercase">
-                          {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {act.created_at ? new Date(act.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                         </p>
                         <p className="text-[10px] text-neutral-500">
-                          {new Date(act.created_at).toLocaleDateString()}
+                          {act.created_at ? new Date(act.created_at).toLocaleDateString() : ""}
                         </p>
                       </div>
                     </div>
@@ -210,4 +212,3 @@ export default async function UserDetailsPage({
     </div>
   );
 }
-

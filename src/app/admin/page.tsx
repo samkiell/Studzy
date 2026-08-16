@@ -1,88 +1,76 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getSystemHealthSummary, getStorageHealthMetrics } from "@/lib/supabase/health";
-import { SystemHealthSummaryWidget } from "@/components/admin/health/SystemHealthSummaryWidget";
-import { StorageWarningBanner } from "@/components/admin/health/StorageWarningBanner";
+import { db } from "@/lib/db";
+import { courses, resources } from "@/lib/db/schema/courses";
+import { users } from "@/lib/db/schema/auth";
+import { studyPresence } from "@/lib/db/schema/activity";
+import { count, gt, desc, eq, sql } from "drizzle-orm";
 import { 
   ShieldCheck, 
   CloudUpload, 
   ClipboardCheck, 
-  BarChart3, 
-  LayoutDashboard, 
-  Database, 
   Clock,
   BookOpen,
   FileText,
   Eye,
   Users,
   BrainCircuit,
-  Activity
+  Database
 } from "lucide-react";
 
 export default async function AdminPage() {
-  const supabase = createAdminClient();
-
-  // Fetch Health & Dashboard Stats
-  const systemSummaryPromise = getSystemHealthSummary();
-  const storageMetricsPromise = getStorageHealthMetrics();
-
-  // Fetch Stats
   const now = new Date();
-  const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
+  const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
   const [
-    systemSummary,
-    storageMetrics,
-    { count: coursesCount },
-    { count: resourcesCount },
-    { count: usersCount },
-    { count: onlineUsersCount },
-    { data: resourceStats },
-    { data: onlineUsersList }
+    [{ total: coursesCount }],
+    [{ total: resourcesCount }],
+    [{ total: usersCount }],
+    [{ total: onlineUsersCount }],
+    resourceStats,
+    onlineUsersList,
+    recentResources
   ] = await Promise.all([
-    systemSummaryPromise,
-    storageMetricsPromise,
-    supabase.from("courses").select("*", { count: "exact", head: true }),
-    supabase.from("resources").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("study_presence").select("*", { count: "exact", head: true }).gt("last_pulse", fiveMinsAgo),
-    supabase.from("resources").select("view_count, completion_count"),
-    supabase.from("study_presence")
-      .select(`
-        last_pulse,
-        profiles!inner (
-          id,
-          email,
-          full_name,
-          username,
-          avatar_url
-        )
-      `)
-      .gt("last_pulse", fiveMinsAgo)
-      .order("last_pulse", { ascending: false })
-      .limit(10)
+    db.select({ total: count() }).from(courses),
+    db.select({ total: count() }).from(resources),
+    db.select({ total: count() }).from(users),
+    db.select({ total: count() }).from(studyPresence).where(gt(studyPresence.last_pulse, fiveMinsAgo)),
+    db.select({ view_count: resources.view_count, completion_count: resources.completion_count }).from(resources),
+    db
+      .select({
+        last_pulse: studyPresence.last_pulse,
+        user: {
+          id: users.id,
+          email: users.email,
+          full_name: users.full_name,
+          username: users.username,
+          avatar_url: users.avatar_url,
+        },
+      })
+      .from(studyPresence)
+      .innerJoin(users, eq(studyPresence.user_id, users.id))
+      .where(gt(studyPresence.last_pulse, fiveMinsAgo))
+      .orderBy(desc(studyPresence.last_pulse))
+      .limit(10),
+    db
+      .select({
+        id: resources.id,
+        title: resources.title,
+        type: resources.type,
+        created_at: resources.created_at,
+        file_url: resources.file_url,
+        course_code: courses.code,
+      })
+      .from(resources)
+      .leftJoin(courses, eq(resources.course_id, courses.id))
+      .orderBy(desc(resources.created_at))
+      .limit(5)
   ]);
 
   const totalViews = (resourceStats || []).reduce((acc, r) => acc + (r.view_count || 0), 0);
 
-  // Recent Resources (Last 5)
-  const { data: recentResources } = await supabase
-    .from("resources")
-    .select(`
-      id,
-      title,
-      type,
-      created_at,
-      courses (code)
-    `)
-    .order("created_at", { ascending: false })
-    .limit(5);
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "No uploads yet";
-    const date = new Date(dateString);
-    const now = new Date();
+  const formatDate = (dateValue: Date | string | null) => {
+    if (!dateValue) return "No uploads yet";
+    const date = new Date(dateValue);
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
@@ -116,9 +104,6 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-10">
-      {/* Storage Warning Alert if threshold reached */}
-      <StorageWarningBanner status={storageMetrics.status} percentage={storageMetrics.usagePercentage} />
-
       {/* Welcome & Stats */}
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -131,11 +116,8 @@ export default async function AdminPage() {
           </div>
         </div>
 
-      {/* System Health Summary Widget */}
-      <SystemHealthSummaryWidget summary={systemSummary} />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {stats.map((stat) => (
             <div key={stat.label} className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
               <div className="flex items-center justify-between">
@@ -207,7 +189,7 @@ export default async function AdminPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-neutral-900 dark:text-white truncate">{resource.title}</h4>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{resource.courses?.code} &bull; {resource.type.toUpperCase()}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{resource.course_code} &bull; {resource.type.toUpperCase()}</p>
                   </div>
                   <div className="text-right">
                     <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-neutral-400 dark:text-neutral-500">
@@ -224,7 +206,6 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        {/* Database Shortcut */}
         {/* Online Users List */}
         <section>
           <div className="mb-4 flex items-center justify-between">
@@ -237,14 +218,14 @@ export default async function AdminPage() {
           <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {onlineUsersList?.map((presence: any) => {
-                const user = presence.profiles;
+                const user = presence.user;
                 return (
                   <div key={user.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 font-bold overflow-hidden">
                       {user.avatar_url ? (
                         <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        (user.username?.[0] || user.full_name?.[0] || user.email[0]).toUpperCase()
+                        (user.username?.[0] || user.full_name?.[0] || user.email?.[0] || "U").toUpperCase()
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -267,43 +248,6 @@ export default async function AdminPage() {
                   <p className="text-sm text-neutral-500">No users currently online</p>
                 </div>
               )}
-            </div>
-          </div>
-        </section>
-
-        {/* System Status */}
-        <section className="flex flex-col">
-          <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">System Status</h2>
-          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium text-neutral-900 dark:text-white">Database Connected</span>
-                </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  Real-time presence tracking is active. User activities are being logged across all active sessions.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-lg bg-neutral-50 p-3 dark:bg-neutral-800/50">
-                  <p className="text-[10px] uppercase font-bold text-neutral-500">Server Time</p>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-white">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-                <div className="rounded-lg bg-neutral-50 p-3 dark:bg-neutral-800/50">
-                  <p className="text-[10px] uppercase font-bold text-neutral-500">Node Environment</p>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-white capitalize">{process.env.NODE_ENV}</p>
-                </div>
-              </div>
-              <a
-                href="https://supabase.com/dashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full rounded-lg bg-neutral-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-              >
-                <Database className="h-4 w-4" />
-                Supabase Console
-              </a>
             </div>
           </div>
         </section>
