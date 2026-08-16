@@ -93,7 +93,7 @@ const RESOURCE_TYPE_LABEL: Record<string, string> = {
  * Email sent to students when an admin uploads a new resource or CBT questions.
  */
 export const getNewContentEmail = (data: {
-  kind: 'resource' | 'questions';
+  kind: 'resource' | 'questions' | 'batch_resources';
   courseCode: string;
   courseTitle: string;
   url: string;
@@ -101,6 +101,7 @@ export const getNewContentEmail = (data: {
   itemTitle?: string; // resource title
   resourceType?: string; // audio | video | pdf | image | document
   count?: number; // number of new questions
+  items?: Array<{ title: string; type: string; url?: string }>;
 }) => {
   const baseStyles = `
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
@@ -121,7 +122,24 @@ export const getNewContentEmail = (data: {
   let body: string;
   let cta: string;
 
-  if (data.kind === 'resource') {
+  if (data.kind === 'batch_resources') {
+    const itemsCount = data.items?.length || 1;
+    subject = `${itemsCount} new study materials in ${data.courseCode}`;
+    heading = `${itemsCount} new study materials added`;
+    
+    const itemsListHtml = (data.items || []).map((item) => {
+      const typeLabel = RESOURCE_TYPE_LABEL[item.type] ?? item.type;
+      return `<li style="margin-bottom: 8px;"><strong>${escapeHtml(item.title)}</strong> <span style="font-size: 11px; padding: 2px 6px; background-color: #f3f4f6; color: #4b5563; border-radius: 4px; text-transform: uppercase;">${escapeHtml(typeLabel)}</span></li>`;
+    }).join('');
+
+    body = `
+      <p>New study materials have been uploaded for <strong>${course}</strong>:</p>
+      <ul style="padding-left: 20px; margin: 16px 0;">
+        ${itemsListHtml}
+      </ul>
+    `;
+    cta = 'View Course Materials';
+  } else if (data.kind === 'resource') {
     const typeLabel = RESOURCE_TYPE_LABEL[data.resourceType ?? ''] ?? 'resource';
     subject = `New ${typeLabel} in ${data.courseCode}`;
     heading = `New ${typeLabel} added`;
