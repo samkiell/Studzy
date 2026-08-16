@@ -38,3 +38,8 @@ next-env.d.ts
 .agent
 .kilo.jsonc
 settings.json
+
+# pwa
+public/sw*
+public/workbox-*
+public/fallback-*
