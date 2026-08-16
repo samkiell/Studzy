@@ -396,5 +396,6 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
         <DiscussionPanel resourceId={resource.id} />
       </main>
+    </div>
   );
 }
