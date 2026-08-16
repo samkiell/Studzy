@@ -14,7 +14,7 @@ Next.js 16+ / React 19
         +-- Neon PostgreSQL
         |     └── Application data + pgvector/RAG
         |
-        +-- Cloudflare R2
+        +-- Filebase (S3-Compatible)
         |     └── Videos, audio, PDFs, images, documents
         |
         +-- Existing AI / external services
@@ -62,7 +62,7 @@ The migration must preserve existing application behavior while removing Supabas
 1. **Do not rewrite working features unnecessarily.**
 2. **Preserve existing database schema and relationships wherever possible.**
 3. **Use PostgreSQL → PostgreSQL migration rather than changing database engines.**
-4. **Use Cloudflare R2 exclusively for large/static media and file storage.**
+4. **Use Filebase exclusively for large/static media and file storage.**
 5. **Keep authentication independent from database-provider-specific authentication.**
 6. **Replace Supabase RLS with explicit server-side authorization.**
 7. **Never expose database or storage credentials to the browser.**
@@ -221,9 +221,9 @@ Never rely on the client for authorization.
 
 ---
 
-## Phase 7 — Cloudflare R2 Storage Migration
+## Phase 7 — Filebase Storage Migration
 
-Move Supabase Storage objects to Cloudflare R2.
+Move Supabase Storage objects to Filebase. Filebase provides an S3-compatible API, allowing the use of standard AWS SDKs (`@aws-sdk/client-s3`).
 
 Storage categories include:
 
@@ -247,11 +247,11 @@ StorageProvider
 └── metadata()
 ```
 
-The application should depend on this abstraction rather than directly depending on R2 APIs.
+The application should depend on this abstraction rather than directly depending on AWS S3 / Filebase APIs.
 
-Store R2 object keys/metadata in Neon.
+Store Filebase object keys/metadata in Neon.
 
-Do not expose R2 secret credentials to clients.
+Do not expose Filebase secret credentials to clients.
 
 ---
 
@@ -268,11 +268,11 @@ Support:
 - Resource downloads
 - Admin previews
 
-Verify that existing resource records correctly point to their new R2 objects.
+Verify that existing resource records correctly point to their new Filebase objects.
 
 Avoid storing large binary files inside Neon.
 
-For public resources, use appropriate public R2 access/custom domain configuration.
+For public resources, use appropriate Filebase public buckets or custom domain configuration.
 
 For protected resources, use controlled/signed access where required.
 
@@ -292,9 +292,9 @@ Audit and migrate:
 - Document uploads
 - Any background upload process
 
-Keep uploads server-authorized.
+Keep uploads server-authorized. Use presigned URLs if direct client-to-storage uploads are needed.
 
-Integrate the existing health/guardrail concepts with R2 where appropriate:
+Integrate the existing health/guardrail concepts with Filebase where appropriate:
 
 - File size limits
 - MIME validation
@@ -358,7 +358,7 @@ Replace them with:
 
 - Auth.js / NextAuth
 - Neon PostgreSQL access layer
-- R2 storage abstraction
+- Filebase storage abstraction
 - Native Next.js server actions/API routes
 - Existing external services where appropriate
 
@@ -433,8 +433,8 @@ Configure:
 
 - Neon database URL
 - Auth.js/NextAuth secrets/configuration
-- R2 account/bucket credentials
-- R2 public/custom-domain configuration
+- Filebase S3-compatible credentials (API key, secret, endpoint)
+- Filebase public/custom-domain configuration
 - Existing AI service credentials
 - Existing deployment configuration
 
@@ -478,11 +478,11 @@ Do not delete the original Supabase project until the migration has been stable 
 | Chat/session data | Neon PostgreSQL |
 | RAG documents | Neon PostgreSQL |
 | Vector embeddings | Neon PostgreSQL + pgvector |
-| Videos | Cloudflare R2 |
-| Audio | Cloudflare R2 |
-| PDFs | Cloudflare R2 |
-| Documents | Cloudflare R2 |
-| Resource images | Cloudflare R2 where applicable |
+| Videos | Filebase |
+| Audio | Filebase |
+| PDFs | Filebase |
+| Documents | Filebase |
+| Resource images | Filebase where applicable |
 | Profile images | Existing Cloudinary integration unless intentionally migrated |
 | AI | Mistral AI |
 | Deployment | Vercel |
@@ -493,7 +493,7 @@ Do not delete the original Supabase project until the migration has been stable 
 
 - No secrets in client-side code.
 - Neon credentials must remain server-side.
-- R2 secret keys must remain server-side.
+- Filebase secret keys must remain server-side.
 - Auth secrets must remain server-side.
 - All mutations require server-side authorization.
 - Admin operations require admin authorization.
@@ -510,7 +510,7 @@ Do not delete the original Supabase project until the migration has been stable 
 
 The new architecture must not depend on a single BaaS for the entire application.
 
-A failure or quota restriction in R2 must not corrupt database state.
+A failure or restriction in Filebase must not corrupt database state.
 
 A database outage must not expose private files.
 
@@ -538,7 +538,7 @@ Before destructive changes:
 1. Export/backup Supabase database.
 2. Preserve Supabase storage metadata.
 3. Verify Neon import.
-4. Verify R2 migration.
+4. Verify Filebase migration.
 5. Run application regression tests.
 6. Verify authentication.
 7. Verify critical production flows.
@@ -556,7 +556,7 @@ Migration is complete when:
 - Users can log in without Supabase Auth.
 - Application data is served from Neon PostgreSQL.
 - RAG/vector search works from Neon.
-- Media is served from Cloudflare R2.
+- Media is served from Filebase.
 - Uploads no longer consume Supabase Storage.
 - Existing CBT functionality works.
 - Admin functionality works.
