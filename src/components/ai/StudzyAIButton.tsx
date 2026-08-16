@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { StudzyAIModal } from "./StudzyAIModal";
-import { createClient } from "@/lib/supabase/client";
 
 export function StudzyAIButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,14 +12,18 @@ export function StudzyAIButton() {
   const [moveMode, setMoveMode] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dragStartPos = useRef({ x: 0, y: 0 });
-  const hasMoved = useRef(false); // Track actual movement
+  const hasMoved = useRef(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAuthenticated(!!user);
-    });
+    fetch("/api/profile/me")
+      .then((res) => res.json())
+      .then((data) => {
+        setIsAuthenticated(!!data?.user);
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      });
   }, []);
 
   // Handle Dragging
@@ -30,23 +33,21 @@ export function StudzyAIButton() {
     const handleMouseMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
 
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
-      // Calculate movement
       const moveX = clientX - dragStartPos.current.x;
       const moveY = clientY - dragStartPos.current.y;
 
-      // Only set dragging if they moved more than a few pixels
       if (!hasMoved.current && (Math.abs(moveX) > 5 || Math.abs(moveY) > 5)) {
         hasMoved.current = true;
       }
 
       if (!hasMoved.current) return;
 
-      setPosition(prev => ({
+      setPosition((prev) => ({
         x: prev.x - moveX,
-        y: prev.y - moveY
+        y: prev.y - moveY,
       }));
 
       dragStartPos.current = { x: clientX, y: clientY };
@@ -54,7 +55,6 @@ export function StudzyAIButton() {
 
     const handleMouseUp = () => {
       if (isDragging) {
-        // Delay clearing dragging so click handler can see it
         setTimeout(() => {
           setIsDragging(false);
           hasMoved.current = false;
@@ -78,25 +78,22 @@ export function StudzyAIButton() {
   }, [isDragging, isAuthenticated]);
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    // Only allow dragging if moveMode is ON or if it's a touch device
-    const isTouch = 'touches' in e;
+    const isTouch = "touches" in e;
     if (!moveMode && !isTouch) return;
 
     setIsDragging(true);
-    hasMoved.current = false; // Reset on start
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    hasMoved.current = false;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     dragStartPos.current = { x: clientX, y: clientY };
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    // If we actually dragged the button, don't open the modal
     if (hasMoved.current) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    // If in move mode, a single click just exits move mode instead of opening
     if (moveMode) {
       setMoveMode(false);
       return;
@@ -120,7 +117,7 @@ export function StudzyAIButton() {
         onDoubleClick={handleDoubleClick}
         style={{
           transform: `translate(${-position.x}px, ${-position.y}px)`,
-          touchAction: 'none'
+          touchAction: "none",
         }}
         className={`fixed bottom-6 right-4 z-[60] flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 p-3 font-medium text-white shadow-lg transition-all active:scale-95 sm:right-6 sm:px-5 sm:py-3 ${
           moveMode 
