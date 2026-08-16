@@ -1,20 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { courses as coursesTable } from "@/lib/db/schema/courses";
+import { asc } from "drizzle-orm";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { BookOpen } from "lucide-react";
 import type { Course } from "@/types/database";
 
 export default async function CoursesPage() {
-  const supabase = await createClient();
-  
-  // Fetch all courses
-  const { data: courses, error } = await supabase
-    .from("courses")
-    .select("*")
-    .order("code", { ascending: true });
-
-  if (error) {
-    console.error("Error fetching courses:", error);
-  }
+  const courses = await db
+    .select()
+    .from(coursesTable)
+    .orderBy(asc(coursesTable.code));
 
   return (
     <div className="space-y-8">
@@ -42,7 +37,7 @@ export default async function CoursesPage() {
           </div>
         </div>
 
-        <CourseGrid courses={(courses as Course[]) || []} />
+        <CourseGrid courses={(courses as unknown as Course[]) || []} />
       </div>
     </div>
   );

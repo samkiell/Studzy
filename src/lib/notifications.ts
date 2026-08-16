@@ -1,4 +1,7 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/auth";
+import { courses } from "@/lib/db/schema/courses";
+import { eq, and, ne, isNotNull } from "drizzle-orm";
 import { sendIndividualEmails } from "@/lib/email";
 import { getNewContentEmail } from "@/lib/email-templates";
 
@@ -33,59 +36,55 @@ function siteUrl(): string {
 }
 
 /**
- * Fetch the email + name of every active student.
- * Uses the service-role client so RLS doesn't hide other users' rows.
+ * Fetch the email + name of every active student using Drizzle.
  */
-async function getStudentRecipients(
-  admin: ReturnType<typeof createAdminClient>,
-): Promise<StudentRecipient[]> {
-  // Students are stored with role "user" (only admins have role "admin"), so target
-  // every active non-admin profile that has an email.
-  const { data, error } = await admin
-    .from("profiles")
-    .select("email, full_name, username")
-    .neq("role", "admin")
-    .eq("status", "active")
-    .not("email", "is", null);
-
-  if (error) {
-    console.error("[notifications] Failed to load student recipients:", error.message);
-    return [];
-  }
-  return (data ?? [])
-    .map((row) => {
-      const r = row as { email: string | null; full_name: string | null; username: string | null };
-      return { email: r.email, name: r.full_name || r.username || null };
+async function getStudentRecipients(): Promise<StudentRecipient[]> {
+  const data = await db
+    .select({
+      email: users.email,
+      full_name: users.full_name,
+      username: users.username,
     })
+    .from(users)
+    .where(
+      and(
+        ne(users.role, "admin"),
+        eq(users.status, "active"),
+        isNotNull(users.email)
+      )
+    );
+
+  return (data ?? [])
+    .map((row) => ({
+      email: row.email!,
+      name: row.full_name || row.username || null,
+    }))
     .filter((r): r is StudentRecipient => !!r.email);
 }
 
 /**
  * Email all active students that new content was published for a course.
- * Safe for fire-and-forget / `after()`: it never throws and logs its own errors.
  */
 export async function notifyStudentsOfNewContent(content: NewContent): Promise<void> {
   try {
-    const admin = createAdminClient();
-
-    const { data: course } = await admin
-      .from("courses")
-      .select("code, title")
-      .eq("id", content.courseId)
-      .maybeSingle();
+    const [course] = await db
+      .select({
+        code: courses.code,
+        title: courses.title,
+      })
+      .from(courses)
+      .where(eq(courses.id, content.courseId))
+      .limit(1);
 
     if (!course) {
       console.warn("[notifications] Course not found, skipping:", content.courseId);
       return;
     }
 
-    // Recipient selection:
-    //   - NOTIFY_TEST_EMAIL set -> send ONLY to that address (for previewing/staging)
-    //   - otherwise             -> send to ALL active students (production default)
     const testEmail = process.env.NOTIFY_TEST_EMAIL?.trim();
     const recipients: StudentRecipient[] = testEmail
       ? [{ email: testEmail, name: null }]
-      : await getStudentRecipients(admin);
+      : await getStudentRecipients();
 
     if (testEmail) {
       console.log(`[notifications] TEST MODE — sending only to ${testEmail} (not students).`);
@@ -99,7 +98,6 @@ export async function notifyStudentsOfNewContent(content: NewContent): Promise<v
     const base = siteUrl();
     const courseUrl = `${base}/course/${course.code}`;
 
-    // Build a personalized message per student (their own "To:" + their name).
     const messages = recipients.map((recipient) => {
       const email =
         content.kind === "resource"
@@ -125,7 +123,7 @@ export async function notifyStudentsOfNewContent(content: NewContent): Promise<v
 
     const result = await sendIndividualEmails(messages);
     console.log(
-      `[notifications] ${content.kind} email for ${course.code}: sent ${result.sent}/${result.total}, failed ${result.failed}.`,
+      `[notifications] ${content.kind} email for ${course.code}: sent ${result.sent}/${result.total}, failed ${result.failed}.`
     );
   } catch (err) {
     console.error("[notifications] Unexpected error notifying students:", err);

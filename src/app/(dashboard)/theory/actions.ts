@@ -1,6 +1,9 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { theoryExams, theoryQuestions, theorySubQuestions, theoryAttempts } from "@/lib/db/schema/theory";
+import { eq, and, desc, asc } from "drizzle-orm";
 import type {
   TheoryExam,
   TheoryQuestion,
@@ -13,20 +16,13 @@ import type {
  * Fetches all theory exams for a given course.
  */
 export async function getTheoryExams(courseId: string): Promise<TheoryExam[]> {
-  const supabase = await createClient();
+  const exams = await db
+    .select()
+    .from(theoryExams)
+    .where(eq(theoryExams.course_id, courseId))
+    .orderBy(desc(theoryExams.created_at));
 
-  const { data, error } = await supabase
-    .from("theory_exams")
-    .select("*")
-    .eq("course_id", courseId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("[Theory] Failed to fetch exams:", error);
-    throw new Error("Failed to fetch theory exams");
-  }
-
-  return (data || []) as TheoryExam[];
+  return (exams || []) as unknown as TheoryExam[];
 }
 
 /**
@@ -35,40 +31,34 @@ export async function getTheoryExams(courseId: string): Promise<TheoryExam[]> {
 export async function startTheoryAttempt(
   examId: string
 ): Promise<TheoryExamSession> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
   // Fetch exam
-  const { data: exam, error: examError } = await supabase
-    .from("theory_exams")
-    .select("*")
-    .eq("id", examId)
-    .single();
+  const [exam] = await db
+    .select()
+    .from(theoryExams)
+    .where(eq(theoryExams.id, examId))
+    .limit(1);
 
-  if (examError || !exam) {
+  if (!exam) {
     throw new Error("Exam not found");
   }
 
   // Fetch questions with sub-questions
-  const { data: questions, error: questionsError } = await supabase
-    .from("theory_questions")
-    .select("*, theory_sub_questions(*)")
-    .eq("exam_id", examId)
-    .order("question_number");
+  const questions = await db
+    .select()
+    .from(theoryQuestions)
+    .where(eq(theoryQuestions.exam_id, examId))
+    .orderBy(asc(theoryQuestions.question_number));
 
-  if (questionsError || !questions) {
-    throw new Error("Failed to fetch questions");
-  }
+  const subQuestions = await db
+    .select()
+    .from(theorySubQuestions);
 
-  // Map sub_questions
   const mappedQuestions: TheoryQuestion[] = questions.map((q: any) => ({
     id: q.id,
     exam_id: q.exam_id,
@@ -76,35 +66,28 @@ export async function startTheoryAttempt(
     main_question: q.main_question,
     marks: q.marks,
     model_answer: q.model_answer,
-    key_points: q.key_points,
+    key_points: (q.key_points as string[]) || [],
     rubric: q.rubric,
-    sub_questions: q.theory_sub_questions || [],
+    sub_questions: subQuestions.filter((sq) => sq.question_id === q.id),
   }));
 
-  // Calculate max score
   const maxScore = mappedQuestions.reduce((sum, q) => sum + q.marks, 0);
 
   // Create attempt
-  const { data: attempt, error: attemptError } = await supabase
-    .from("theory_attempts")
-    .insert({
+  const [attempt] = await db
+    .insert(theoryAttempts)
+    .values({
       user_id: user.id,
       exam_id: examId,
       answers: {},
       total_score: 0,
       max_score: maxScore,
     })
-    .select()
-    .single();
-
-  if (attemptError || !attempt) {
-    console.error("[Theory] Failed to create attempt:", attemptError);
-    throw new Error("Failed to create attempt");
-  }
+    .returning();
 
   return {
-    attempt: attempt as TheoryAttempt,
-    exam: exam as TheoryExam,
+    attempt: attempt as unknown as TheoryAttempt,
+    exam: exam as unknown as TheoryExam,
     questions: mappedQuestions,
   };
 }
@@ -116,27 +99,21 @@ export async function saveTheoryProgress(
   attemptId: string,
   answers: TheoryAnswers
 ): Promise<void> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const { error } = await supabase
-    .from("theory_attempts")
-    .update({ answers })
-    .eq("id", attemptId)
-    .eq("user_id", user.id);
-
-  if (error) {
-    console.error("[Theory] Failed to save progress:", error);
-    throw new Error("Failed to save progress");
-  }
+  await db
+    .update(theoryAttempts)
+    .set({ answers })
+    .where(
+      and(
+        eq(theoryAttempts.id, attemptId),
+        eq(theoryAttempts.user_id, user.id)
+      )
+    );
 }
 
 /**
@@ -145,50 +122,49 @@ export async function saveTheoryProgress(
 export async function getTheoryAttemptSession(
   attemptId: string
 ): Promise<TheoryExamSession> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
   // Fetch attempt
-  const { data: attempt, error: attemptError } = await supabase
-    .from("theory_attempts")
-    .select("*")
-    .eq("id", attemptId)
-    .eq("user_id", user.id)
-    .single();
+  const [attempt] = await db
+    .select()
+    .from(theoryAttempts)
+    .where(
+      and(
+        eq(theoryAttempts.id, attemptId),
+        eq(theoryAttempts.user_id, user.id)
+      )
+    )
+    .limit(1);
 
-  if (attemptError || !attempt) {
+  if (!attempt) {
     throw new Error("Attempt not found");
   }
 
   // Fetch exam
-  const { data: exam, error: examError } = await supabase
-    .from("theory_exams")
-    .select("*")
-    .eq("id", attempt.exam_id)
-    .single();
+  const [exam] = await db
+    .select()
+    .from(theoryExams)
+    .where(eq(theoryExams.id, attempt.exam_id))
+    .limit(1);
 
-  if (examError || !exam) {
+  if (!exam) {
     throw new Error("Exam not found");
   }
 
   // Fetch questions
-  const { data: questions, error: questionsError } = await supabase
-    .from("theory_questions")
-    .select("*, theory_sub_questions(*)")
-    .eq("exam_id", attempt.exam_id)
-    .order("question_number");
+  const questions = await db
+    .select()
+    .from(theoryQuestions)
+    .where(eq(theoryQuestions.exam_id, attempt.exam_id))
+    .orderBy(asc(theoryQuestions.question_number));
 
-  if (questionsError || !questions) {
-    throw new Error("Failed to fetch questions");
-  }
+  const subQuestions = await db
+    .select()
+    .from(theorySubQuestions);
 
   const mappedQuestions: TheoryQuestion[] = questions.map((q: any) => ({
     id: q.id,
@@ -197,14 +173,14 @@ export async function getTheoryAttemptSession(
     main_question: q.main_question,
     marks: q.marks,
     model_answer: q.model_answer,
-    key_points: q.key_points,
+    key_points: (q.key_points as string[]) || [],
     rubric: q.rubric,
-    sub_questions: q.theory_sub_questions || [],
+    sub_questions: subQuestions.filter((sq) => sq.question_id === q.id),
   }));
 
   return {
-    attempt: attempt as TheoryAttempt,
-    exam: exam as TheoryExam,
+    attempt: attempt as unknown as TheoryAttempt,
+    exam: exam as unknown as TheoryExam,
     questions: mappedQuestions,
   };
 }

@@ -1,6 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { courses as coursesTable, resources } from "@/lib/db/schema/courses";
+import { eq, and, ne, desc } from "drizzle-orm";
 import { Button } from "@/components/ui/Button";
 import { Video, Music, FileText } from "lucide-react";
 import { ResourceList } from "@/components/resources/ResourceList";
@@ -18,24 +20,22 @@ interface CoursePageProps {
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
   const { courseCode: rawCourseCode } = await params;
   const decodedCourseCode = decodeURIComponent(rawCourseCode);
-  const supabase = await createClient();
-
   const canonicalCode = decodedCourseCode.replace(/\s+/g, "").toUpperCase();
 
-  let { data: course } = await supabase
-    .from("courses")
-    .select("*")
-    .eq("code", canonicalCode)
-    .maybeSingle();
+  let [course] = await db
+    .select()
+    .from(coursesTable)
+    .where(eq(coursesTable.code, canonicalCode))
+    .limit(1);
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedCourseCode);
   if (!course && isUUID) {
-    const { data } = await supabase
-      .from("courses")
-      .select("*")
-      .eq("id", decodedCourseCode)
-      .maybeSingle();
-    course = data;
+    const [byId] = await db
+      .select()
+      .from(coursesTable)
+      .where(eq(coursesTable.id, decodedCourseCode))
+      .limit(1);
+    course = byId;
   }
 
   if (!course) {
@@ -68,93 +68,48 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseCode: rawCourseCode } = await params;
   const decodedCourseCode = decodeURIComponent(rawCourseCode);
-  const supabase = await createClient();
-
-  console.log(`[CoursePage] Request for: "${rawCourseCode}" (Decoded: "${decodedCourseCode}")`);
-
-  // Canonicalize: Remove all spaces and make uppercase
   const canonicalCode = decodedCourseCode.replace(/\s+/g, "").toUpperCase();
 
-  // Try fetching by the normalized canonical code
-  let { data: course, error: courseError } = await supabase
-    .from("courses")
-    .select("*")
-    .eq("code", canonicalCode)
-    .maybeSingle();
+  let [course] = await db
+    .select()
+    .from(coursesTable)
+    .where(eq(coursesTable.code, canonicalCode))
+    .limit(1);
 
-  // If still not found, try by ID if it's a UUID
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedCourseCode);
-  if (!course && !courseError && isUUID) {
-    const { data: idData, error: idError } = await supabase
-      .from("courses")
-      .select("*")
-      .eq("id", decodedCourseCode)
-      .maybeSingle();
-    
-    course = idData;
-    courseError = idError;
-  }
-
-  if (courseError) {
-    console.error(`[CoursePage] Database error for "${decodedCourseCode}":`, courseError);
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-          <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h2 className="mt-6 text-2xl font-bold text-neutral-900 dark:text-white">Connection Error</h2>
-        <p className="mt-2 max-w-md text-neutral-600 dark:text-neutral-400">
-          We couldn&apos;t connect to the database to fetch <strong>{decodedCourseCode}</strong>. 
-          This is often due to a network timeout or temporary service interruption.
-        </p>
-        <div className="mt-6 space-x-4">
-          <Link href="/dashboard">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
-          <a href="" className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
-            Retry Page
-          </a>
-        </div>
-        {courseError.message && (
-          <p className="mt-8 text-xs text-neutral-400">
-            System Error: {courseError.message}
-          </p>
-        )}
-      </div>
-    );
+  if (!course && isUUID) {
+    const [byId] = await db
+      .select()
+      .from(coursesTable)
+      .where(eq(coursesTable.id, decodedCourseCode))
+      .limit(1);
+    course = byId;
   }
 
   if (!course) {
-    console.warn(`[CoursePage] Course not found for: "${decodedCourseCode}"`);
     notFound();
   }
 
-  // FORCE REDIRECT if:
-  // 1. URL contains spaces (rawCourseCode !== canonicalCode)
-  // 2. URL is via UUID (decodedCourseCode === course.id)
   if (rawCourseCode !== course.code || decodedCourseCode === course.id) {
-    const { redirect } = await import("next/navigation");
     redirect(`/course/${course.code}`);
   }
 
-  const typedCourse = course as Course;
+  const typedCourse = course as unknown as Course;
 
   // Fetch resources for this course (only published for students)
-  const { data: resources, error: resourcesError } = await supabase
-    .from("resources")
-    .select("*")
-    .eq("course_id", typedCourse.id)
-    .eq("status", "published")
-    .neq("type", "question_bank")
-    .order("created_at", { ascending: false });
+  const courseResources = await db
+    .select()
+    .from(resources)
+    .where(
+      and(
+        eq(resources.course_id, typedCourse.id),
+        eq(resources.status, "published"),
+        ne(resources.type, "question_bank")
+      )
+    )
+    .orderBy(desc(resources.created_at));
 
-  if (resourcesError) {
-    console.error("Error fetching resources:", resourcesError);
-  }
-
-  const typedResources = (resources as Resource[]) || [];
+  const typedResources = (courseResources as unknown as Resource[]) || [];
 
   // Count resources by type
   const videoCount = typedResources.filter((r) => r.type === "video").length;

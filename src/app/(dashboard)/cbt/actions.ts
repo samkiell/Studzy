@@ -1,17 +1,13 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { Attempt, CbtMode, Difficulty, Question, SubmitAnswer } from "@/types/cbt";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { courses as coursesTable } from "@/lib/db/schema/courses";
+import { questions as questionsTable, attempts, attemptAnswers } from "@/lib/db/schema/cbt";
+import { eq, and, inArray } from "drizzle-orm";
+import { Attempt, CbtMode, Question, SubmitAnswer } from "@/types/cbt";
 import { revalidatePath } from "next/cache";
 
-/**
- * Starts a new CBT attempt.
- * Randomly selects N questions and creates a record in the 'attempts' table.
- */
-/**
- * Starts a new CBT attempt.
- * Randomly selects N questions and creates a record in the 'attempts' table.
- */
 export async function startCbtAttempt({
   courseId,
   mode,
@@ -29,25 +25,25 @@ export async function startCbtAttempt({
   isWeakAreasOnly?: boolean;
   difficulty?: string;
 }) {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
   // 0. Validate Course
-  const { data: course, error: courseError } = await supabase
-    .from("courses")
-    .select("title, code, is_cbt")
-    .eq("id", courseId)
-    .single();
+  const [course] = await db
+    .select({
+      id: coursesTable.id,
+      title: coursesTable.title,
+      code: coursesTable.code,
+      is_cbt: coursesTable.is_cbt,
+    })
+    .from(coursesTable)
+    .where(eq(coursesTable.id, courseId))
+    .limit(1);
 
-  if (courseError || !course) {
+  if (!course) {
     throw new Error("Course not found");
   }
 
@@ -55,146 +51,94 @@ export async function startCbtAttempt({
     throw new Error("This course is not enabled for CBT");
   }
 
-  // 1. Determine which topics to study if "Weak Areas Only" is enabled
-  let targetTopics = topic ? [topic] : [];
-  
-  if (isWeakAreasOnly) {
-    // Fetch average accuracy per topic for this user and course
-    const { data: stats } = await supabase.rpc('get_user_topic_accuracy', {
-      p_user_id: user.id,
-      p_course_id: courseId
-    });
-    
-    // Filter topics where accuracy < 60%
-    if (stats) {
-      const weakTopics = (stats as any[])
-        .filter(s => s.accuracy < 60)
-        .map(s => s.topic);
-      
-      if (weakTopics.length > 0) {
-        targetTopics = weakTopics;
-      }
-    }
+  // 1. Fetch questions with filters
+  const conditions = [eq(questionsTable.course_id, courseId)];
+
+  if (topic && topic !== "all") {
+    conditions.push(eq(questionsTable.topic, topic));
   }
 
-  // 2. Fetch questions with filters
-  let query = supabase
-    .from("questions")
-    .select("id")
-    .eq("course_id", courseId);
-
-  if (targetTopics.length > 0) {
-    // If 'General' is in targetTopics, we also want to include questions where topic is null
-    if (targetTopics.includes("General")) {
-      query = query.or(`topic.in.(${targetTopics.map(t => `"${t}"`).join(",")}),topic.is.null`);
-    } else {
-      query = query.in("topic", targetTopics);
-    }
-  }
-
-  // Filter by difficulty if specified
   if (difficulty && difficulty !== "all") {
-    query = query.eq("difficulty", difficulty);
+    conditions.push(eq(questionsTable.difficulty, difficulty));
   }
 
-  const { data: questionIds, error: questError } = await query;
+  const allQuestions = await db
+    .select()
+    .from(questionsTable)
+    .where(and(...conditions));
 
-  if (questError) {
-    console.error("Error fetching filtered questions:", questError);
-    throw new Error("Failed to fetch questions");
-  }
-
-  if (!questionIds || questionIds.length === 0) {
+  if (!allQuestions || allQuestions.length === 0) {
     throw new Error("No questions found matching your filters");
   }
 
-  const shuffledIds = [...questionIds]
+  const shuffledQuestions = [...allQuestions]
     .sort(() => Math.random() - 0.5)
-    .slice(0, Math.min(numberOfQuestions, questionIds.length))
-    .map((q) => q.id);
+    .slice(0, Math.min(numberOfQuestions, allQuestions.length));
 
-  const { data: questions, error: fetchError } = await supabase
-    .from("questions")
-    .select("*")
-    .in("id", shuffledIds);
+  const shuffledIds = shuffledQuestions.map((q) => q.id);
 
-  if (fetchError || !questions) {
-    throw new Error("Failed to fetch question details");
-  }
-
-  // 3. Create attempt record
-  const { data: attempt, error: attemptError } = await supabase
-    .from("attempts")
-    .insert({
+  // 2. Create attempt record
+  const [attempt] = await db
+    .insert(attempts)
+    .values({
       user_id: user.id,
       course_id: courseId,
       course_code: course.code,
       mode,
-      total_questions: questions.length,
+      total_questions: shuffledQuestions.length,
       score: 0,
       duration_seconds: 0,
       time_limit_seconds: timeLimitMinutes * 60,
       question_ids: shuffledIds,
     })
-    .select()
-    .single();
-
-  if (attemptError || !attempt) {
-    console.error("Failed to create attempt. Error:", attemptError);
-    throw new Error("Failed to create attempt");
-  }
+    .returning();
 
   return {
-    attempt: { ...attempt, course_title: course.title } as Attempt,
-    questions: questions as Question[],
+    attempt: { ...attempt, course_title: course.title } as unknown as Attempt,
+    questions: shuffledQuestions as unknown as Question[],
   };
 }
 
 export async function getCbtMetadata(courseId: string) {
-  const supabase = await createClient();
-  
-  // Get unique topics, question counts, difficulty distribution, and detect theory questions
-  const { data: topicsData, error } = await supabase
-    .from("questions")
-    .select("topic, question_type, difficulty")
-    .eq("course_id", courseId);
-    
-  if (error) return { topics: [], totalQuestions: 0, hasTheoryQuestions: false, difficulties: [] };
-  
+  const topicsData = await db
+    .select({
+      topic: questionsTable.topic,
+      question_type: questionsTable.question_type,
+      difficulty: questionsTable.difficulty,
+    })
+    .from(questionsTable)
+    .where(eq(questionsTable.course_id, courseId));
+
   const topicCounts: Record<string, number> = {};
   const difficultyCounts: Record<string, number> = {};
   let hasTheoryQuestions = false;
-  topicsData.forEach(q => {
+
+  topicsData.forEach((q) => {
     const t = q.topic || "General";
     topicCounts[t] = (topicCounts[t] || 0) + 1;
     if (q.question_type === "theory") hasTheoryQuestions = true;
     const d = q.difficulty || "medium";
     difficultyCounts[d] = (difficultyCounts[d] || 0) + 1;
   });
-  
+
   const topics = Object.entries(topicCounts).map(([name, count]) => ({
     name,
-    count
+    count,
   }));
 
   const difficulties = Object.entries(difficultyCounts).map(([name, count]) => ({
     name,
-    count
+    count,
   }));
-  
+
   return {
     topics,
     totalQuestions: topicsData.length,
     hasTheoryQuestions,
-    difficulties
+    difficulties,
   };
 }
 
-/**
- * Submits a CBT attempt.
- * Handles both MCQ and theory questions via the modular quiz scorer.
- * MCQs are scored deterministically; theory questions are graded by AI.
- */
 export async function submitCbtAttempt({
   attemptId,
   answers,
@@ -210,10 +154,8 @@ export async function submitCbtAttempt({
 }) {
   const { scoreQuiz } = await import("@/lib/cbt/quizScorer");
 
-  // Merge MCQ answers and theory answers into the unified format
   const submittedAnswers: any[] = [];
 
-  // MCQ answers
   for (const ans of answers) {
     submittedAnswers.push({
       question_id: ans.question_id,
@@ -224,11 +166,9 @@ export async function submitCbtAttempt({
     });
   }
 
-  // Theory answers
   if (theoryAnswers) {
     for (const [questionId, answer] of Object.entries(theoryAnswers)) {
-      // Don't duplicate if already in MCQ answers
-      if (submittedAnswers.find(a => a.question_id === questionId)) continue;
+      if (submittedAnswers.find((a) => a.question_id === questionId)) continue;
       submittedAnswers.push({
         question_id: questionId,
         selected_option: null,
@@ -265,21 +205,16 @@ export async function syncOfflineAttempt(offlineAttempt: {
   started_at: string;
   completed_at: string;
 }) {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  // 1. Create a server-side attempt record matching the offline one
-  const { data: attempt, error: attemptError } = await supabase
-    .from("attempts")
-    .insert({
+  // 1. Create a server-side attempt record
+  const [attempt] = await db
+    .insert(attempts)
+    .values({
       user_id: user.id,
       course_id: offlineAttempt.course_id,
       mode: offlineAttempt.mode,
@@ -288,31 +223,21 @@ export async function syncOfflineAttempt(offlineAttempt: {
       duration_seconds: offlineAttempt.duration_seconds,
       time_limit_seconds: offlineAttempt.time_limit_seconds,
       question_ids: offlineAttempt.question_ids,
-      started_at: offlineAttempt.started_at,
-      completed_at: offlineAttempt.completed_at,
+      started_at: new Date(offlineAttempt.started_at),
+      completed_at: new Date(offlineAttempt.completed_at),
     })
-    .select()
-    .single();
+    .returning();
 
-  if (attemptError || !attempt) {
-    console.error("Failed to create sync attempt record:", attemptError);
-    throw new Error(`Failed to sync: ${attemptError?.message || "DB error"}`);
-  }
-
-  // 2. Insert all the student's answers (MCQ + Theory) into 'student_answers' table
+  // 2. Insert all student answers
   const submittedAnswers: any[] = [];
 
-  // MCQs
-  for (const [qId, option] of Object.entries(offlineAttempt.answers)) {
-    const duration = offlineAttempt.questionDurations[qId] || 0;
-    
-    // Check if correct
-    const { data: qData } = await supabase
-      .from("questions")
-      .select("correct_option")
-      .eq("id", qId)
-      .single();
+  const qIds = Object.keys(offlineAttempt.answers);
+  const fetchedQuestions = qIds.length > 0
+    ? await db.select().from(questionsTable).where(inArray(questionsTable.id, qIds))
+    : [];
 
+  for (const [qId, option] of Object.entries(offlineAttempt.answers)) {
+    const qData = fetchedQuestions.find((q) => q.id === qId);
     const isCorrect = qData?.correct_option === option;
 
     submittedAnswers.push({
@@ -320,45 +245,14 @@ export async function syncOfflineAttempt(offlineAttempt: {
       question_id: qId,
       selected_option: option,
       theory_answer: null,
-      theory_sub_answers: null,
       is_correct: isCorrect,
-      duration_seconds: duration,
     });
   }
 
-  // Theory
-  if (offlineAttempt.theoryAnswers) {
-    for (const [qId, answer] of Object.entries(offlineAttempt.theoryAnswers)) {
-      if (submittedAnswers.find(a => a.question_id === qId)) continue;
-      
-      const duration = offlineAttempt.questionDurations[qId] || 0;
-
-      submittedAnswers.push({
-        attempt_id: attempt.id,
-        question_id: qId,
-        selected_option: null,
-        theory_answer: answer.main || null,
-        theory_sub_answers: Object.keys(answer.sub).length > 0 ? answer.sub : null,
-        is_correct: false, // will require grading / not auto-scored offline
-        duration_seconds: duration,
-      });
-    }
-  }
-
   if (submittedAnswers.length > 0) {
-    const { error: answersError } = await supabase
-      .from("student_answers")
-      .insert(submittedAnswers);
-
-    if (answersError) {
-      console.error("Failed to insert synced student answers:", answersError);
-      // Clean up the attempt record to prevent duplicates
-      await supabase.from("attempts").delete().eq("id", attempt.id);
-      throw new Error(`Failed to sync answers: ${answersError.message}`);
-    }
+    await db.insert(attemptAnswers).values(submittedAnswers);
   }
 
   revalidatePath("/dashboard/cbt");
   return { success: true, serverAttemptId: attempt.id };
 }
-

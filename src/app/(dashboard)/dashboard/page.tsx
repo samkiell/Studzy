@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { courses as coursesTable, resources, bookmarks } from "@/lib/db/schema/courses";
+import { users } from "@/lib/db/schema/auth";
+import { userActivity } from "@/lib/db/schema/activity";
+import { eq, and, asc, count, ne, gt, sql } from "drizzle-orm";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { ContinueStudying } from "@/components/dashboard/ContinueStudying";
 import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
@@ -8,94 +12,73 @@ import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
 import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
-import { ProfileEditor } from "@/components/profile/ProfileEditor";
-import { BookOpen, FileText, Eye, Zap, CreditCard, ShieldAlert, MessageCircle } from "lucide-react";
+import { BookOpen, FileText, Eye, Zap, ShieldAlert, MessageCircle } from "lucide-react";
 import type { Course } from "@/types/database";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
   }
 
   // Fetch all courses
-  const { data: courses, error } = await supabase
-    .from("courses")
-    .select("*")
-    .order("code", { ascending: true });
+  const courses = await db
+    .select()
+    .from(coursesTable)
+    .orderBy(asc(coursesTable.code));
 
-  // Fetch total resources count (only published)
-  const [
-    { count: totalResources },
-    { count: viewedResourcesCount },
-    { count: bookmarksCount }
-  ] = await Promise.all([
-    supabase.from("resources").select("*", { count: "exact", head: true }).eq("status", "published").neq("type", "question_bank"),
-    supabase.from("user_activity").select("resource_id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("action_type", "view_resource"),
-    supabase.from("bookmarks").select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-  ]);
+  // Fetch total resources count (published & not question bank)
+  const [{ total: totalResourcesCount }] = await db
+    .select({ total: count() })
+    .from(resources)
+    .where(
+      and(
+        eq(resources.status, "published"),
+        ne(resources.type, "question_bank")
+      )
+    );
 
-  if (error) {
-    console.error("Error fetching dashboard data:", error);
-  }
+  // Fetch user bookmarks count
+  const [{ total: bookmarksCount }] = await db
+    .select({ total: count() })
+    .from(bookmarks)
+    .where(eq(bookmarks.user_id, user.id));
 
-  // Get display name: prefer username from metadata, then first name, fall back to email prefix
-  const displayName =
-    user?.user_metadata?.username ||
-    user?.user_metadata?.full_name?.split(" ")[0] ||
-    user?.user_metadata?.name?.split(" ")[0] ||
-    user?.user_metadata?.first_name ||
-    user?.email?.split("@")[0] ||
-    "";
-
-  // Fetch all activity to calculate stats
-  const { data: activityLogs } = await supabase
-    .from("user_activity")
-    .select("resource_id, action_type")
-    .eq("user_id", user.id);
+  // Fetch all user activity to calculate unique views
+  const activityLogs = await db
+    .select({
+      resource_id: userActivity.resource_id,
+      action_type: userActivity.action_type,
+    })
+    .from(userActivity)
+    .where(eq(userActivity.user_id, user.id));
 
   const uniqueViews = new Set(
     activityLogs
-      ?.filter(a => a.action_type === "view_resource" && a.resource_id)
-      .map(a => a.resource_id)
+      .filter((a) => a.action_type === "view_resource" && a.resource_id)
+      .map((a) => a.resource_id)
   ).size;
 
-  // Fetch profile for study time, streak, and personalization
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("total_study_seconds, current_streak, bio, learning_goal, avatar_url, username, role, is_verified")
-    .eq("id", user.id)
-    .single();
-
-  const totalSeconds = profile?.total_study_seconds || 0;
+  const totalSeconds = user.total_study_seconds || 0;
 
   // Fetch rank based on study time among non-admins
-  const { count: higherRankCount } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .gt("total_study_seconds", totalSeconds)
-    .neq("role", "admin");
+  const [{ total: higherRankCount }] = await db
+    .select({ total: count() })
+    .from(users)
+    .where(
+      and(
+        gt(users.total_study_seconds, totalSeconds),
+        ne(users.role, "admin")
+      )
+    );
 
   const userRank = totalSeconds > 0 ? (higherRankCount || 0) + 1 : 0;
+  const username = user.username || user.name?.split(" ")[0] || user.email?.split("@")[0] || "student";
+  const displayName = user.full_name || user.name || username;
+  const avatarUrl = user.avatar_url || user.image;
 
-  console.log("=== DB COUNTS DEBUG ===");
-  console.log("Bookmarks:", bookmarksCount);
-  console.log("totalSeconds:", totalSeconds);
-  console.log("higherRankCount:", higherRankCount);
-  console.log("userRank:", userRank);
-
-  const currentStreak = profile?.current_streak || 0;
-  const bio = profile?.bio || null;
-  const learningGoal = profile?.learning_goal || null;
-  const avatarUrl = profile?.avatar_url || null;
-  const username = profile?.username || user?.email?.split("@")[0] || "student";
-
-  // Format time: only show non-zero units
+  // Format time
   const formatStudyTime = (totalSecs: number) => {
     if (totalSecs <= 0) return "0s";
     
@@ -141,7 +124,7 @@ export default async function DashboardPage() {
         />
         <StatCard 
           title="Total Resources" 
-          value={String(totalResources || 0)}
+          value={String(totalResourcesCount || 0)}
           icon={<FileText className="h-5 w-5" />}
         />
         <StatCard 
@@ -169,24 +152,22 @@ export default async function DashboardPage() {
               Omo, Exam don near oo. Select the course wey you wan brainstorm and get access to the full resources.
             </p>
             <div className="mt-4">
-              <CourseGrid courses={(courses as Course[]) || []} />
+              <CourseGrid courses={(courses as unknown as Course[]) || []} />
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-
-          
-          {profile?.is_verified ? (
+          {user.is_verified ? (
             <StudentIDCard 
               displayName={displayName}
               username={username}
-              role={profile?.role === "admin" ? "Admin" : "Student"}
+              role={user.role === "admin" ? "Admin" : "Student"}
               avatarUrl={avatarUrl}
-              initialStack={user?.user_metadata?.stack || "Frontend Dev"}
+              initialStack="Software Engineering"
               stats={{
                 resourcesViewed: uniqueViews,
-                hours: Math.floor(totalSeconds / 3600), // Math fixed back to hours
+                hours: Math.floor(totalSeconds / 3600),
                 rank: userRank, 
                 bookmarks: bookmarksCount || 0
               }}
@@ -229,7 +210,7 @@ function StatCard({
 }: { 
   title: string; 
   value: string; 
-  icon: React.ReactNode;
+  icon: React.ReactNode; 
 }) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-900 flex flex-col justify-between gap-3 min-h-[110px]">
