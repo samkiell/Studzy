@@ -95,13 +95,14 @@ export async function deleteFile(key: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Get the raw object from Filebase. Useful for proxying downloads.
+ * Get the raw object from Filebase. Useful for proxying downloads and streaming.
  */
-export async function getFile(key: string) {
+export async function getFile(key: string, range?: string) {
   const response = await s3.send(
     new GetObjectCommand({
       Bucket: BUCKET,
       Key: key,
+      Range: range,
     })
   );
   return response;
