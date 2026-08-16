@@ -86,57 +86,59 @@ export function InstallPWA() {
 
   return (
     <div
-      className={`fixed bottom-4 left-3 right-3 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[99999] sm:w-max sm:max-w-[90vw] transition-all duration-200 ease-out ${
-        isAnimating ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      className={`fixed bottom-4 left-4 right-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-auto sm:max-w-md z-[9999] transition-all duration-300 ease-out ${
+        isAnimating ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
       }`}
     >
-      <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 rounded-2xl border border-neutral-200/50 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] p-4 dark:border-white/10 dark:bg-neutral-900">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDismiss();
-          }}
-          className="absolute top-2 right-2 sm:static flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full sm:rounded-xl transition-colors hover:bg-neutral-100 dark:hover:bg-white/10 shrink-0 sm:order-last"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4 sm:h-5 sm:w-5 text-neutral-400" />
-        </button>
-
+      <div className="flex items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-neutral-200/80 bg-white/95 backdrop-blur-md shadow-2xl p-3.5 sm:p-4 dark:border-neutral-800 dark:bg-neutral-900/95">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 shrink-0">
-            <Download className="h-5 w-5 sm:h-6 sm:w-6" />
+          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-md shadow-primary-600/30 shrink-0">
+            <Download className="h-5 w-5" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white leading-tight">
+            <span className="text-sm font-bold text-neutral-900 dark:text-white truncate leading-tight">
               Install Studzy
             </span>
-            <span className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 leading-tight mt-0.5">
-              Have it as an App on your phone
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate leading-tight mt-0.5">
+              {isIOS ? "Tap Share then 'Add to Home Screen'" : "Fast access & offline study on your device"}
             </span>
           </div>
         </div>
 
-        {!isIOS ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleInstall();
-            }}
-            className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-600/20 shrink-0"
-          >
-            Install
-          </button>
-        ) : (
+        <div className="flex items-center gap-2 shrink-0">
+          {!isIOS ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleInstall();
+              }}
+              className="rounded-xl bg-primary-600 px-3.5 py-2 text-xs sm:text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 shadow-md shadow-primary-600/20"
+            >
+              Install
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDismiss();
+              }}
+              className="rounded-xl bg-neutral-100 px-3.5 py-2 text-xs sm:text-sm font-semibold text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              Got it
+            </button>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleDismiss();
             }}
-            className="w-full sm:w-auto rounded-xl bg-neutral-100 px-5 py-2.5 text-sm font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 shrink-0"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
+            aria-label="Close"
           >
-            Got it
+            <X className="h-4 w-4" />
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
