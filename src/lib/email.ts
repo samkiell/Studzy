@@ -34,6 +34,9 @@ async function sendWithResend(to: string, subject: string, html: string) {
     subject,
     html,
   });
+  if (result.error) {
+    throw new Error(`Resend Error: ${result.error.message || JSON.stringify(result.error)}`);
+  }
   return result;
 }
 
