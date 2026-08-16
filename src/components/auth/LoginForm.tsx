@@ -27,9 +27,12 @@ export function LoginForm() {
     }
   };
 
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setUnverifiedEmail(null);
 
     if (!email || !password) {
       setError("Please fill in all fields");
@@ -47,6 +50,9 @@ export function LoginForm() {
 
       if (result?.error) {
         setError(result.error);
+        if (result?.unverified && result?.email) {
+          setUnverifiedEmail(result.email);
+        }
         setLoading(false);
       }
     } catch (err: any) {
@@ -89,8 +95,16 @@ export function LoginForm() {
         </Link>
       </div>
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-          {error}
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400 space-y-2">
+          <p>{error}</p>
+          {unverifiedEmail && (
+            <Link
+              href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
+              className="inline-block text-xs font-bold underline hover:text-red-700 dark:hover:text-red-300"
+            >
+              Go to Email Verification page →
+            </Link>
+          )}
         </div>
       )}
       <Button type="submit" className="w-full" disabled={loading || googleLoading}>
