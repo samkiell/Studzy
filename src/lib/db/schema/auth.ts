@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   total_study_seconds: integer("total_study_seconds").default(0),
   last_login_date: date("last_login_date"),
   is_verified: boolean("is_verified").default(false),
+  password_hash: text("password_hash"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
