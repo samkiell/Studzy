@@ -278,15 +278,12 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       }
 
       if (key && (key.startsWith("materials/") || key.startsWith("rag/") || !key.startsWith("http"))) {
-        const cleanKey = decodeURIComponent(key.split("?")[0]);
-        const signedUrl = await getPresignedUrl(cleanKey, 60 * 60 * 24);
-        if (signedUrl) {
-          mediaSrc = signedUrl;
-        }
+        const cleanKey = decodeURIComponent(key.split("?")[0]).replace(/^\/+/, "");
+        mediaSrc = `/api/storage/${cleanKey}`;
       }
     }
   } catch (err) {
-    console.error("Failed to generate presigned URL for resource:", err);
+    console.error("Failed to resolve storage URL for resource:", err);
   }
 
   return (
