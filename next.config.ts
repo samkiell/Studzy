@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import path from "path";
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: false, // Temporarily enabled for PWA verification
+  disable: process.env.NODE_ENV === "development",
   register: true,
   fallbacks: {
     document: "/offline",
@@ -11,7 +12,9 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  turbopack: {},
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   allowedDevOrigins: [
     "localhost:3000",
     "192.168.137.1:3000",
@@ -26,15 +29,19 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.supabase.co",
+        hostname: "*.filebase.com",
       },
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
+        hostname: "s3.filebase.com",
       },
       {
         protocol: "https",
         hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
       },
     ],
     qualities: [100, 75],
