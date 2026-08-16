@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786880733174,
+      "tag": "0000_closed_umar",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786880781598,
+      "tag": "0001_auth_migration",
+      "breakpoints": true
+    }
+  ]
+}
