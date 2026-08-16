@@ -24,10 +24,31 @@ export async function GET(
     // Convert S3 body to web ReadableStream
     const stream = response.Body.transformToWebStream();
 
+    const mimeTypes: Record<string, string> = {
+      pdf: "application/pdf",
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      webp: "image/webp",
+      svg: "image/svg+xml",
+      mp4: "video/mp4",
+      webm: "video/webm",
+      mp3: "audio/mpeg",
+      wav: "audio/wav",
+      m4a: "audio/mp4",
+      json: "application/json",
+      txt: "text/plain",
+    };
+
+    const ext = key.split(".").pop()?.toLowerCase() || "";
+    const contentType = response.ContentType && response.ContentType !== "binary/octet-stream"
+      ? response.ContentType
+      : mimeTypes[ext] || "application/octet-stream";
+
     const headers = new Headers();
-    if (response.ContentType) {
-      headers.set("Content-Type", response.ContentType);
-    }
+    headers.set("Content-Type", contentType);
+    headers.set("Content-Disposition", "inline");
+
     if (response.ContentLength) {
       headers.set("Content-Length", response.ContentLength.toString());
     }
