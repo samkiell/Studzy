@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import type { ResourceStatus } from "@/types/database";
-import { Star, Search, Filter, Trash2, Edit3, Loader2, Hash, AlertTriangle, Image as ImageIcon, ExternalLink, FileText } from "lucide-react";
+import { Star, Search, Filter, Trash2, Edit3, Download, Loader2, Hash, AlertTriangle, Image as ImageIcon, ExternalLink, FileText } from "lucide-react";
+import { downloadFile } from "@/lib/download";
 import { EditResourceModal } from "./EditResourceModal";
 import { Modal, useModal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -278,6 +279,15 @@ export function AdminResourceTable({
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                          {resource.file_url && (
+                            <button
+                              onClick={() => downloadFile(resource.file_url, `${resource.title || "resource"}`)}
+                              className="p-2 text-neutral-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                              title="Download File"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => setEditingResource(resource)}
                             className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
