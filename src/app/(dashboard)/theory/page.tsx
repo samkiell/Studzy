@@ -50,7 +50,7 @@ export default async function TheoryPage() {
     <TheoryDashboard
       courses={(courses as unknown as Course[]) || []}
       exams={exams || []}
-      recentAttempts={recentAttempts || []}
+      recentAttempts={(recentAttempts as any) || []}
     />
   );
 }
