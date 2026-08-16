@@ -6,8 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { NAVIGATION_ITEMS } from "@/config/navigation";
 import { NavItem } from "./NavItem";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useState } from "react";
 
 interface MobileSidebarProps {
@@ -17,15 +16,11 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ isOpen, onClose, role }: MobileSidebarProps) {
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    await signOut({ callbackUrl: "/login" });
     onClose();
   };
 
@@ -73,7 +68,7 @@ export function MobileSidebar({ isOpen, onClose, role }: MobileSidebarProps) {
             </div>
 
             <nav className="flex flex-1 flex-col gap-1">
-              {NAVIGATION_ITEMS.filter(item => !item.adminOnly || role === 'admin').map((item) => (
+              {NAVIGATION_ITEMS.filter((item) => !item.adminOnly || role === "admin").map((item) => (
                 <NavItem key={item.href} {...item} onClick={onClose} />
               ))}
             </nav>
