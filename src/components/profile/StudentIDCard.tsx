@@ -47,7 +47,7 @@ export function StudentIDCard({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(normalizeAvatar(avatarUrl));
   const [stack, setStack] = useState(initialStack);
   const [showStackMenu, setShowStackMenu] = useState(false);
   
@@ -61,7 +61,7 @@ export function StudentIDCard({
 
   // Sync internal state
   useEffect(() => {
-    setCurrentAvatarUrl(avatarUrl);
+    setCurrentAvatarUrl(normalizeAvatar(avatarUrl));
   }, [avatarUrl]);
 
   // --- Avatar Upload Logic ---

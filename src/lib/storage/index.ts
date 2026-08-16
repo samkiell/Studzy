@@ -35,7 +35,8 @@ const s3 = new S3Client({
  * Filebase serves public objects at: https://<bucket>.s3.filebase.com/<key>
  */
 export function getPublicUrl(key: string): string {
-  return `https://${BUCKET}.s3.filebase.com/${key}`;
+  const cleanKey = key.replace(/^\/+/, "");
+  return `/api/storage/${cleanKey}`;
 }
 
 // ---------------------------------------------------------------------------

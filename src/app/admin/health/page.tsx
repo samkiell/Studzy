@@ -6,8 +6,9 @@ import { StorageWarningBanner } from "@/components/admin/health/StorageWarningBa
 import { GrowthForecastCard } from "@/components/admin/health/GrowthForecastCard";
 import { StorageManagementSection } from "@/components/admin/health/StorageManagementSection";
 import { SystemHealthSummaryWidget } from "@/components/admin/health/SystemHealthSummaryWidget";
+import { RefreshButton } from "@/components/admin/health/RefreshButton";
 import { GUARDRAIL_CONFIG } from "@/config/storage-guardrails";
-import { ShieldCheck, RefreshCw } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export const revalidate = 600; // 10 minutes cache revalidation
 
@@ -34,13 +35,7 @@ export default async function AdminHealthPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => window.location.reload()}
-            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
-          </button>
+          <RefreshButton />
         </div>
       </div>
 
