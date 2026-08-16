@@ -92,8 +92,15 @@ export function InstallPWA() {
     >
       <div className="flex items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-neutral-200/80 bg-white/95 backdrop-blur-md shadow-2xl p-3.5 sm:p-4 dark:border-neutral-800 dark:bg-neutral-900/95">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-md shadow-primary-600/30 shrink-0">
-            <Download className="h-5 w-5" />
+          <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-neutral-900 border border-white/10 shadow-md shrink-0 p-2">
+            <Image
+              src="/favicon.png"
+              alt="Studzy"
+              width={28}
+              height={28}
+              className="object-contain"
+              priority
+            />
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-bold text-neutral-900 dark:text-white truncate leading-tight">
