@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { courses as coursesTable, resources } from "@/lib/db/schema/courses";
 import { eq, and } from "drizzle-orm";
+import { getPresignedUrl } from "@/lib/storage";
 import { VideoPlayer, AudioPlayer, PDFViewer, ImageViewer, LockedResourcePreview, ViewTracker } from "@/components/media";
 import { StudyTimeTracker } from "@/components/study/StudyTimeTracker";
 import { DiscussionPanel } from "@/components/resources/DiscussionPanel";
@@ -264,6 +265,30 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     );
   }
 
+  let mediaSrc = resource.file_url;
+  try {
+    if (resource.file_url) {
+      let key = resource.file_url;
+      if (key.includes(".s3.filebase.com/")) {
+        key = key.split(".s3.filebase.com/")[1];
+      } else if (key.startsWith("https://s3.filebase.com/")) {
+        const parts = key.replace("https://s3.filebase.com/", "").split("/");
+        parts.shift(); // remove bucket name
+        key = parts.join("/");
+      }
+
+      if (key && (key.startsWith("materials/") || key.startsWith("rag/") || !key.startsWith("http"))) {
+        const cleanKey = decodeURIComponent(key.split("?")[0]);
+        const signedUrl = await getPresignedUrl(cleanKey, 60 * 60 * 24);
+        if (signedUrl) {
+          mediaSrc = signedUrl;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to generate presigned URL for resource:", err);
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <script
@@ -348,16 +373,16 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {resource.type === "video" && (
-          <VideoPlayer src={resource.file_url} title={resource.title} resourceId={resource.id} />
+          <VideoPlayer src={mediaSrc} title={resource.title} resourceId={resource.id} />
         )}
         {resource.type === "audio" && (
-          <AudioPlayer src={resource.file_url} title={resource.title} resourceId={resource.id} />
+          <AudioPlayer src={mediaSrc} title={resource.title} resourceId={resource.id} />
         )}
         {resource.type === "pdf" && (
-          <PDFViewer src={resource.file_url} title={resource.title} resourceId={resource.id} />
+          <PDFViewer src={mediaSrc} title={resource.title} resourceId={resource.id} />
         )}
         {resource.type === "image" && (
-          <ImageViewer src={resource.file_url} title={resource.title} resourceId={resource.id} />
+          <ImageViewer src={mediaSrc} title={resource.title} resourceId={resource.id} />
         )}
 
         <div className="mt-8">
@@ -374,6 +399,5 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
         <DiscussionPanel resourceId={resource.id} />
       </main>
-    </div>
   );
 }
