@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "react-hot-toast";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { normalizeAvatar } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -51,13 +52,7 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
   const [username, setUsername] = useState(profile.username || "");
   const [bio, setBio] = useState(profile.bio || "");
   const [learningGoal, setLearningGoal] = useState(profile.learning_goal || "");
-  const normalizeAvatar = (url?: string | null) => {
-    if (!url) return null;
-    if (url.includes(".s3.filebase.com/")) {
-      return `/api/storage/${url.split(".s3.filebase.com/")[1]}`;
-    }
-    return url;
-  };
+  const [stack, setStack] = useState(initialStack);
 
   const [avatarUrl, setAvatarUrl] = useState(normalizeAvatar(profile.avatar_url));
   const [isUploading, setIsUploading] = useState(false);

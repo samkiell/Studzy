@@ -26,3 +26,12 @@ export function shuffle<T>(array: T[]): T[] {
   }
   return newArray;
 }
+
+export function normalizeAvatar(url?: string | null): string | null {
+  if (!url) return null;
+  if (url.includes(".s3.filebase.com/")) {
+    return `/api/storage/${url.split(".s3.filebase.com/")[1]}`;
+  }
+  return url;
+}
+

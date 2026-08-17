@@ -13,14 +13,23 @@ type StudentRecipient = {
 type NewResource = {
   kind: "resource";
   courseId: string;
+  courseCode?: string | null;
   resourceTitle: string;
   resourceType: string;
   slug?: string | null;
 };
 
+type NewQuestions = {
+  kind: "questions";
+  courseId: string;
+  courseCode?: string | null;
+  count: number;
+};
+
 type NewBatchResources = {
   kind: "batch_resources";
   courseId: string;
+  courseCode?: string | null;
   items: Array<{
     title: string;
     type: string;
