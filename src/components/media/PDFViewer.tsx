@@ -36,13 +36,14 @@ export function PDFViewer({
   onComplete,
 }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
 
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1.2);
+  const [scale, setScale] = useState<number>(1.0);
   const [rotation, setRotation] = useState<number>(0);
   const [nightMode, setNightMode] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -140,6 +141,11 @@ export function PDFViewer({
 
         await renderTask.promise;
         setIsRendering(false);
+
+        // Scroll to top of viewport smoothly on page transition
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = 0;
+        }
       } catch (err: any) {
         if (err.name !== "RenderingCancelledException") {
           console.error("Page render error:", err);
@@ -456,7 +462,10 @@ export function PDFViewer({
       </div>
 
       {/* Main PDF Canvas Workspace */}
-      <div className="relative flex-1 overflow-auto bg-[#18181b] flex items-center justify-center p-4 sm:p-6 select-none">
+      <div
+        ref={scrollAreaRef}
+        className="relative flex-1 overflow-auto bg-[#141416] p-4 sm:p-8 select-none"
+      >
         {/* Loading Spinner */}
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-950/80 backdrop-blur-sm z-30">
@@ -490,19 +499,21 @@ export function PDFViewer({
 
         {/* Rendering Overlay */}
         {isRendering && !isLoading && (
-          <div className="absolute top-4 right-4 z-20 flex items-center gap-2 rounded-lg bg-neutral-900/80 px-2.5 py-1 text-xs text-neutral-400 backdrop-blur-sm border border-white/5">
+          <div className="sticky top-2 float-right z-20 flex items-center gap-2 rounded-lg bg-neutral-900/80 px-2.5 py-1 text-xs text-neutral-400 backdrop-blur-sm border border-white/5">
             <Loader2 className="h-3 w-3 animate-spin text-primary-400" />
             <span>Rendering...</span>
           </div>
         )}
 
-        {/* High-Res Canvas Page Render */}
-        <div
-          className={`relative transition-transform duration-200 shadow-2xl rounded-sm ${
-            nightMode ? "filter invert contrast-125 hue-rotate-180 brightness-90" : ""
-          }`}
-        >
-          <canvas ref={canvasRef} className="block rounded-sm bg-white shadow-2xl" />
+        {/* High-Res Canvas Page Render with items-start top alignment */}
+        <div className="min-h-full flex items-start justify-center pb-12">
+          <div
+            className={`relative transition-transform duration-200 shadow-2xl rounded-sm ${
+              nightMode ? "filter invert contrast-125 hue-rotate-180 brightness-90" : ""
+            }`}
+          >
+            <canvas ref={canvasRef} className="block rounded-sm bg-white shadow-2xl mx-auto" />
+          </div>
         </div>
       </div>
 
