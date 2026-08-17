@@ -2,7 +2,7 @@
 
 import React from "react";
 import { HealthStatus, QuotaMetricStatus } from "@/lib/health/types";
-import { HardDrive, Database, Network, Activity, AlertTriangle, ShieldCheck, AlertCircle, XCircle, RotateCcw, Lock } from "lucide-react";
+import { HardDrive, Database, Network, Activity, ShieldCheck, AlertTriangle, AlertCircle, XCircle } from "lucide-react";
 
 interface HealthMetricCardProps {
   title: string;
@@ -15,30 +15,30 @@ interface HealthMetricCardProps {
 export function getStatusBadgeStyle(status: HealthStatus) {
   switch (status) {
     case "Healthy":
-      return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800";
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
     case "Notice":
-      return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800";
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
     case "Warning":
-      return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
     case "Critical":
-      return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-800";
+      return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
     case "Exhausted":
-      return "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800";
+      return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
   }
 }
 
 export function getProgressBarColor(status: HealthStatus) {
   switch (status) {
     case "Healthy":
-      return "bg-emerald-500 dark:bg-emerald-400";
+      return "from-emerald-500 to-teal-400";
     case "Notice":
-      return "bg-blue-500 dark:bg-blue-400";
+      return "from-blue-500 to-cyan-400";
     case "Warning":
-      return "bg-amber-500 dark:bg-amber-400";
+      return "from-amber-500 to-yellow-400";
     case "Critical":
-      return "bg-orange-500 dark:bg-orange-400";
+      return "from-orange-500 to-amber-500";
     case "Exhausted":
-      return "bg-red-600 dark:bg-red-500";
+      return "from-red-600 to-rose-500";
   }
 }
 
@@ -54,70 +54,60 @@ export function HealthMetricCard({ title, metric, iconType = "general", subtitle
   const Icon = iconType === "storage" ? HardDrive : iconType === "database" ? Database : iconType === "egress" ? Network : Activity;
   const StatusIcon = metric.status === "Healthy" ? ShieldCheck : metric.status === "Notice" ? Activity : metric.status === "Warning" ? AlertTriangle : metric.status === "Critical" ? AlertCircle : XCircle;
 
-  const isPersistent = metric.resetBehavior === "Persistent Quota";
-
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 flex flex-col justify-between">
+    <div className="relative overflow-hidden rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900 flex flex-col justify-between group">
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-              <Icon className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 border border-neutral-200/50 dark:border-neutral-700/50 transition-colors group-hover:border-primary-500/30">
+              <Icon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-neutral-900 dark:text-white">{title}</h3>
+              <h3 className="font-semibold text-neutral-900 dark:text-white text-sm sm:text-base">{title}</h3>
               {subtitle && <p className="text-xs text-neutral-500 dark:text-neutral-400">{subtitle}</p>}
             </div>
           </div>
-          <div className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${getStatusBadgeStyle(metric.status)}`}>
-            <StatusIcon className="h-3.5 w-3.5" />
+          <div className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusBadgeStyle(metric.status)}`}>
+            <StatusIcon className="h-3 w-3" />
             <span>{metric.status}</span>
           </div>
         </div>
 
-        {/* Persistent vs Monthly reset badge */}
-        <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-          {isPersistent ? (
-            <>
-              <Lock className="h-3 w-3 text-amber-500" />
-              <span>Persistent Quota (Does not reset monthly)</span>
-            </>
-          ) : (
-            <>
-              <RotateCcw className="h-3 w-3 text-blue-500" />
-              <span>Monthly Resetting Usage (Resets 1st of month)</span>
-            </>
-          )}
-        </div>
-
-        <div className="mt-4 space-y-2">
+        <div className="mt-5 space-y-3">
           <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+            <div className="flex items-baseline gap-1.5 font-mono">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
                 {formatBytes(metric.currentUsageBytes)}
               </span>
-              <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <span className="text-xs text-neutral-400 dark:text-neutral-500 font-sans">
                 / {formatBytes(metric.limitBytes)}
               </span>
             </div>
-            <span className="text-lg font-bold text-neutral-900 dark:text-white">
+            <span className="text-sm font-bold font-mono text-neutral-700 dark:text-neutral-300">
               {metric.percentage}%
             </span>
           </div>
 
-          {/* Progress bar */}
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+          {/* Elegant Progress bar */}
+          <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
             <div
-              className={`h-full transition-all duration-500 ${getProgressBarColor(metric.status)}`}
+              className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${getProgressBarColor(metric.status)}`}
               style={{ width: `${Math.min(100, Math.max(2, metric.percentage))}%` }}
             />
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex justify-between border-t border-neutral-100 dark:border-neutral-800 pt-3 text-xs text-neutral-500 dark:text-neutral-400">
-        <span>Remaining: {formatBytes(metric.remainingBytes)}</span>
-        {extraInfo && <span>{extraInfo}</span>}
+      <div className="mt-5 flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800/80 pt-3 text-xs text-neutral-500 dark:text-neutral-400">
+        <span className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          Free: {formatBytes(metric.remainingBytes)}
+        </span>
+        {extraInfo ? (
+          <span className="text-neutral-400">{extraInfo}</span>
+        ) : (
+          <span className="font-mono text-[11px] text-neutral-400">{metric.resetBehavior}</span>
+        )}
       </div>
     </div>
   );
