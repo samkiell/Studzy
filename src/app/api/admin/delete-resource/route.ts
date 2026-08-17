@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { resources } from "@/lib/db/schema/courses";
-import { questions } from "@/lib/db/schema/cbt";
-import { eq } from "drizzle-orm";
+import { questions, attemptAnswers } from "@/lib/db/schema/cbt";
+import { eq, or, inArray } from "drizzle-orm";
 import { deleteFile } from "@/lib/storage";
 
 export async function DELETE(request: NextRequest) {
@@ -30,9 +30,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Resource already deleted" });
     }
 
-    // 2. If it is a question bank, cascade delete corresponding questions from CBT engine
-    if (resource.type === "question_bank" && resource.course_id) {
-      await db.delete(questions).where(eq(questions.course_id, resource.course_id));
+    // 2. If it is a question bank, cascade delete corresponding questions and attempt answers
+    if (resource.type === "question_bank") {
+      // Find all target questions linked to this specific bank or course
+      const targetQuestions = await db
+        .select({ id: questions.id })
+        .from(questions)
+        .where(
+          or(
+            eq(questions.bank_id, resource.id),
+            resource.course_id ? eq(questions.course_id, resource.course_id) : undefined
+          )
+        );
+
+      if (targetQuestions.length > 0) {
+        const qIds = targetQuestions.map((q) => q.id);
+        // Clean related attempt answers first to prevent foreign key errors
+        await db.delete(attemptAnswers).where(inArray(attemptAnswers.question_id, qIds));
+        // Delete all matching questions
+        await db.delete(questions).where(inArray(questions.id, qIds));
+      }
     }
 
     // 3. Delete underlying file from Filebase storage if applicable
