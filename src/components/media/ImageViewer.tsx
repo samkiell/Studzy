@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Maximize2, Download, ExternalLink, Loader2 } from "lucide-react";
+import { Maximize2, Download, ExternalLink, Loader2, Share2, Check } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface ImageViewerProps {
   src: string;
@@ -13,6 +14,15 @@ export function ImageViewer({ src, title }: ImageViewerProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [error, setError] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleDownload = async () => {
     if (error || isDownloading) return;
@@ -152,18 +162,39 @@ export function ImageViewer({ src, title }: ImageViewerProps) {
               <span className="text-lg font-bold text-blue-400/50 drop-shadow-md">Studzy</span>
             </div>
           </div>
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading || error}
-            className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isDownloading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            {isDownloading ? "Processing..." : "Download"}
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-xs sm:text-sm font-semibold text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 transition-colors"
+              title="Share Link"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 text-emerald-500" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4" />
+                  <span>Share</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || error}
+              className="flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-xs sm:text-sm font-bold text-white transition-all hover:bg-primary-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary-600/20"
+            >
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {isDownloading ? "Processing..." : "Download"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
