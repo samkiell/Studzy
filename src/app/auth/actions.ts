@@ -185,7 +185,7 @@ export async function resetPassword(email: string) {
   });
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const resetUrl = `${siteUrl}/forgot-password?token=${token}&email=${encodeURIComponent(normalizedEmail)}`;
+  const resetUrl = `${siteUrl}/api/auth/recover?token=${token}&email=${encodeURIComponent(normalizedEmail)}`;
   const template = getEmailTemplate("reset", { link: resetUrl, name: user.username || "there" });
 
   await sendEmail({

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { 
   User, 
   Lock, 
@@ -12,7 +13,8 @@ import {
   Save, 
   AlertTriangle,
   CheckCircle,
-  Sliders
+  Sliders,
+  KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -38,7 +40,11 @@ interface SettingsFormProps {
 type TabType = "profile" | "theme" | "security";
 
 export function SettingsForm({ profile, initialStack = "Frontend Dev" }: SettingsFormProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("profile");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "security" ? "security" : searchParams.get("tab") === "theme" ? "theme" : "profile";
+  const isRecovery = searchParams.get("recovery") === "true";
+
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   
   // Profile state
   const [fullName, setFullName] = useState(profile.full_name || "");
@@ -68,13 +74,21 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stackOptions = ["Frontend Dev", "Backend Dev", "Full Stack Dev", "UI/UX Dev", "Mobile Dev", "Game Dev"];
 
-  // Initialize theme choice on mount
+  // Initialize theme choice on mount and handle recovery banner
   useEffect(() => {
     if (typeof window !== "undefined") {
       const isDark = document.documentElement.classList.contains("dark");
       setTheme(isDark ? "dark" : "light");
+
+      if (window.location.hash === "#security" || searchParams.get("tab") === "security") {
+        setActiveTab("security");
+      }
+
+      if (isRecovery) {
+        toast.success("Signed in via recovery link! Please enter your new password below.", { duration: 6000 });
+      }
     }
-  }, []);
+  }, [searchParams, isRecovery]);
 
   // Avatar upload logic
   const handleAvatarClick = () => {
