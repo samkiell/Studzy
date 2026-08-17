@@ -30,8 +30,12 @@ export function QuestionBankViewer({
       filename += ".json";
     }
 
+    const downloadUrl = courseCode
+      ? `/api/cbt/export?course=${encodeURIComponent(courseCode)}`
+      : src;
+
     try {
-      await downloadFile(src, filename);
+      await downloadFile(downloadUrl, filename);
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 3000);
     } catch (err) {
