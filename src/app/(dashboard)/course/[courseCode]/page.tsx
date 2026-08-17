@@ -195,6 +195,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
               {pdfCount} PDF{pdfCount !== 1 ? "s" : ""}
             </span>
           </div>
+          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5 dark:bg-emerald-900/20">
+            <ImageIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+              {imageCount} Image{imageCount !== 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
       </div>
 
