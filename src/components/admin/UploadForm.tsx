@@ -444,6 +444,7 @@ export function UploadForm({ courses }: UploadFormProps) {
 
     let successCount = 0;
     let errorCount = 0;
+    const savedItems: Array<{ title: string; type: string; slug: string }> = [];
 
     // Save each file to database
     for (const fileUpload of uploadedFiles) {
@@ -463,6 +464,7 @@ export function UploadForm({ courses }: UploadFormProps) {
             type: fileUpload.type,
             fileUrl: fileUpload.fileUrl,
             status: selectedStatus,
+            skipNotification: true,
           }),
         });
 
@@ -474,6 +476,11 @@ export function UploadForm({ courses }: UploadFormProps) {
               f.id === fileUpload.id ? { ...f, status: "success", message: "Saved!" } : f
             )
           );
+          savedItems.push({
+            title: fileUpload.title.trim(),
+            type: fileUpload.type,
+            slug: fileUpload.slug.trim(),
+          });
           successCount++;
         } else {
           setFiles((prev) =>
@@ -491,6 +498,18 @@ export function UploadForm({ courses }: UploadFormProps) {
         );
         errorCount++;
       }
+    }
+
+    // Send a single consolidated notification email for the entire upload batch
+    if (savedItems.length > 0 && selectedStatus === "published" && selectedCourseId) {
+      fetch("/api/admin/notify-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId: selectedCourseId,
+          items: savedItems,
+        }),
+      }).catch((err) => console.error("Batch notification error:", err));
     }
 
     setIsSaving(false);
