@@ -56,6 +56,19 @@ export async function login(formData: FormData) {
       password,
       redirect: false,
     });
+
+    if (user?.id) {
+      const now = new Date();
+      const today = now.toISOString().split("T")[0];
+      await db
+        .update(users)
+        .set({
+          last_login: now,
+          last_login_date: today,
+          updated_at: now,
+        })
+        .where(eq(users.id, user.id));
+    }
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

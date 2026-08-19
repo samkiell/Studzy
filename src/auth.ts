@@ -76,6 +76,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
+  events: {
+    async signIn({ user }) {
+      if (user?.id) {
+        const now = new Date();
+        const today = now.toISOString().split("T")[0];
+        try {
+          await db
+            .update(users)
+            .set({
+              last_login: now,
+              last_login_date: today,
+              updated_at: now,
+            })
+            .where(eq(users.id, user.id));
+        } catch (e) {
+          console.error("Failed to update last_login on signIn event:", e);
+        }
+      }
+    },
+  },
   pages: {
     signIn: "/login",
   },

@@ -46,19 +46,22 @@ export async function POST(req: Request) {
     }
 
     // Update study time atomically and streaks
+    const now = new Date();
     await db
       .update(users)
       .set({
         total_study_seconds: sql`COALESCE(${users.total_study_seconds}, 0) + 10`,
         current_streak: newStreak,
         last_login_date: newLastLogin,
+        last_login: now,
         longest_streak: newLongest,
-        updated_at: new Date(),
+        updated_at: now,
       })
       .where(eq(users.id, user.id));
 
     // --- Study Presence (Real-time Buddies) ---
-    if (courseId) {
+    // Only track presence for non-admin students
+    if (user.role !== "admin" && courseId) {
       const [existingPresence] = await db
         .select({ user_id: studyPresence.user_id })
         .from(studyPresence)
@@ -73,7 +76,7 @@ export async function POST(req: Request) {
       if (existingPresence) {
         await db
           .update(studyPresence)
-          .set({ last_pulse: new Date() })
+          .set({ last_pulse: now })
           .where(
             and(
               eq(studyPresence.user_id, user.id),
@@ -84,9 +87,14 @@ export async function POST(req: Request) {
         await db.insert(studyPresence).values({
           user_id: user.id,
           course_id: courseId,
-          last_pulse: new Date(),
+          last_pulse: now,
         });
       }
+    } else if (user.role === "admin") {
+      // Clean up any stale admin presence records
+      await db
+        .delete(studyPresence)
+        .where(eq(studyPresence.user_id, user.id));
     }
 
     return NextResponse.json({ success: true, streak: newStreak });

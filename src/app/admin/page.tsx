@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { courses, resources } from "@/lib/db/schema/courses";
 import { users } from "@/lib/db/schema/auth";
 import { studyPresence } from "@/lib/db/schema/activity";
-import { count, gt, desc, eq, sql } from "drizzle-orm";
+import { count, countDistinct, gt, desc, eq, ne, and, sql } from "drizzle-orm";
 import { 
   ShieldCheck, 
   CloudUpload, 
@@ -18,8 +19,15 @@ import {
 } from "lucide-react";
 
 export default async function AdminPage() {
+  const currentUser = await getCurrentUser();
   const now = new Date();
   const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+  const onlineFilter = and(
+    gt(studyPresence.last_pulse, fiveMinsAgo),
+    ne(users.role, "admin"),
+    currentUser ? ne(users.id, currentUser.id) : undefined
+  );
 
   const [
     [{ total: coursesCount }],
@@ -33,7 +41,11 @@ export default async function AdminPage() {
     db.select({ total: count() }).from(courses),
     db.select({ total: count() }).from(resources),
     db.select({ total: count() }).from(users),
-    db.select({ total: count() }).from(studyPresence).where(gt(studyPresence.last_pulse, fiveMinsAgo)),
+    db
+      .select({ total: countDistinct(studyPresence.user_id) })
+      .from(studyPresence)
+      .innerJoin(users, eq(studyPresence.user_id, users.id))
+      .where(onlineFilter),
     db.select({ view_count: resources.view_count, completion_count: resources.completion_count }).from(resources),
     db
       .select({
@@ -48,7 +60,7 @@ export default async function AdminPage() {
       })
       .from(studyPresence)
       .innerJoin(users, eq(studyPresence.user_id, users.id))
-      .where(gt(studyPresence.last_pulse, fiveMinsAgo))
+      .where(onlineFilter)
       .orderBy(desc(studyPresence.last_pulse))
       .limit(10),
     db

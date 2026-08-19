@@ -79,10 +79,14 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
         return (new Date(a.created_at || 0).getTime() || 0) - (new Date(b.created_at || 0).getTime() || 0);
       }
       if (sortBy === "recent_login") {
-        return (new Date(b.last_login || 0).getTime() || 0) - (new Date(a.last_login || 0).getTime() || 0);
+        const dateB = b.last_login || (b.last_login_date ? `${b.last_login_date}T00:00:00.000Z` : 0);
+        const dateA = a.last_login || (a.last_login_date ? `${a.last_login_date}T00:00:00.000Z` : 0);
+        return (new Date(dateB).getTime() || 0) - (new Date(dateA).getTime() || 0);
       }
       if (sortBy === "oldest_login") {
-        return (new Date(a.last_login || 0).getTime() || 0) - (new Date(b.last_login || 0).getTime() || 0);
+        const dateA = a.last_login || (a.last_login_date ? `${a.last_login_date}T00:00:00.000Z` : 0);
+        const dateB = b.last_login || (b.last_login_date ? `${b.last_login_date}T00:00:00.000Z` : 0);
+        return (new Date(dateA).getTime() || 0) - (new Date(dateB).getTime() || 0);
       }
       return 0;
     });
@@ -295,7 +299,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           {(() => {
-                            const dt = formatDateTime(user.last_login);
+                            const dt = formatDateTime(user.last_login || (user.last_login_date ? `${user.last_login_date}T00:00:00.000Z` : null));
                             if (typeof dt === 'string') {
                               return <span className="text-xs font-medium text-neutral-500">{dt}</span>;
                             }

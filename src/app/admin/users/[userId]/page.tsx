@@ -141,7 +141,7 @@ export default async function UserDetailsPage({
               </div>
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>Last login {formatDate(profile.last_login_date)}</span>
+                <span>Last login {formatDate(profile.last_login || (profile.last_login_date ? `${profile.last_login_date}T00:00:00.000Z` : null))}</span>
               </div>
             </div>
           </div>

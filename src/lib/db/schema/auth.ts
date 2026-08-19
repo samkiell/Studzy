@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   longest_streak: integer("longest_streak").default(0),
   total_study_seconds: integer("total_study_seconds").default(0),
   last_login_date: date("last_login_date"),
+  last_login: timestamp("last_login", { withTimezone: true }),
   is_verified: boolean("is_verified").default(false),
   password_hash: text("password_hash"),
   created_at: timestamp("created_at").defaultNow(),

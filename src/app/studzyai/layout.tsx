@@ -21,14 +21,19 @@ export default async function StudzyAILayout({
   }
 
   // Activity Tracking: Update last_login if needed
-  const lastLogin = user.last_login_date ? new Date(user.last_login_date) : new Date(0);
+  const lastLogin = user.last_login ? new Date(user.last_login) : (user.last_login_date ? new Date(user.last_login_date) : new Date(0));
   const now = new Date();
   const timeSinceLogin = now.getTime() - lastLogin.getTime();
+  const today = now.toISOString().split("T")[0];
   
   if (timeSinceLogin > 30 * 60 * 1000) {
     await db
       .update(users)
-      .set({ updated_at: now })
+      .set({
+        last_login: now,
+        last_login_date: today,
+        updated_at: now,
+      })
       .where(eq(users.id, user.id));
     await logActivity("login");
   }
