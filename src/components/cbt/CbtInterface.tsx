@@ -196,6 +196,9 @@ export default function CbtInterface({ initialAttempt, questions, onSubmit, hide
 
       // Option Selection: A, B, C, D
       if (currentQuestion && !isTheoryQuestion(currentQuestion)) {
+        if (initialAttempt.mode === 'study' && answers[currentQuestion.id]) {
+          return;
+        }
         if (key === "a") {
           handleSelectOption("A");
         } else if (key === "b") {
@@ -223,10 +226,11 @@ export default function CbtInterface({ initialAttempt, questions, onSubmit, hide
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentIndex, orderedQuestions, isSubmitted, currentQuestion]);
+  }, [currentIndex, orderedQuestions, isSubmitted, currentQuestion, answers, initialAttempt.mode]);
 
   const handleSelectOption = (option: string) => {
     if (isSubmitted || !currentQuestion) return;
+    if (initialAttempt.mode === 'study' && answers[currentQuestion.id]) return;
     setAnswer(currentQuestion.id, option);
     if (initialAttempt.mode === 'study') {
       setShowExplanation(true);
