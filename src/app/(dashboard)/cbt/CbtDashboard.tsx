@@ -155,7 +155,7 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                     <select
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
-                      disabled={metadataLoading || isWeakAreasOnly}
+                      disabled={metadataLoading}
                       className="w-full bg-[#121214] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-all appearance-none cursor-pointer disabled:opacity-50"
                     >
                       <option value="all">All Topics ({metadata?.totalQuestions || 0})</option>
