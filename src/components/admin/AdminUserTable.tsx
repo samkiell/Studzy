@@ -79,14 +79,14 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
         return (new Date(a.created_at || 0).getTime() || 0) - (new Date(b.created_at || 0).getTime() || 0);
       }
       if (sortBy === "recent_login") {
-        const dateB = b.last_login || (b.last_login_date ? `${b.last_login_date}T00:00:00.000Z` : 0);
-        const dateA = a.last_login || (a.last_login_date ? `${a.last_login_date}T00:00:00.000Z` : 0);
-        return (new Date(dateB).getTime() || 0) - (new Date(dateA).getTime() || 0);
+        const dateB = b.last_login ? new Date(b.last_login).getTime() : 0;
+        const dateA = a.last_login ? new Date(a.last_login).getTime() : 0;
+        return (dateB || 0) - (dateA || 0);
       }
       if (sortBy === "oldest_login") {
-        const dateA = a.last_login || (a.last_login_date ? `${a.last_login_date}T00:00:00.000Z` : 0);
-        const dateB = b.last_login || (b.last_login_date ? `${b.last_login_date}T00:00:00.000Z` : 0);
-        return (new Date(dateA).getTime() || 0) - (new Date(dateB).getTime() || 0);
+        const dateA = a.last_login ? new Date(a.last_login).getTime() : 0;
+        const dateB = b.last_login ? new Date(b.last_login).getTime() : 0;
+        return (dateA || 0) - (dateB || 0);
       }
       return 0;
     });
@@ -106,12 +106,49 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, status: newStatus }),
       });
-      const result = await response.json();
-      if (result.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
-      } else {
-        alert(result.error || "Failed to update status");
-      }
+      if (!response.ok) throw new Error("Failed to update status");
+      
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
+      );
+    } catch (error) {
+      console.error("Error updating user status:", error);
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleDemote = async (userId: string) => {
+    setLoadingId(userId);
+    try {
+      const response = await fetch("/api/admin/update-user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role: "student" }),
+      });
+      if (!response.ok) throw new Error("Failed to demote user");
+      
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: "student" as UserRole } : u))
+      );
+    } catch (error) {
+      console.error("Error demoting user:", error);
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleDelete = async (userId: string) => {
+    setLoadingId(userId);
+    try {
+      const response = await fetch(`/api/admin/delete-user?id=${userId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete user");
+      
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (error) {
+      console.error("Error deleting user:", error);
     } finally {
       setLoadingId(null);
     }
@@ -122,51 +159,27 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
     const { type, userId } = modalState;
     if (!type || !userId) return;
 
-    setLoadingId(userId);
+    if (type === "delete") await handleDelete(userId);
+    else if (type === "demote") await handleDemote(userId);
+    else await handleUpdateStatus(userId, type === "verify" ? "active" : "active"); // Placeholder logic for verify/unverify toggle
+    
     closeModal();
-
-    try {
-      let response;
-      if (type === "delete") {
-        response = await fetch("/api/admin/delete-user", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
-      } else {
-        const endpoint = (type === "verify") ? "/api/admin/verify-user" : "/api/admin/demote-user";
-        response = await fetch(endpoint, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        if (type === "delete") {
-          setUsers(prev => prev.filter(u => u.id !== userId));
-        } else {
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: type === "verify" } : u));
-        }
-      } else {
-        alert(result.error || `Failed to ${type} user`);
-      }
-    } finally {
-      setLoadingId(null);
-    }
   };
   
   const formatDateTime = (dateString: string | null) => {
     if (!dateString) return "Never";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Never";
+
+    const isDateOnly = typeof dateString === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateString.trim());
+
     return {
       date: date.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric"
       }),
-      time: date.toLocaleTimeString("en-US", {
+      time: isDateOnly ? null : date.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit"
       })
@@ -299,7 +312,7 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           {(() => {
-                            const dt = formatDateTime(user.last_login || (user.last_login_date ? `${user.last_login_date}T00:00:00.000Z` : null));
+                            const dt = formatDateTime(user.last_login);
                             if (typeof dt === 'string') {
                               return <span className="text-xs font-medium text-neutral-500">{dt}</span>;
                             }
@@ -308,9 +321,11 @@ export function AdminUserTable({ users: initialUsers }: AdminUserTableProps) {
                                 <span className="text-xs font-medium text-neutral-900 dark:text-white">
                                   {dt.date}
                                 </span>
-                                <span className="text-[10px] text-neutral-500">
-                                  {dt.time}
-                                </span>
+                                {dt.time && (
+                                  <span className="text-[10px] text-neutral-500">
+                                    {dt.time}
+                                  </span>
+                                )}
                               </>
                             );
                           })()}

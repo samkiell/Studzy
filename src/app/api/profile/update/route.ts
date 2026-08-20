@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema/auth";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export async function PATCH(req: Request) {
   try {
@@ -34,6 +35,17 @@ export async function PATCH(req: Request) {
     }
     if (body.learningGoal !== undefined) {
       updatePayload.learning_goal = body.learningGoal;
+    }
+    if (body.password !== undefined) {
+      const password = typeof body.password === "string" ? body.password : "";
+      if (password.length < 6) {
+        return NextResponse.json(
+          { error: "Password must be at least 6 characters." },
+          { status: 400 }
+        );
+      }
+      const password_hash = await bcrypt.hash(password, 10);
+      updatePayload.password_hash = password_hash;
     }
 
     try {

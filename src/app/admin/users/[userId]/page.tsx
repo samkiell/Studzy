@@ -73,12 +73,15 @@ export default async function UserDetailsPage({
 
   const formatDate = (dateValue: Date | string | null) => {
     if (!dateValue) return "Never";
-    return new Date(dateValue).toLocaleDateString("en-US", {
+    const isDateOnly = typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateValue.trim());
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return "Never";
+
+    return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" }),
     });
   };
 
@@ -141,7 +144,7 @@ export default async function UserDetailsPage({
               </div>
               <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>Last login {formatDate(profile.last_login || (profile.last_login_date ? `${profile.last_login_date}T00:00:00.000Z` : null))}</span>
+                <span>Last login {formatDate(profile.last_login)}</span>
               </div>
             </div>
           </div>
