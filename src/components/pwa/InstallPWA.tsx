@@ -11,17 +11,40 @@ export function InstallPWA() {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(ios);
 
     const checkAndShowPrompt = async (showFn: () => void) => {
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
-      if (isStandalone) return;
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.startsWith("android-app://");
+
+      if (isStandalone) {
+        localStorage.setItem("studzy_pwa_installed", "true");
+        return;
+      }
+
+      if (localStorage.getItem("studzy_pwa_installed") === "true") {
+        return;
+      }
+
+      // Check if dismissed within last 14 days
+      const dismissedAt = localStorage.getItem("studzy_pwa_dismissed");
+      if (dismissedAt) {
+        const timeDiff = Date.now() - parseInt(dismissedAt, 10);
+        if (!isNaN(timeDiff) && timeDiff < 14 * 24 * 60 * 60 * 1000) {
+          return;
+        }
+      }
 
       if ("getInstalledRelatedApps" in navigator) {
         try {
           const relatedApps = await (navigator as any).getInstalledRelatedApps();
           if (relatedApps && relatedApps.length > 0) {
+            localStorage.setItem("studzy_pwa_installed", "true");
             return;
           }
         } catch (e) {
@@ -29,10 +52,7 @@ export function InstallPWA() {
         }
       }
 
-      const isDismissed = sessionStorage.getItem("pwa-prompt-dismissed");
-      if (!isDismissed) {
-        showFn();
-      }
+      showFn();
     };
 
     if (ios) {
@@ -59,6 +79,7 @@ export function InstallPWA() {
 
     window.addEventListener("beforeinstallprompt", handler);
     window.addEventListener("appinstalled", () => {
+      localStorage.setItem("studzy_pwa_installed", "true");
       setIsAnimating(false);
       setTimeout(() => setIsVisible(false), 200);
       setDeferredPrompt(null);
@@ -71,6 +92,9 @@ export function InstallPWA() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      localStorage.setItem("studzy_pwa_installed", "true");
+    }
     setDeferredPrompt(null);
     setIsAnimating(false);
     setTimeout(() => setIsVisible(false), 200);
@@ -79,7 +103,7 @@ export function InstallPWA() {
   const handleDismiss = () => {
     setIsAnimating(false);
     setTimeout(() => setIsVisible(false), 200);
-    sessionStorage.setItem("pwa-prompt-dismissed", "true");
+    localStorage.setItem("studzy_pwa_dismissed", Date.now().toString());
   };
 
   if (!isVisible) return null;
