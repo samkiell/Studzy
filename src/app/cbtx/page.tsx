@@ -218,9 +218,14 @@ export default function PublicCbtLanding() {
                   <label className="text-sm font-medium text-gray-300">
                     Number of Questions
                   </label>
-                  <span className="text-xs text-indigo-400 font-medium">
-                    Up to {metadata?.totalQuestions || 0} available
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setNumQuestions(metadata?.totalQuestions || 100)}
+                    className="text-xs text-indigo-400 font-medium hover:text-indigo-300 hover:underline transition-all cursor-pointer flex items-center gap-1"
+                    title="Click to select all available questions"
+                  >
+                    Up to {metadata?.totalQuestions || 0} available (Select All)
+                  </button>
                 </div>
                 <div className="relative">
                   <input
@@ -240,12 +245,20 @@ export default function PublicCbtLanding() {
                     {[10, 20, 50].map((preset) => (
                       <button
                         key={preset}
+                        type="button"
                         onClick={() => setNumQuestions(Math.min(preset, metadata?.totalQuestions || preset))}
                         className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all uppercase"
                       >
                         {preset}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => setNumQuestions(metadata?.totalQuestions || 100)}
+                      className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/30 text-[10px] font-bold text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 transition-all uppercase"
+                    >
+                      All
+                    </button>
                   </div>
                 </div>
               </div>
