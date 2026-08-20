@@ -29,7 +29,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
   const [mode, setMode] = useState<CbtMode>("study");
   const [numQuestions, setNumQuestions] = useState(20);
   const [topic, setTopic] = useState<string>("all");
-  const [isWeakAreasOnly, setIsWeakAreasOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
   const [metadata, setMetadata] = useState<{ topics: { name: string; count: number }[]; totalQuestions: number; hasTheoryQuestions: boolean; difficulties: { name: string; count: number }[] } | null>(null);
@@ -80,7 +79,6 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
         numberOfQuestions: numQuestions,
         topic: topic === "all" ? undefined : topic,
         timeLimitMinutes: mode === "exam" ? timeLimit : 30,
-        isWeakAreasOnly,
         difficulty: difficulty === "all" ? undefined : difficulty,
       });
       
@@ -251,34 +249,21 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                   </div>
                 </div>
 
-                {/* Smart study & Count */}
+                {/* Question Count */}
                 <div className="space-y-6">
-                   <div className="flex items-center justify-between p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                        <BrainCircuit className="w-5 h-5 text-indigo-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold">Focus on Weak Areas</h4>
-                        <p className="text-xs text-gray-500">Study topics where you score below 60%</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => setIsWeakAreasOnly(!isWeakAreasOnly)}
-                      className={`w-12 h-6 rounded-full transition-all relative ${isWeakAreasOnly ? 'bg-indigo-500' : 'bg-white/10'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isWeakAreasOnly ? 'left-7' : 'left-1'}`} />
-                    </button>
-                  </div>
-
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-gray-300">
                         Number of Questions
                       </label>
-                      <span className="text-xs text-indigo-400 font-medium">
-                        Up to {metadata?.totalQuestions || 0} available
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setNumQuestions(metadata?.totalQuestions || 100)}
+                        className="text-xs text-indigo-400 font-medium hover:text-indigo-300 hover:underline transition-all cursor-pointer flex items-center gap-1"
+                        title="Click to select all available questions"
+                      >
+                        Up to {metadata?.totalQuestions || 0} available (Select All)
+                      </button>
                     </div>
                     <div className="relative">
                       <input
@@ -298,12 +283,20 @@ export default function CbtDashboard({ courses }: CbtDashboardProps) {
                         {[10, 20, 50].map((preset) => (
                           <button
                             key={preset}
+                            type="button"
                             onClick={() => setNumQuestions(Math.min(preset, metadata?.totalQuestions || preset))}
                             className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all uppercase"
                           >
                             {preset}
                           </button>
                         ))}
+                        <button
+                          type="button"
+                          onClick={() => setNumQuestions(metadata?.totalQuestions || 100)}
+                          className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/30 text-[10px] font-bold text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 transition-all uppercase"
+                        >
+                          All
+                        </button>
                       </div>
                     </div>
                   </div>
