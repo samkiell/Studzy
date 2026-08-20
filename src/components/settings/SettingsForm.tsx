@@ -72,8 +72,13 @@ export function SettingsForm({ profile, initialStack = "Frontend Dev" }: Setting
   // Initialize theme choice on mount and handle recovery banner
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const isDark = document.documentElement.classList.contains("dark");
-      setTheme(isDark ? "dark" : "light");
+      const storedTheme = localStorage.getItem("theme");
+      if (storedTheme === "light" || storedTheme === "dark") {
+        setTheme(storedTheme);
+      } else {
+        const isDark = document.documentElement.classList.contains("dark");
+        setTheme(isDark ? "dark" : "light");
+      }
 
       if (window.location.hash === "#security" || searchParams.get("tab") === "security") {
         setActiveTab("security");
