@@ -13,7 +13,7 @@ import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import Link from "next/link";
-import { BookOpen, FileText, Eye, Zap, ShieldAlert, MessageCircle, Brain, ArrowRight, Sparkles } from "lucide-react";
+import { BookOpen, FileText, Eye, Zap, ShieldAlert, MessageCircle, Brain, ArrowRight } from "lucide-react";
 import type { Course } from "@/types/database";
 
 export default async function DashboardPage() {
@@ -101,29 +101,18 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl md:text-3xl">
-              Welcome back, {username}
-            </h1>
-            <span className="hidden rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400 md:block">
-              DevCore&apos;23
-            </span>
-          </div>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            Select a course to access study materials.
-          </p>
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl md:text-3xl">
+            Welcome back, {username}
+          </h1>
+          <span className="hidden rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400 md:block">
+            DevCore&apos;23
+          </span>
         </div>
-
-        <Link
-          href="/cbt"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:to-purple-500 active:scale-95 shrink-0"
-        >
-          <Brain className="h-4 w-4" />
-          <span>Launch CBT Practice</span>
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <p className="mt-1 text-neutral-600 dark:text-neutral-400">
+          Select a course to access study materials.
+        </p>
       </div>
 
       <div className="mt-8 grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -149,39 +138,15 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* CBT Shortcut Card */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950/40 via-neutral-900 to-purple-950/40 p-5 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/30">
-              <Brain className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white sm:text-lg">
-                  CBT Practice & Mock Engine
-                </h3>
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-                  <Sparkles className="h-2.5 w-2.5" />
-                  Exam Ready
-                </span>
-              </div>
-              <p className="mt-1 text-xs sm:text-sm text-neutral-300">
-                Practice past questions with instant answer explanations or simulate real timed exam conditions.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Link
-              href="/cbt"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white transition-all shadow-md shadow-indigo-600/30 active:scale-95"
-            >
-              <span>Start CBT Session</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
+      <div className="mt-6 flex items-center justify-start">
+        <Link
+          href="/cbt"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:to-purple-500 active:scale-95 shrink-0"
+        >
+          <Brain className="h-4 w-4" />
+          <span>Launch CBT Practice</span>
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-12">
