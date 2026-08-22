@@ -224,7 +224,7 @@ export default function PublicCbtLanding() {
                     className="text-xs text-indigo-400 font-medium hover:text-indigo-300 hover:underline transition-all cursor-pointer flex items-center gap-1"
                     title="Click to select all available questions"
                   >
-                    Up to {metadata?.totalQuestions || 0} available (Select All)
+                    Up to {metadata?.totalQuestions || 0} available
                   </button>
                 </div>
                 <div className="relative">
