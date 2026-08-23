@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema/auth";
 import { resources } from "@/lib/db/schema/courses";
 import { eq, and, or, sql } from "drizzle-orm";
-import { uploadFile } from "@/lib/storage";
+import { uploadFile, getPresignedUploadUrl, getPublicUrl } from "@/lib/storage";
 import type { ResourceType } from "@/types/database";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -42,7 +42,81 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Admin access required" }, { status: 403 });
     }
 
-    // Parse form data
+    const contentType = request.headers.get("content-type") || "";
+
+    // -------------------------------------------------------------------------
+    // 1. Direct Presigned URL Generation (Bypasses serverless body limits)
+    // -------------------------------------------------------------------------
+    if (contentType.includes("application/json")) {
+      const body = await request.json();
+      const fileName = body.fileName as string;
+      const fileType = (body.fileType as string) || "application/octet-stream";
+      const fileSize = Number(body.fileSize) || 0;
+      const type = body.type as ResourceType;
+      const courseId = body.courseId as string | null;
+      const isRAG = Boolean(body.isRAG);
+
+      if (!fileName) {
+        return NextResponse.json({ success: false, message: "No fileName provided" }, { status: 400 });
+      }
+
+      if (fileSize > MAX_FILE_SIZE) {
+        return NextResponse.json({
+          success: false,
+          message: `File size exceeds 100MB limit. Your file is ${(fileSize / (1024 * 1024)).toFixed(2)}MB`,
+        }, { status: 400 });
+      }
+
+      // Check for duplicate resource in course
+      if (courseId && !isRAG) {
+        const baseName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim();
+        const rawName = fileName.replace(/\.[^/.]+$/, "").trim();
+
+        const [existingResource] = await db
+          .select({ id: resources.id, title: resources.title })
+          .from(resources)
+          .where(
+            and(
+              eq(resources.course_id, courseId),
+              or(
+                sql`LOWER(${resources.title}) = LOWER(${baseName})`,
+                sql`LOWER(${resources.title}) = LOWER(${rawName})`,
+                sql`LOWER(${resources.title}) = LOWER(${fileName})`
+              )
+            )
+          )
+          .limit(1);
+
+        if (existingResource) {
+          return NextResponse.json({
+            success: false,
+            message: `Resource "${existingResource.title}" already exists for this course. Please remove or rename it to avoid duplicate uploads.`,
+          }, { status: 409 });
+        }
+      }
+
+      // Generate unique key and presigned upload URL
+      const fileExtension = fileName.split(".").pop()?.toLowerCase() || "";
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 9);
+      const folder = isRAG ? "rag" : "materials";
+      const key = `${folder}/${type}/${timestamp}-${randomId}.${fileExtension}`;
+
+      const uploadUrl = await getPresignedUploadUrl(key, "application/octet-stream", 3600);
+      const publicUrl = getPublicUrl(key);
+
+      return NextResponse.json({
+        success: true,
+        directUpload: true,
+        uploadUrl,
+        fileUrl: publicUrl,
+        storagePath: key,
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. Fallback FormData Upload
+    // -------------------------------------------------------------------------
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const type = formData.get("type") as ResourceType;
