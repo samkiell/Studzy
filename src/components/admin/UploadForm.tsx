@@ -212,15 +212,110 @@ export function UploadForm({ courses }: UploadFormProps) {
     }
   }, [selectedCourseId, isRAG]);
 
-  // Upload file to Filebase storage via backend
+  // Upload file to Filebase storage via direct presigned URL (with live XHR progress) or fallback
   const uploadFileToStorage = useCallback(async (fileUpload: FileUpload): Promise<{ fileUrl: string; storagePath: string } | null> => {
     setFiles((prev) =>
       prev.map((f) =>
-        f.id === fileUpload.id ? { ...f, status: "uploading", progress: 20, message: "Uploading to storage..." } : f
+        f.id === fileUpload.id ? { ...f, status: "uploading", progress: 5, message: "Preparing upload..." } : f
       )
     );
 
     try {
+      // 1. Request presigned upload URL (bypasses serverless payload limits for videos and large files)
+      let presignData: any = null;
+      try {
+        const presignRes = await fetch("/api/admin/upload-file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: fileUpload.file.name,
+            fileType: fileUpload.file.type || "application/octet-stream",
+            fileSize: fileUpload.file.size,
+            type: fileUpload.type,
+            courseId: selectedCourseId || null,
+            isRAG,
+          }),
+        });
+
+        const presignText = await presignRes.text();
+        try {
+          presignData = JSON.parse(presignText);
+        } catch {
+          // If server returned HTML or non-JSON
+          if (presignRes.status === 413) {
+            throw new Error("File exceeds server upload limits (413 Payload Too Large).");
+          }
+          throw new Error(`Upload preparation failed with status ${presignRes.status}`);
+        }
+
+        if (!presignRes.ok || !presignData?.success) {
+          throw new Error(presignData?.message || "Failed to initialize storage upload");
+        }
+      } catch (presignErr: any) {
+        console.warn("Direct upload init failed, will attempt fallback:", presignErr);
+      }
+
+      // 2. Direct upload to S3/Filebase via Presigned PUT URL
+      if (presignData?.directUpload && presignData?.uploadUrl) {
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", presignData.uploadUrl);
+          xhr.setRequestHeader("Content-Type", "application/octet-stream");
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable && e.total > 0) {
+              const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? { ...f, progress: pct, message: `Uploading (${pct}%)...` }
+                    : f
+                )
+              );
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`Direct storage upload returned HTTP ${xhr.status}`));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error("Network error during direct storage upload. Please check connection."));
+          xhr.ontimeout = () => reject(new Error("Storage upload timed out. Please try again."));
+          xhr.send(fileUpload.file);
+        });
+
+        // Trigger RAG ingestion if needed
+        if (isRAG && (fileUpload.type === "pdf" || fileUpload.type === "document")) {
+          fetch("/api/admin/trigger-ingestion", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filePath: presignData.storagePath }),
+          }).catch((err) => console.error("[RAG] Background trigger error:", err));
+        }
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileUpload.id
+              ? {
+                  ...f,
+                  progress: 100,
+                  status: "uploaded",
+                  fileUrl: presignData.fileUrl,
+                  storagePath: presignData.storagePath,
+                  message: "Ready to save",
+                }
+              : f
+          )
+        );
+
+        return { fileUrl: presignData.fileUrl, storagePath: presignData.storagePath };
+      }
+
+      // 3. Fallback: Proxy upload via FormData
       const formData = new FormData();
       formData.append("file", fileUpload.file);
       formData.append("type", fileUpload.type);
@@ -232,7 +327,16 @@ export function UploadForm({ courses }: UploadFormProps) {
         body: formData,
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        if (response.status === 413) {
+          throw new Error("File exceeds serverless proxy payload limits (413). Please upload a smaller file or try again.");
+        }
+        throw new Error(`Upload failed with status ${response.status}`);
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Upload failed");
