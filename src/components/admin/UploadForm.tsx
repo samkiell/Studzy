@@ -257,90 +257,121 @@ export function UploadForm({ courses }: UploadFormProps) {
 
       // 2. Direct upload to S3/Filebase via Presigned PUT URL
       if (presignData?.directUpload && presignData?.uploadUrl) {
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("PUT", presignData.uploadUrl);
-          xhr.setRequestHeader("Content-Type", "application/octet-stream");
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", presignData.uploadUrl);
+            xhr.setRequestHeader("Content-Type", "application/octet-stream");
 
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable && e.total > 0) {
-              const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === fileUpload.id
-                    ? { ...f, progress: pct, message: `Uploading (${pct}%)...` }
-                    : f
-                )
-              );
-            }
-          };
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable && e.total > 0) {
+                const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.id === fileUpload.id
+                      ? { ...f, progress: pct, message: `Uploading (${pct}%)...` }
+                      : f
+                  )
+                );
+              }
+            };
 
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve();
-            } else {
-              reject(new Error(`Direct storage upload returned HTTP ${xhr.status}`));
-            }
-          };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                resolve();
+              } else {
+                reject(new Error(`Direct storage upload returned HTTP ${xhr.status}`));
+              }
+            };
 
-          xhr.onerror = () => reject(new Error("Network error during direct storage upload. Please check connection."));
-          xhr.ontimeout = () => reject(new Error("Storage upload timed out. Please try again."));
-          xhr.send(fileUpload.file);
-        });
+            xhr.onerror = () => reject(new Error("Network error during direct storage upload."));
+            xhr.ontimeout = () => reject(new Error("Storage upload timed out."));
+            xhr.send(fileUpload.file);
+          });
 
-        // Trigger RAG ingestion if needed
-        if (isRAG && (fileUpload.type === "pdf" || fileUpload.type === "document")) {
-          fetch("/api/admin/trigger-ingestion", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filePath: presignData.storagePath }),
-          }).catch((err) => console.error("[RAG] Background trigger error:", err));
+          // Trigger RAG ingestion if needed
+          if (isRAG && (fileUpload.type === "pdf" || fileUpload.type === "document")) {
+            fetch("/api/admin/trigger-ingestion", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ filePath: presignData.storagePath }),
+            }).catch((err) => console.error("[RAG] Background trigger error:", err));
+          }
+
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileUpload.id
+                ? {
+                    ...f,
+                    progress: 100,
+                    status: "uploaded",
+                    fileUrl: presignData.fileUrl,
+                    storagePath: presignData.storagePath,
+                    message: "Ready to save",
+                  }
+                : f
+            )
+          );
+
+          return { fileUrl: presignData.fileUrl, storagePath: presignData.storagePath };
+        } catch (directUploadErr) {
+          console.warn("Direct storage upload failed (CORS/network), falling back to server proxy upload:", directUploadErr);
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileUpload.id
+                ? { ...f, progress: 10, message: "Uploading via server proxy..." }
+                : f
+            )
+          );
         }
-
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileUpload.id
-              ? {
-                  ...f,
-                  progress: 100,
-                  status: "uploaded",
-                  fileUrl: presignData.fileUrl,
-                  storagePath: presignData.storagePath,
-                  message: "Ready to save",
-                }
-              : f
-          )
-        );
-
-        return { fileUrl: presignData.fileUrl, storagePath: presignData.storagePath };
       }
 
-      // 3. Fallback: Proxy upload via FormData
+      // 3. Fallback: Proxy upload via FormData with live progress
       const formData = new FormData();
       formData.append("file", fileUpload.file);
       formData.append("type", fileUpload.type);
       if (selectedCourseId) formData.append("courseId", selectedCourseId);
       if (isRAG) formData.append("isRAG", "true");
 
-      const response = await fetch("/api/admin/upload-file", {
-        method: "POST",
-        body: formData,
+      const data: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/admin/upload-file");
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && e.total > 0) {
+            const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileUpload.id
+                  ? { ...f, progress: pct, message: `Uploading (${pct}%)...` }
+                  : f
+              )
+            );
+          }
+        };
+
+        xhr.onload = () => {
+          let resData: any;
+          try {
+            resData = JSON.parse(xhr.responseText);
+          } catch {
+            if (xhr.status === 413) {
+              return reject(new Error("File exceeds serverless proxy payload limits (413). Please upload a smaller file."));
+            }
+            return reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+
+          if (xhr.status >= 200 && xhr.status < 300 && resData?.success) {
+            resolve(resData);
+          } else {
+            reject(new Error(resData?.message || `Upload failed with status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload. Please check connection."));
+        xhr.ontimeout = () => reject(new Error("Upload timed out. Please try again."));
+        xhr.send(formData);
       });
-
-      const responseText = await response.text();
-      let data: any;
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        if (response.status === 413) {
-          throw new Error("File exceeds serverless proxy payload limits (413). Please upload a smaller file or try again.");
-        }
-        throw new Error(`Upload failed with status ${response.status}`);
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Upload failed");
-      }
 
       setFiles((prev) =>
         prev.map((f) =>
