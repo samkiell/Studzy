@@ -25,8 +25,9 @@ const ALLOWED_TYPES: Record<ResourceType, string[]> = {
     "text/x-typescript",
     "text/x-python",
     "application/x-python-code",
+    "application/octet-stream",
   ],
-  question_bank: ["application/json"],
+  question_bank: ["application/json", "application/octet-stream", "text/plain"],
 };
 
 export async function POST(request: NextRequest) {
@@ -59,12 +60,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate file type
+    // Validate file type by MIME or extension fallback
     const allowedMimeTypes = ALLOWED_TYPES[type];
-    if (allowedMimeTypes && !allowedMimeTypes.includes(file.type)) {
+    const fileExt = file.name.split(".").pop()?.toLowerCase();
+    const isExtensionAllowed =
+      (type === "pdf" && fileExt === "pdf") ||
+      (type === "document" && ["txt", "md", "json", "csv", "js", "ts", "py", "tsx", "jsx"].includes(fileExt || "")) ||
+      (type === "question_bank" && fileExt === "json") ||
+      (type === "audio" && ["mp3", "wav", "ogg", "m4a", "flac"].includes(fileExt || "")) ||
+      (type === "video" && ["mp4", "webm", "mov", "avi"].includes(fileExt || "")) ||
+      (type === "image" && ["jpg", "jpeg", "png", "webp", "svg", "gif"].includes(fileExt || ""));
+
+    const isMimeAllowed = allowedMimeTypes && (allowedMimeTypes.includes(file.type) || file.type === "application/octet-stream" || file.type === "");
+
+    if (!isMimeAllowed && !isExtensionAllowed) {
       return NextResponse.json({
         success: false,
-        message: `Invalid file type for ${type}. Received: ${file.type}`,
+        message: `Invalid file type for ${type}. Received: ${file.type || "unknown"} (.${fileExt})`,
       }, { status: 400 });
     }
 

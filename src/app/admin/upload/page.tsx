@@ -45,7 +45,8 @@ export default async function AdminUploadPage() {
               <p className="font-medium">Upload Guidelines</p>
               <ul className="mt-1 list-inside list-disc text-blue-600 dark:text-blue-400">
                 <li>Maximum file size: 100MB</li>
-                <li>Supported formats: MP4, WebM, MP3, WAV, PDF, Images</li>
+                <li>Supported formats: PDF, JSON, MP4, WebM, MP3, WAV, Images & Code</li>
+                <li>Paste JSON (Ctrl+V) directly or paste raw text to compile into files</li>
                 <li>Files are stored securely in Filebase S3 Storage</li>
               </ul>
             </div>

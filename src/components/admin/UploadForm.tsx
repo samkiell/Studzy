@@ -12,7 +12,10 @@ import {
   Trash2,
   Loader2,
   Image as ImageIcon,
-  Info
+  Info,
+  ClipboardPaste,
+  Code2,
+  FileCode
 } from "lucide-react";
 import type { Course, ResourceType, ResourceStatus } from "@/types/database";
 import { uploadCBTQuestions } from "@/app/admin/actions";
@@ -47,8 +50,8 @@ const FILE_TYPES: Record<ResourceType, { accept: string; label: string }> = {
   video: { accept: "video/*,.mp4,.webm,.mov", label: "Video files (MP4, WebM, MOV)" },
   pdf: { accept: ".pdf,application/pdf", label: "PDF documents" },
   image: { accept: "image/*,.jpg,.jpeg,.png,.webp,.svg,.gif", label: "Image files (JPG, PNG, WebP, SVG)" },
-  document: { accept: ".txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx", label: "Documents & Code (TXT, MD, JSON, JS/TS)" },
-  question_bank: { accept: ".json", label: "CBT Question Bank (JSON)" },
+  document: { accept: ".txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx,application/json", label: "Documents & JSON (.pdf, .json, .txt, .md)" },
+  question_bank: { accept: ".json,application/json", label: "CBT Question Bank (JSON)" },
 };
 
 // Auto-detect resource type from MIME type
@@ -58,6 +61,7 @@ const detectResourceType = (file: File): ResourceType | null => {
   if (mimeType.startsWith("audio/")) return "audio";
   if (mimeType === "application/pdf") return "pdf";
   if (mimeType.startsWith("image/")) return "image";
+  if (mimeType === "application/json") return "document";
   
   // Fallback: check file extension
   const ext = file.name.split(".").pop()?.toLowerCase();
@@ -90,6 +94,10 @@ export function UploadForm({ courses }: UploadFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ResourceStatus>("published");
   const [globalMessage, setGlobalMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [pasteTitle, setPasteTitle] = useState("");
+  const [pasteError, setPasteError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
 
@@ -318,6 +326,100 @@ export function UploadForm({ courses }: UploadFormProps) {
       }
     }
   };
+
+  const compilePastedJsonToFile = useCallback((text: string, title?: string): boolean => {
+    try {
+      const trimmed = text.trim();
+      if (!trimmed) {
+        setPasteError("Please enter or paste valid JSON text.");
+        return false;
+      }
+      const parsed = JSON.parse(trimmed);
+      const formatted = JSON.stringify(parsed, null, 2);
+
+      // Auto generate descriptive title and filename
+      let autoName = title?.trim() || "";
+      if (!autoName) {
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) && (parsed.title || parsed.name || parsed.course_code)) {
+          autoName = String(parsed.title || parsed.name || parsed.course_code);
+        } else if (Array.isArray(parsed)) {
+          autoName = `question-bank-${Date.now()}`;
+        } else {
+          autoName = `document-${Date.now()}`;
+        }
+      }
+
+      const cleanSlug = autoName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || `document-${Date.now()}`;
+      const filename = `${cleanSlug}.json`;
+
+      const compiledFile = new File([formatted], filename, {
+        type: "application/json",
+      });
+
+      if (isCbtMode) {
+        setCbtFile(compiledFile);
+        setGlobalMessage({
+          type: "success",
+          text: `Pasted JSON compiled into "${filename}" for CBT!`,
+        });
+      } else {
+        handleFilesSelect([compiledFile]);
+        setGlobalMessage({
+          type: "success",
+          text: `Compiled pasted JSON into "${filename}" and added to queue.`,
+        });
+      }
+
+      setPasteText("");
+      setPasteTitle("");
+      setPasteError(null);
+      setShowPasteModal(false);
+      return true;
+    } catch (err: any) {
+      setPasteError(`Invalid JSON format: ${err.message}`);
+      return false;
+    }
+  }, [isCbtMode, handleFilesSelect]);
+
+  // Handle global or dropzone paste
+  const handlePaste = useCallback((e: React.ClipboardEvent | ClipboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA") && target.id !== "paste-json-global-drop") {
+      return;
+    }
+
+    if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
+      e.preventDefault();
+      const pastedFiles = Array.from(e.clipboardData.files);
+      if (isCbtMode) {
+        const jsonFile = pastedFiles.find(f => f.name.endsWith(".json") || f.type === "application/json");
+        if (jsonFile) setCbtFile(jsonFile);
+        else setGlobalMessage({ type: "error", text: "CBT mode only accepts .json files" });
+      } else {
+        handleFilesSelect(pastedFiles);
+      }
+      return;
+    }
+
+    const text = e.clipboardData?.getData("text");
+    if (text && (text.trim().startsWith("{") || text.trim().startsWith("["))) {
+      try {
+        JSON.parse(text.trim());
+        e.preventDefault();
+        compilePastedJsonToFile(text);
+      } catch {
+        // Not JSON
+      }
+    }
+  }, [isCbtMode, handleFilesSelect, compilePastedJsonToFile]);
+
+  useEffect(() => {
+    const onGlobalPaste = (e: ClipboardEvent) => {
+      handlePaste(e);
+    };
+    window.addEventListener("paste", onGlobalPaste);
+    return () => window.removeEventListener("paste", onGlobalPaste);
+  }, [handlePaste]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -679,9 +781,84 @@ export function UploadForm({ courses }: UploadFormProps) {
 
       {/* File Upload Zone */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Upload Files <span className="text-red-500">*</span>
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Upload Files <span className="text-red-500">*</span>
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowPasteModal(!showPasteModal)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors cursor-pointer"
+          >
+            <ClipboardPaste className="h-3.5 w-3.5" />
+            {showPasteModal ? "Close Paste Box" : "Paste JSON"}
+          </button>
+        </div>
+
+        {showPasteModal && (
+          <div className="mb-4 rounded-xl border border-primary-200 bg-primary-50/40 p-4 dark:border-primary-900/40 dark:bg-primary-950/20 space-y-3 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary-700 dark:text-primary-300 flex items-center gap-1.5">
+                <Code2 className="h-4 w-4" />
+                Paste Raw JSON to Upload
+              </span>
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                Will be compiled into a .json file
+              </span>
+            </div>
+
+            <input
+              type="text"
+              value={pasteTitle}
+              onChange={(e) => setPasteTitle(e.target.value)}
+              placeholder="Optional file title / name (e.g. Course Notes or Syllabus)"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            />
+
+            <textarea
+              id="paste-json-global-drop"
+              value={pasteText}
+              onChange={(e) => {
+                setPasteText(e.target.value);
+                setPasteError(null);
+              }}
+              placeholder='{ "title": "...", "content": "..." } or [ { "question": "..." } ]'
+              rows={5}
+              className="w-full rounded-lg border border-neutral-300 bg-white p-3 font-mono text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            />
+
+            {pasteError && (
+              <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                {pasteError}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasteModal(false);
+                  setPasteText("");
+                  setPasteTitle("");
+                  setPasteError(null);
+                }}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!pasteText.trim()}
+                onClick={() => compilePastedJsonToFile(pasteText, pasteTitle)}
+                className="rounded-lg bg-primary-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+              >
+                <FileCode className="h-3.5 w-3.5" />
+                Compile & Add to Upload
+              </button>
+            </div>
+          </div>
+        )}
+
         <div
           className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
             dragActive
@@ -694,11 +871,12 @@ export function UploadForm({ courses }: UploadFormProps) {
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
+          onPaste={handlePaste}
         >
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*,audio/*,.pdf,.jpg,.jpeg,.png,.webp,.svg,.gif,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a,.txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx"
+            accept="video/*,audio/*,.pdf,.jpg,.jpeg,.png,.webp,.svg,.gif,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a,.txt,.md,.json,.csv,.js,.ts,.py,.tsx,.jsx,application/json,application/pdf"
             onChange={handleFileChange}
             multiple
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -711,14 +889,14 @@ export function UploadForm({ courses }: UploadFormProps) {
             </div>
             <div>
               <p className="font-medium text-neutral-900 dark:text-white">
-                {selectedCourseId || isRAG ? "Drag and drop files here" : "Select a course first"}
+                {selectedCourseId || isRAG ? "Drag and drop files or paste JSON here" : "Select a course first"}
               </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                {selectedCourseId || isRAG ? "or click to browse • Mixed file types allowed" : "Choose a course to enable uploads"}
+                {selectedCourseId || isRAG ? "or click to browse • Paste JSON (Ctrl+V) supported" : "Choose a course to enable uploads"}
               </p>
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
-              Videos, Audio, PDFs, Images • Max 100MB per file
+              Videos, Audio, PDFs, Images, JSON & Docs • Max 100MB per file
             </p>
           </div>
         </div>
