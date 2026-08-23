@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ResourceCard } from "./ResourceCard";
 import { ResourceFilterTabs, type FilterTab } from "./ResourceFilterTabs";
 import type { Resource } from "@/types/database";
-import { Inbox, Star } from "lucide-react";
+import { Inbox, Star, BrainCircuit, FileCode } from "lucide-react";
 
 interface ResourceListProps {
   resources: Resource[];
@@ -34,25 +34,36 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
     }
   }, [courseId, resources.length]);
 
-  // Count resources by type
-  const counts = useMemo(
-    () => ({
-      all: resources.length,
-      video: resources.filter((r) => r.type === "video").length,
-      audio: resources.filter((r) => r.type === "audio").length,
-      pdf: resources.filter((r) => r.type === "pdf").length,
-      image: resources.filter((r) => r.type === "image").length,
-      document: resources.filter((r) => r.type === "document").length,
-      question_bank: resources.filter((r) => r.type === "question_bank").length,
-    }),
+  // Separate standard study resources from CBT JSON files
+  const standardResources = useMemo(
+    () => resources.filter((r) => r.type !== "question_bank"),
     [resources]
   );
 
-  // Filter resources based on active tab
+  const cbtResources = useMemo(
+    () => resources.filter((r) => r.type === "question_bank"),
+    [resources]
+  );
+
+  // Count standard resources by type
+  const counts = useMemo(
+    () => ({
+      all: standardResources.length,
+      video: standardResources.filter((r) => r.type === "video").length,
+      audio: standardResources.filter((r) => r.type === "audio").length,
+      pdf: standardResources.filter((r) => r.type === "pdf").length,
+      image: standardResources.filter((r) => r.type === "image").length,
+      document: standardResources.filter((r) => r.type === "document").length,
+      question_bank: cbtResources.length,
+    }),
+    [standardResources, cbtResources]
+  );
+
+  // Filter standard resources based on active tab
   const filteredResources = useMemo(() => {
-    if (activeFilter === "all") return resources;
-    return resources.filter((r) => r.type === activeFilter);
-  }, [resources, activeFilter]);
+    if (activeFilter === "all") return standardResources;
+    return standardResources.filter((r) => r.type === activeFilter);
+  }, [standardResources, activeFilter]);
 
   // Separate featured from non-featured (no duplication)
   const featuredResources = useMemo(
@@ -82,15 +93,17 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filter Tabs */}
-      <ResourceFilterTabs
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        counts={counts}
-      />
+    <div className="space-y-8">
+      {/* Standard Resource Filter Tabs */}
+      {standardResources.length > 0 && (
+        <ResourceFilterTabs
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          counts={counts}
+        />
+      )}
 
-      {/* Filtered Resource List */}
+      {/* Filtered Standard Resource List */}
       <div
         id="resource-list-panel"
         role="tabpanel"
@@ -149,7 +162,7 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
               </div>
             )}
           </>
-        ) : (
+        ) : standardResources.length > 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-800/50">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               No{" "}
@@ -158,13 +171,52 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
                   ? "video"
                   : activeFilter === "audio"
                     ? "audio"
-                    : "PDF"}
+                    : activeFilter === "pdf"
+                    ? "PDF"
+                    : activeFilter === "document"
+                    ? "document"
+                    : activeFilter}
               </span>{" "}
               resources available for this course.
             </p>
           </div>
-        )}
+        ) : null}
       </div>
+
+      {/* Dedicated CBT JSON Question Banks Section at the Bottom */}
+      {cbtResources.length > 0 && (
+        <section aria-label="CBT Question Banks" className="pt-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                <BrainCircuit className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  CBT Question Banks & Practice Sets
+                  <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    {cbtResources.length} {cbtResources.length === 1 ? "JSON Bank" : "JSON Banks"}
+                  </span>
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Interactive past questions and practice material compiled from uploaded CBT JSON banks.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {cbtResources.map((resource) => (
+              <ResourceCard
+                key={resource.id}
+                resource={resource}
+                courseCode={courseCode}
+                isCompleted={completedIds.includes(resource.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
