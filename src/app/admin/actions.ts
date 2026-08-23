@@ -295,6 +295,9 @@ export async function uploadCBTQuestions(formData: FormData) {
 
     const file = formData.get("file") as File | null;
     const courseCode = formData.get("courseCode") as string;
+    const customTitle = (formData.get("title") as string)?.trim();
+    const customSlug = (formData.get("slug") as string)?.trim();
+    const customDescription = (formData.get("description") as string)?.trim();
 
     if (!file) {
       return { success: false, message: "No file provided" };
@@ -303,6 +306,10 @@ export async function uploadCBTQuestions(formData: FormData) {
     if (!courseCode) {
       return { success: false, message: "Course code is required" };
     }
+
+    // Determine clean title
+    const cleanFileNameTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim();
+    const finalTitle = customTitle || cleanFileNameTitle || file.name;
 
     // 1. Upload the file to Filebase Storage
     const timestamp = Date.now();
@@ -332,7 +339,7 @@ export async function uploadCBTQuestions(formData: FormData) {
     }
 
     // 2b. Record the uploaded JSON as a question_bank resource
-    const bankSlug = `qb-${timestamp}-${file.name
+    const bankSlug = customSlug || `qb-${timestamp}-${finalTitle
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")}`.slice(0, 90);
@@ -341,8 +348,9 @@ export async function uploadCBTQuestions(formData: FormData) {
       .insert(resources)
       .values({
         course_id: courseData.id,
-        title: file.name,
+        title: finalTitle,
         slug: bankSlug,
+        description: customDescription || null,
         type: "question_bank",
         file_url: fileUrl,
         status: "published",

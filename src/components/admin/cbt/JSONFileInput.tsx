@@ -14,6 +14,7 @@ export function JSONFileInput({ file, onFileSelect, disabled }: JSONFileInputPro
   const [dragActive, setDragActive] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [pastedJsonText, setPastedJsonText] = useState("");
+  const [pastedJsonTitle, setPastedJsonTitle] = useState("");
   const [pasteError, setPasteError] = useState<string | null>(null);
 
   // Compile JSON text into a File object
@@ -21,13 +22,16 @@ export function JSONFileInput({ file, onFileSelect, disabled }: JSONFileInputPro
     try {
       const parsed = JSON.parse(text.trim());
       const formatted = JSON.stringify(parsed, null, 2);
-      const filename = customName || `questions-${Date.now()}.json`;
-      const compiledFile = new File([formatted], filename, {
+      const cleanName = customName?.trim()
+        ? `${customName.trim().replace(/\.json$/i, "").replace(/[^a-zA-Z0-9_-]/g, "_")}.json`
+        : `questions-${Date.now()}.json`;
+      const compiledFile = new File([formatted], cleanName, {
         type: "application/json",
       });
       onFileSelect(compiledFile);
       setPasteError(null);
       setPastedJsonText("");
+      setPastedJsonTitle("");
       setShowPasteModal(false);
       return true;
     } catch (err: any) {
@@ -116,6 +120,14 @@ export function JSONFileInput({ file, onFileSelect, disabled }: JSONFileInputPro
             </span>
           </div>
 
+          <input
+            type="text"
+            value={pastedJsonTitle}
+            onChange={(e) => setPastedJsonTitle(e.target.value)}
+            placeholder="File name / Question Bank Title (optional, e.g. STT202 2024 Exam)"
+            className="w-full rounded-lg border border-neutral-300 bg-white p-2.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          />
+
           <textarea
             value={pastedJsonText}
             onChange={(e) => {
@@ -139,6 +151,7 @@ export function JSONFileInput({ file, onFileSelect, disabled }: JSONFileInputPro
               onClick={() => {
                 setShowPasteModal(false);
                 setPastedJsonText("");
+                setPastedJsonTitle("");
                 setPasteError(null);
               }}
               className="rounded-lg px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
@@ -148,7 +161,7 @@ export function JSONFileInput({ file, onFileSelect, disabled }: JSONFileInputPro
             <button
               type="button"
               disabled={!pastedJsonText.trim()}
-              onClick={() => compileJsonToFile(pastedJsonText)}
+              onClick={() => compileJsonToFile(pastedJsonText, pastedJsonTitle)}
               className="rounded-lg bg-primary-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-50 transition-all shadow-sm"
             >
               Compile into File
