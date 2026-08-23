@@ -278,6 +278,8 @@ export function UploadForm({ courses }: UploadFormProps) {
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("PUT", presignData.uploadUrl);
+            const fileMime = fileUpload.file.type || "application/octet-stream";
+            xhr.setRequestHeader("Content-Type", fileMime);
 
             xhr.upload.onprogress = (e) => {
               if (e.lengthComputable && e.total > 0) {
@@ -296,7 +298,17 @@ export function UploadForm({ courses }: UploadFormProps) {
               if (xhr.status >= 200 && xhr.status < 300) {
                 resolve();
               } else {
-                reject(new Error(`Direct storage upload returned HTTP ${xhr.status}`));
+                let errorMsg = `Direct storage upload returned HTTP ${xhr.status}`;
+                try {
+                  const parser = new DOMParser();
+                  const xml = parser.parseFromString(xhr.responseText, "application/xml");
+                  const code = xml.querySelector("Code")?.textContent;
+                  const message = xml.querySelector("Message")?.textContent;
+                  if (code || message) {
+                    errorMsg = `Storage error (${xhr.status}): ${message || code}`;
+                  }
+                } catch {}
+                reject(new Error(errorMsg));
               }
             };
 
