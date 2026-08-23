@@ -6,6 +6,7 @@ import {
   HeadObjectCommand,
   ListObjectsV2Command,
   CopyObjectCommand,
+  PutBucketCorsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -171,6 +172,28 @@ export async function getPresignedUploadUrl(
     ContentType: contentType,
   });
   return await getSignedUrl(s3, command, { expiresIn });
+}
+
+/**
+ * Ensures that CORS rules (allowing browser direct PUT uploads) are applied to the storage bucket.
+ */
+export async function configureBucketCors(): Promise<void> {
+  await s3.send(
+    new PutBucketCorsCommand({
+      Bucket: BUCKET,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedHeaders: ["*"],
+            AllowedMethods: ["GET", "PUT", "POST", "HEAD", "DELETE"],
+            AllowedOrigins: ["*"],
+            ExposeHeaders: ["ETag"],
+            MaxAgeSeconds: 3600,
+          },
+        ],
+      },
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
