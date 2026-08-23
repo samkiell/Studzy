@@ -153,6 +153,26 @@ export async function getPresignedUrl(
   return url;
 }
 
+/**
+ * Generate a temporary presigned PUT URL for direct client-to-storage uploads.
+ * Bypasses serverless request body size limits in production.
+ * @param key    Object key
+ * @param contentType  MIME type (defaults to application/octet-stream)
+ * @param expiresIn  Seconds until the URL expires (default 3600 = 1 hour)
+ */
+export async function getPresignedUploadUrl(
+  key: string,
+  contentType: string = "application/octet-stream",
+  expiresIn = 3600
+): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    ContentType: contentType,
+  });
+  return await getSignedUrl(s3, command, { expiresIn });
+}
+
 // ---------------------------------------------------------------------------
 // List Objects
 // ---------------------------------------------------------------------------
