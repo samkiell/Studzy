@@ -243,37 +243,33 @@ export function UploadForm({ courses }: UploadFormProps) {
 
     try {
       // 1. Request presigned upload URL (bypasses serverless payload limits for videos and large files)
-      let presignData: any = null;
+      const presignRes = await fetch("/api/admin/upload-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: fileUpload.file.name,
+          fileType: fileUpload.file.type || "application/octet-stream",
+          fileSize: fileUpload.file.size,
+          type: fileUpload.type,
+          courseId: selectedCourseId || null,
+          isRAG,
+        }),
+      });
+
+      const presignText = await presignRes.text();
+      let presignData: any;
       try {
-        const presignRes = await fetch("/api/admin/upload-file", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: fileUpload.file.name,
-            fileType: fileUpload.file.type || "application/octet-stream",
-            fileSize: fileUpload.file.size,
-            type: fileUpload.type,
-            courseId: selectedCourseId || null,
-            isRAG,
-          }),
-        });
-
-        const presignText = await presignRes.text();
-        try {
-          presignData = JSON.parse(presignText);
-        } catch {
-          // If server returned HTML or non-JSON
-          if (presignRes.status === 413) {
-            throw new Error("File exceeds server upload limits (413 Payload Too Large).");
-          }
-          throw new Error(`Upload preparation failed with status ${presignRes.status}`);
+        presignData = JSON.parse(presignText);
+      } catch {
+        // If server returned HTML or non-JSON
+        if (presignRes.status === 413) {
+          throw new Error("File exceeds server upload limits (413 Payload Too Large).");
         }
+        throw new Error(`Upload preparation failed with status ${presignRes.status}`);
+      }
 
-        if (!presignRes.ok || !presignData?.success) {
-          throw new Error(presignData?.message || "Failed to initialize storage upload");
-        }
-      } catch (presignErr: any) {
-        console.warn("Direct upload init failed, will attempt fallback:", presignErr);
+      if (!presignRes.ok || !presignData?.success) {
+        throw new Error(presignData?.message || "Failed to initialize storage upload");
       }
 
       // 2. Direct upload to S3/Filebase via Presigned PUT URL
@@ -282,7 +278,6 @@ export function UploadForm({ courses }: UploadFormProps) {
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("PUT", presignData.uploadUrl);
-            xhr.setRequestHeader("Content-Type", "application/octet-stream");
 
             xhr.upload.onprogress = (e) => {
               if (e.lengthComputable && e.total > 0) {
@@ -335,8 +330,11 @@ export function UploadForm({ courses }: UploadFormProps) {
           );
 
           return { fileUrl: presignData.fileUrl, storagePath: presignData.storagePath };
-        } catch (directUploadErr) {
-          console.warn("Direct storage upload failed (CORS/network), falling back to server proxy upload:", directUploadErr);
+        } catch (directUploadErr: any) {
+          if (fileUpload.file.size > 4.5 * 1024 * 1024) {
+            throw directUploadErr;
+          }
+          console.warn("Direct storage upload failed, falling back to server proxy upload:", directUploadErr);
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileUpload.id

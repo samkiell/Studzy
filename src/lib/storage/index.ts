@@ -163,13 +163,13 @@ export async function getPresignedUrl(
  */
 export async function getPresignedUploadUrl(
   key: string,
-  contentType: string = "application/octet-stream",
+  contentType?: string,
   expiresIn = 3600
 ): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: BUCKET,
     Key: key,
-    ContentType: contentType,
+    ...(contentType ? { ContentType: contentType } : {}),
   });
   return await getSignedUrl(s3, command, { expiresIn });
 }
