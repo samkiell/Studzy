@@ -24,7 +24,6 @@ interface ResourceFilterTabsProps {
     pdf: number;
     image: number;
     document: number;
-    question_bank: number;
   };
 }
 

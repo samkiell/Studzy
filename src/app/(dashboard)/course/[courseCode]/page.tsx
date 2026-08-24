@@ -95,14 +95,15 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
   const typedCourse = course as unknown as Course;
 
-  // Fetch resources for this course (only published for students)
+  // Fetch resources for this course (only published for students, excluding question_bank CBT files)
   const courseResources = await db
     .select()
     .from(resources)
     .where(
       and(
         eq(resources.course_id, typedCourse.id),
-        eq(resources.status, "published")
+        eq(resources.status, "published"),
+        ne(resources.type, "question_bank")
       )
     )
     .orderBy(desc(resources.created_at));
@@ -114,7 +115,6 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const audioCount = typedResources.filter((r) => r.type === "audio").length;
   const pdfCount = typedResources.filter((r) => r.type === "pdf").length;
   const imageCount = typedResources.filter((r) => r.type === "image").length;
-  const cbtCount = typedResources.filter((r) => r.type === "question_bank").length;
 
   const jsonLd = {
     "@context": "https://schema.org",

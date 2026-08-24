@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ResourceCard } from "./ResourceCard";
 import { ResourceFilterTabs, type FilterTab } from "./ResourceFilterTabs";
 import type { Resource } from "@/types/database";
-import { Inbox, Star, BrainCircuit, FileCode } from "lucide-react";
+import { Inbox, Star } from "lucide-react";
 
 interface ResourceListProps {
   resources: Resource[];
@@ -34,14 +34,9 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
     }
   }, [courseId, resources.length]);
 
-  // Separate standard study resources from CBT JSON files
+  // Standard study resources (ensuring CBT JSON files are excluded)
   const standardResources = useMemo(
     () => resources.filter((r) => r.type !== "question_bank"),
-    [resources]
-  );
-
-  const cbtResources = useMemo(
-    () => resources.filter((r) => r.type === "question_bank"),
     [resources]
   );
 
@@ -54,9 +49,8 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
       pdf: standardResources.filter((r) => r.type === "pdf").length,
       image: standardResources.filter((r) => r.type === "image").length,
       document: standardResources.filter((r) => r.type === "document").length,
-      question_bank: cbtResources.length,
     }),
-    [standardResources, cbtResources]
+    [standardResources]
   );
 
   // Filter standard resources based on active tab
@@ -76,7 +70,7 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
     [filteredResources]
   );
 
-  if (resources.length === 0) {
+  if (standardResources.length === 0) {
     return (
       <div className="rounded-xl border border-neutral-200 bg-white p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
@@ -182,41 +176,6 @@ export function ResourceList({ resources, courseId, courseCode }: ResourceListPr
           </div>
         ) : null}
       </div>
-
-      {/* Dedicated CBT JSON Question Banks Section at the Bottom */}
-      {cbtResources.length > 0 && (
-        <section aria-label="CBT Question Banks" className="pt-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-                <BrainCircuit className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                  CBT Question Banks & Practice Sets
-                  <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                    {cbtResources.length} {cbtResources.length === 1 ? "JSON Bank" : "JSON Banks"}
-                  </span>
-                </h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Interactive past questions and practice material compiled from uploaded CBT JSON banks.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            {cbtResources.map((resource) => (
-              <ResourceCard
-                key={resource.id}
-                resource={resource}
-                courseCode={courseCode}
-                isCompleted={completedIds.includes(resource.id)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

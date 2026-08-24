@@ -110,7 +110,13 @@ export async function GET(request: NextRequest) {
       const courseResources = await db
         .select({ id: resources.id })
         .from(resources)
-        .where(eq(resources.course_id, courseId));
+        .where(
+          and(
+            eq(resources.course_id, courseId),
+            eq(resources.status, "published"),
+            ne(resources.type, "question_bank")
+          )
+        );
 
       if (!courseResources || courseResources.length === 0) {
         return NextResponse.json({ completed: [], total: 0 });
