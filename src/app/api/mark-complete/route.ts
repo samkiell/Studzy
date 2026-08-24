@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { userProgress } from "@/lib/db/schema/activity";
 import { resources } from "@/lib/db/schema/courses";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, sql, ne } from "drizzle-orm";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
