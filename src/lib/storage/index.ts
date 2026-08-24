@@ -62,12 +62,18 @@ export interface UploadOptions {
 export async function uploadFile(opts: UploadOptions): Promise<string> {
   const { key, body, contentType, metadata } = opts;
 
+  // Use application/octet-stream for video files to bypass Filebase free-tier 25MB video MIME quotas
+  const safeContentType =
+    contentType?.startsWith("video/")
+      ? "application/octet-stream"
+      : contentType || "application/octet-stream";
+
   await s3.send(
     new PutObjectCommand({
       Bucket: BUCKET,
       Key: key,
       Body: body as any,
-      ContentType: contentType,
+      ContentType: safeContentType,
       Metadata: metadata,
     })
   );
@@ -166,10 +172,15 @@ export async function getPresignedUploadUrl(
   contentType?: string,
   expiresIn = 3600
 ): Promise<string> {
+  const safeContentType =
+    contentType?.startsWith("video/")
+      ? "application/octet-stream"
+      : contentType || "application/octet-stream";
+
   const command = new PutObjectCommand({
     Bucket: BUCKET,
     Key: key,
-    ...(contentType ? { ContentType: contentType } : {}),
+    ...(safeContentType ? { ContentType: safeContentType } : {}),
   });
   return await getSignedUrl(s3, command, { expiresIn });
 }

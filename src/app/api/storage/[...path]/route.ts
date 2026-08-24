@@ -32,19 +32,32 @@ export async function GET(
       jpeg: "image/jpeg",
       webp: "image/webp",
       svg: "image/svg+xml",
+      gif: "image/gif",
       mp4: "video/mp4",
       webm: "video/webm",
+      mov: "video/quicktime",
+      ogv: "video/ogg",
+      mkv: "video/x-matroska",
       mp3: "audio/mpeg",
       wav: "audio/wav",
+      ogg: "audio/ogg",
       m4a: "audio/mp4",
+      flac: "audio/flac",
       json: "application/json",
       txt: "text/plain",
+      csv: "text/csv",
+      md: "text/markdown",
     };
 
     const ext = key.split(".").pop()?.toLowerCase() || "";
-    const contentType = response.ContentType && response.ContentType !== "binary/octet-stream"
-      ? response.ContentType
-      : mimeTypes[ext] || "application/octet-stream";
+    const isGenericMime =
+      !response.ContentType ||
+      response.ContentType === "binary/octet-stream" ||
+      response.ContentType === "application/octet-stream";
+    const contentType =
+      !isGenericMime && response.ContentType
+        ? response.ContentType
+        : mimeTypes[ext] || "application/octet-stream";
 
     const headers = new Headers();
     headers.set("Content-Type", contentType);

@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       const folder = isRAG ? "rag" : "materials";
       const key = `${folder}/${type}/${timestamp}-${randomId}.${fileExtension}`;
 
-      const uploadUrl = await getPresignedUploadUrl(key, fileType, 3600);
+      const uploadUrl = await getPresignedUploadUrl(key, "application/octet-stream", 3600);
       const publicUrl = getPublicUrl(key);
 
       return NextResponse.json({

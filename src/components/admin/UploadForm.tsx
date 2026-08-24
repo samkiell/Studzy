@@ -278,8 +278,7 @@ export function UploadForm({ courses }: UploadFormProps) {
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("PUT", presignData.uploadUrl);
-            const fileMime = fileUpload.file.type || "application/octet-stream";
-            xhr.setRequestHeader("Content-Type", fileMime);
+            xhr.setRequestHeader("Content-Type", "application/octet-stream");
 
             xhr.upload.onprogress = (e) => {
               if (e.lengthComputable && e.total > 0) {
