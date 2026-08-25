@@ -46,7 +46,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://studzy.me"),
   alternates: { canonical: "https://studzy.me" },
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/icon_192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon_512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/favicon.png",
     apple: "/favicon.png",
   },
   manifest: "/manifest.json",
@@ -63,14 +68,37 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://studzy.me",
     siteName: "Studzy",
-    title: "Studzy – Software Engineering Learning Platform | OAU",
+    title: {
+      default: "Studzy – Software Engineering Learning Platform | OAU",
+      template: "%s | Studzy",
+    },
     description:
       "Studzy is a dedicated learning and revision platform for Software Engineering students at Obafemi Awolowo University (OAU). Access course materials, structured resources, and exam-focused content in one organized workspace.",
+    images: [
+      {
+        url: "https://studzy.me/favicon.png",
+        width: 512,
+        height: 512,
+        alt: "Studzy Logo",
+        type: "image/png",
+      },
+      {
+        url: "https://studzy.me/logo.png",
+        width: 570,
+        height: 188,
+        alt: "Studzy Logo",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Studzy – Software Engineering Learning Platform",
+    card: "summary",
+    title: {
+      default: "Studzy – Software Engineering Learning Platform",
+      template: "%s | Studzy",
+    },
     description: "Dedicated learning platform for Software Engineering university students.",
+    images: ["https://studzy.me/favicon.png"],
   },
 };
 
