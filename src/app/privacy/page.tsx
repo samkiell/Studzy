@@ -2,6 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Footer } from "@/components/ui/Footer";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Privacy Policy and data protection at Studzy.",
+};
 
 export default function PrivacyPage() {
   return (
