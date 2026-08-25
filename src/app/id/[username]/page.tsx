@@ -8,11 +8,20 @@ import { userActivity } from "@/lib/db/schema/activity";
 import { eq, and, gt, ne, count, ilike } from "drizzle-orm";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import { ShieldCheck } from "lucide-react";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{
     username: string;
   }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { username } = await params;
+  return {
+    title: `${username}'s Student ID Card`,
+    description: `Verified Student ID for ${username} on Studzy.`,
+  };
 }
 
 export default async function PublicIDPage({ params }: PageProps) {
