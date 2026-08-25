@@ -5,6 +5,12 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/ui/Footer";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Sign Up",
+  description: "Create your Studzy account to access course materials and AI study tools.",
+};
 
 export default async function SignupPage() {
   const session = await auth();
