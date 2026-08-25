@@ -4,6 +4,12 @@ import { asc } from "drizzle-orm";
 import { CourseGrid } from "@/components/courses/CourseGrid";
 import { BookOpen } from "lucide-react";
 import type { Course } from "@/types/database";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Course Directory",
+  description: "Browse Software Engineering courses and academic study materials on Studzy.",
+};
 
 export default async function CoursesPage() {
   const courses = await db
