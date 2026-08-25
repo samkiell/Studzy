@@ -5,6 +5,12 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/ui/Footer";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Log In",
+  description: "Log in to your Studzy account.",
+};
 
 export default async function LoginPage() {
   const session = await auth();
