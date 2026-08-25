@@ -2,6 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Footer } from "@/components/ui/Footer";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms of Service and conditions for using Studzy.",
+};
 
 export default function TermsPage() {
   return (
