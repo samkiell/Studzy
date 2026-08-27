@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdminAutoRefresh from "@/components/admin/AdminAutoRefresh";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { courses, resources } from "@/lib/db/schema/courses";
@@ -116,6 +117,7 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-10">
+      <AdminAutoRefresh />
       {/* Welcome & Stats */}
       <div className="space-y-6">
         <div className="flex items-center gap-4">
