@@ -131,21 +131,21 @@ export default async function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
           {stats.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div key={stat.label} className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{stat.label}</p>
+                  <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400">{stat.label}</p>
                   <div className="mt-1 flex items-baseline gap-2">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value.toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">{stat.value.toLocaleString()}</p>
                     {stat.isPulse && (
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-500 animate-pulse" />
                     )}
                   </div>
                 </div>
-                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.bg} ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
+                <div className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg ${stat.bg} ${stat.color}`}>
+                  <stat.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
               </div>
             </div>
@@ -155,24 +155,24 @@ export default async function AdminPage() {
 
       {/* Quick Actions */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">Quick Actions</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-neutral-900 dark:text-white">Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[
-            { href: "/admin/upload", label: "Upload Resource", desc: "Add new materials", icon: CloudUpload, bg: "bg-primary-100", color: "text-primary-600" },
-            { href: "/admin/resources", label: "Manage Content", desc: "Edit resources", icon: ClipboardCheck, bg: "bg-amber-100", color: "text-amber-600" },
+            { href: "/admin/upload", label: "Upload", desc: "Add new materials", icon: CloudUpload, bg: "bg-primary-100", color: "text-primary-600" },
+            { href: "/admin/resources", label: "Content", desc: "Edit resources", icon: ClipboardCheck, bg: "bg-amber-100", color: "text-amber-600" },
             { href: "/admin/rag", label: "AI Knowledge", desc: "Sync semantic data", icon: BrainCircuit, bg: "bg-purple-100", color: "text-purple-600" },
-            { href: "/admin/courses", label: "Manage Courses", desc: "Edit code/title/desc", icon: BookOpen, bg: "bg-blue-100", color: "text-blue-600" },
+            { href: "/admin/courses", label: "Courses", desc: "Edit code/title/desc", icon: BookOpen, bg: "bg-blue-100", color: "text-blue-600" },
           ].map((action) => (
             <Link
               key={action.label}
               href={action.href}
-              className="group rounded-xl border border-neutral-200 bg-white p-5 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
+              className="group rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 transition-all hover:border-primary-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-primary-700"
             >
-              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${action.bg} ${action.color} dark:bg-opacity-20`}>
-                <action.icon className="h-5 w-5" />
+              <div className={`mb-3 sm:mb-4 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg ${action.bg} ${action.color} dark:bg-opacity-20`}>
+                <action.icon className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">{action.label}</h3>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{action.desc}</p>
+              <h3 className="text-sm sm:text-base font-semibold text-neutral-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">{action.label}</h3>
+              <p className="mt-1 text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 hidden sm:block">{action.desc}</p>
             </Link>
           ))}
         </div>
