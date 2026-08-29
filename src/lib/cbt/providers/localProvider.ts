@@ -9,27 +9,27 @@ type RawQuestion = {
   options: Record<string, string>;
   correct_option: string | null;
   explanation: string | null;
-  course_id: string;
-  question_id: number;
-  created_at: string;
+  course_id?: string;
+  question_id?: number;
+  created_at?: string;
 };
 
 const banks: Record<string, RawQuestion[]> = {
   CIS214: cis214Raw as RawQuestion[],
 };
 
-function toQuestion(raw: RawQuestion): Question {
+function toQuestion(raw: RawQuestion, index: number, courseId: string): Question {
   return {
     id: raw.id,
-    course_id: raw.course_id,
-    question_id: raw.question_id,
-    difficulty: raw.difficulty,
+    course_id: raw.course_id || courseId,
+    question_id: raw.question_id || index + 1,
+    difficulty: raw.difficulty || "medium",
     topic: raw.topic || null,
     question_text: raw.question_text,
     options: raw.options,
     correct_option: raw.correct_option,
-    explanation: raw.explanation,
-    created_at: raw.created_at,
+    explanation: raw.explanation || null,
+    created_at: raw.created_at || new Date().toISOString(),
   };
 }
 
@@ -37,7 +37,7 @@ export const localProvider = {
   getQuestions(courseId: string): Question[] {
     const raw = banks[courseId.toUpperCase()];
     if (!raw) return [];
-    return raw.map(toQuestion);
+    return raw.map((q, i) => toQuestion(q, i, courseId));
   },
 
   getExamMetadata(courseId: string) {
