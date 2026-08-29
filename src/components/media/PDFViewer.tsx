@@ -77,7 +77,27 @@ export function PDFViewer({
         });
 
         const doc = await loadingTask.promise;
+
         if (!isCancelled) {
+          // Auto-calculate scale to fit width before setting doc
+          if (scrollAreaRef.current) {
+            try {
+              const firstPage = await doc.getPage(1);
+              const unscaledViewport = firstPage.getViewport({ scale: 1.0 });
+              const padding = window.innerWidth < 640 ? 32 : 64; // p-4 is 16px*2, p-8 is 32px*2
+              const containerWidth = scrollAreaRef.current.clientWidth - padding;
+              
+              if (containerWidth > 0 && unscaledViewport.width > 0) {
+                const fitScale = containerWidth / unscaledViewport.width;
+                // Round down to 1 decimal place, bounds between 0.4 and 2.0
+                const initialScale = Math.max(0.4, Math.min(2.0, Math.floor(fitScale * 10) / 10));
+                setScale(initialScale);
+              }
+            } catch (err) {
+              console.warn("Could not calculate initial PDF scale", err);
+            }
+          }
+
           setPdfDoc(doc);
           setTotalPages(doc.numPages);
           setCurrentPage(1);
@@ -505,14 +525,16 @@ export function PDFViewer({
           </div>
         )}
 
-        {/* High-Res Canvas Page Render with items-start top alignment */}
-        <div className="min-h-full flex items-start justify-center pb-12">
-          <div
-            className={`relative transition-transform duration-200 shadow-2xl rounded-sm ${
-              nightMode ? "filter invert contrast-125 hue-rotate-180 brightness-90" : ""
-            }`}
-          >
-            <canvas ref={canvasRef} className="block rounded-sm bg-white shadow-2xl mx-auto" />
+        {/* High-Res Canvas Page Render with safe horizontal scrolling */}
+        <div className="min-h-full pb-12">
+          <div className="w-max min-w-full flex justify-center">
+            <div
+              className={`relative transition-transform duration-200 shadow-2xl rounded-sm ${
+                nightMode ? "filter invert contrast-125 hue-rotate-180 brightness-90" : ""
+              }`}
+            >
+              <canvas ref={canvasRef} className="block rounded-sm bg-white shadow-2xl mx-auto" />
+            </div>
           </div>
         </div>
       </div>
