@@ -12,7 +12,7 @@ function generateMcqExplanationPrompt(
     .join("\n");
 
   return `You are an expert tutor. Explain the following question clearly.
-  KEEP IT VERY SHORT AND BRIEF. Max 2-3 sentences per section.
+  KEEP IT VERY SHORT AND BRIEF. Max 1-2 sentences per section.
 
 Question:
 "${question.question_text}"
@@ -27,7 +27,7 @@ Correct Answer:
 "${question.correct_option?.toUpperCase() || 'N/A'}"
  Explain clearly WHY the correct answer is correct.
  Explain WHY the other options are incorrect.
- Keep the tone encouraging and brief.`;
+ Keep the tone funny, humorous and brief.`;
 }
 
 /**
