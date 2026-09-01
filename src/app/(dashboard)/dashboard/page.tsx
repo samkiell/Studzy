@@ -13,7 +13,7 @@ import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { BookmarksWidget } from "@/components/dashboard/BookmarksWidget";
 import { StudentIDCard } from "@/components/profile/StudentIDCard";
 import Link from "next/link";
-import { BookOpen, FileText, Eye, Zap, ShieldAlert, MessageCircle, Brain, ArrowRight } from "lucide-react";
+import { BookOpen, FileText, Eye, Zap, ShieldAlert, MessageCircle, Brain, ArrowRight, Flame } from "lucide-react";
 import type { Course } from "@/types/database";
 
 export default async function DashboardPage() {
@@ -115,7 +115,12 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 grid-cols-2 lg:grid-cols-5">
+        <StatCard 
+          title="Current Streak" 
+          value={`${user.current_streak || 0} days`}
+          icon={<Flame className="h-5 w-5 text-orange-500" />}
+        />
         <StatCard 
           title="Total Courses" 
           value={String(courses?.length || 0)} 
