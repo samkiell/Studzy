@@ -1,7 +1,9 @@
 import { db } from "@/lib/db";
 import { resources, courses } from "@/lib/db/schema/courses";
+import { userActivity } from "@/lib/db/schema/activity";
+import { users } from "@/lib/db/schema/auth";
 import { eq, desc } from "drizzle-orm";
-import { Star } from "lucide-react";
+import { Star, Activity, Eye, ShieldCheck } from "lucide-react";
 
 interface ResourceAnalytics {
   id: string;
@@ -31,6 +33,22 @@ export default async function AdminAnalyticsPage() {
     .from(resources)
     .leftJoin(courses, eq(resources.course_id, courses.id))
     .orderBy(desc(resources.view_count));
+
+  const recentActivities = await db
+    .select({
+      id: userActivity.id,
+      action_type: userActivity.action_type,
+      created_at: userActivity.created_at,
+      metadata: userActivity.metadata,
+      resource_title: resources.title,
+      user_name: users.full_name,
+      user_username: users.username,
+    })
+    .from(userActivity)
+    .leftJoin(resources, eq(userActivity.resource_id, resources.id))
+    .leftJoin(users, eq(userActivity.user_id, users.id))
+    .orderBy(desc(userActivity.created_at))
+    .limit(50);
 
   const analytics: ResourceAnalytics[] = (allResources || []).map((r) => ({
     id: r.id,
@@ -198,6 +216,54 @@ export default async function AdminAnalyticsPage() {
           </table>
         </div>
       </div>
+
+      {/* Activity Log */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary-500" />
+          Recent User Actions
+        </h2>
+        <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 overflow-hidden">
+          <div className="divide-y divide-neutral-100 dark:divide-neutral-800 max-h-[600px] overflow-y-auto">
+            {recentActivities && recentActivities.length > 0 ? (
+              recentActivities.map((act) => (
+                <div key={act.id} className="flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                    act.action_type === "view_resource" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" :
+                    act.action_type === "complete_resource" ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400" :
+                    act.action_type.startsWith("ai_") ? "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400" :
+                    "bg-neutral-50 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                  }`}>
+                    {act.action_type === "view_resource" ? <Eye className="h-4 w-4" /> :
+                     act.action_type === "complete_resource" ? <ShieldCheck className="h-4 w-4" /> :
+                     <Activity className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                      <span className="font-semibold text-primary-600 dark:text-primary-400">{act.user_username || act.user_name || "Unknown User"}</span>
+                      {" • "}
+                      {act.action_type.replace(/_/g, " ").toUpperCase()}
+                    </p>
+                    <p className="text-xs text-neutral-500 truncate mt-0.5">
+                      {act.resource_title || "System Activity"}
+                    </p>
+                  </div>
+                  <div className="text-right whitespace-nowrap">
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase">
+                      {act.created_at ? new Date(act.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                    </p>
+                    <p className="text-[10px] text-neutral-500">
+                      {act.created_at ? new Date(act.created_at).toLocaleDateString() : ""}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-12 text-center text-neutral-500">No recent activity recorded</div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
