@@ -1,21 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy, Medal, User } from "lucide-react";
+import { Trophy, Medal, User, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-interface LeaderboardEntry {
+export interface LeaderboardEntry {
   id: string;
   username: string;
+  full_name?: string;
   total_study_seconds: number;
   avatar_url?: string;
+  current_streak?: number;
+  longest_streak?: number;
 }
 
-export function LeaderboardWidget() {
+interface LeaderboardWidgetProps {
+  currentUserId?: string;
+  currentUserRank?: number;
+  currentUserTotalSeconds?: number;
+  currentUserAvatar?: string;
+  currentUsername?: string;
+}
+
+export function LeaderboardWidget({
+  currentUserId,
+  currentUserRank,
+  currentUserTotalSeconds,
+  currentUserAvatar,
+  currentUsername,
+}: LeaderboardWidgetProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [limit, setLimit] = useState(5);
-  const [hasMore, setHasMore] = useState(true);
+  const [limit] = useState(10);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -25,23 +41,20 @@ export function LeaderboardWidget() {
 
         if (data.data) {
           setEntries(data.data as LeaderboardEntry[]);
-          setHasMore(data.data.length === limit);
         }
       } catch (err) {
         console.error("Failed to load leaderboard:", err);
       } finally {
         setLoading(false);
-        setIsFetchingMore(false);
+        setLoading(false);
       }
     };
 
     fetchLeaderboard();
   }, [limit]);
 
-  const handleSeeMore = () => {
-    setIsFetchingMore(true);
-    setLimit((prev) => prev + 10);
-  };
+  const currentUserInTop10 = entries.some((e) => e.id === currentUserId);
+  const showCurrentUserAppended = currentUserId && !currentUserInTop10 && currentUserRank;
 
   if (loading) return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 animate-pulse">
@@ -61,7 +74,12 @@ export function LeaderboardWidget() {
 
       <div className="space-y-4">
         {entries.map((entry, index) => (
-          <div key={entry.id} className="flex items-center justify-between">
+          <div 
+            key={entry.id} 
+            className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
+              entry.id === currentUserId ? "bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800" : ""
+            }`}
+          >
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-neutral-100 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800">
@@ -73,17 +91,15 @@ export function LeaderboardWidget() {
                     </div>
                   )}
                 </div>
-                {index < 3 && (
-                  <div className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
-                    index === 0 ? "bg-yellow-500" : index === 1 ? "bg-slate-400" : "bg-amber-600"
-                  }`}>
-                    {index + 1}
-                  </div>
-                )}
+                <div className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm ${
+                  index === 0 ? "bg-yellow-500" : index === 1 ? "bg-slate-400" : index === 2 ? "bg-amber-600" : "bg-neutral-500"
+                }`}>
+                  {index + 1}
+                </div>
               </div>
               <div>
                 <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate max-w-[120px]">
-                  {entry.username || "Anonymous"}
+                  {entry.username || "Anonymous"} {entry.id === currentUserId && "(You)"}
                 </p>
                 <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
                   {Math.floor((entry.total_study_seconds || 0) / 3600)}h {Math.floor(((entry.total_study_seconds || 0) % 3600) / 60)}m studied
@@ -93,17 +109,53 @@ export function LeaderboardWidget() {
             {index === 0 && <Medal className="h-5 w-5 text-yellow-500" />}
           </div>
         ))}
+        
+        {showCurrentUserAppended && (
+          <>
+            <div className="flex justify-center py-1">
+              <div className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 mx-1"></div>
+              <div className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 mx-1"></div>
+              <div className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 mx-1"></div>
+            </div>
+            <div 
+              className="flex items-center justify-between p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-neutral-100 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800">
+                    {currentUserAvatar ? (
+                      <img src={currentUserAvatar} alt={currentUsername || ""} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-neutral-400">
+                        <User className="h-5 w-5" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute -right-2 -top-1 flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full text-[10px] font-bold text-white bg-primary-500 shadow-sm">
+                    {currentUserRank}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate max-w-[120px]">
+                    {currentUsername || "Anonymous"} (You)
+                  </p>
+                  <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                    {Math.floor((currentUserTotalSeconds || 0) / 3600)}h {Math.floor(((currentUserTotalSeconds || 0) % 3600) / 60)}m studied
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {hasMore && (
-        <button
-          onClick={handleSeeMore}
-          disabled={isFetchingMore}
-          className="mt-6 w-full rounded-lg border border-neutral-200 py-2 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white disabled:opacity-50"
-        >
-          {isFetchingMore ? "Loading..." : "See More"}
-        </button>
-      )}
+      <Link
+        href="/leaderboard"
+        className="mt-6 flex items-center justify-center gap-2 w-full rounded-lg border border-neutral-200 py-2.5 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+      >
+        View Full Leaderboard
+        <ArrowRight className="h-4 w-4" />
+      </Link>
     </div>
   );
 }

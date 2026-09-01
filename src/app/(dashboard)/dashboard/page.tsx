@@ -210,7 +210,13 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          <LeaderboardWidget />
+          <LeaderboardWidget 
+            currentUserId={user.id}
+            currentUserRank={userRank}
+            currentUserTotalSeconds={totalSeconds}
+            currentUserAvatar={avatarUrl || undefined}
+            currentUsername={username}
+          />
           <BookmarksWidget />
         </div>
       </div>

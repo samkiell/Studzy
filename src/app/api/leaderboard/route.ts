@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "5", 10);
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
 
     const entries = await db
       .select({
@@ -15,11 +16,14 @@ export async function GET(request: NextRequest) {
         full_name: users.full_name,
         total_study_seconds: users.total_study_seconds,
         avatar_url: users.avatar_url,
+        current_streak: users.current_streak,
+        longest_streak: users.longest_streak,
       })
       .from(users)
       .where(ne(users.role, "admin"))
       .orderBy(desc(users.total_study_seconds))
-      .limit(limit);
+      .limit(limit)
+      .offset(offset);
 
     return NextResponse.json({ data: entries });
   } catch (error: any) {
