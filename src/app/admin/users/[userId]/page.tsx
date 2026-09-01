@@ -177,11 +177,11 @@ export default async function UserDetailsPage({
                   activity.map((act) => (
                     <div key={act.id} className="flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                        act.action_type === "view_resource" ? "bg-blue-50 text-blue-600" :
-                        act.action_type === "complete_resource" ? "bg-green-50 text-green-600" :
-                        act.action_type.startsWith("ai_") ? "bg-purple-50 text-purple-600" :
-                        "bg-neutral-50 text-neutral-600"
-                      } dark:bg-opacity-10`}>
+                        act.action_type === "view_resource" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" :
+                        act.action_type === "complete_resource" ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400" :
+                        act.action_type.startsWith("ai_") ? "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400" :
+                        "bg-neutral-50 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                      }`}>
                         {act.action_type === "view_resource" ? <Eye className="h-4 w-4" /> :
                          act.action_type === "complete_resource" ? <ShieldCheck className="h-4 w-4" /> :
                          <Activity className="h-4 w-4" />}
